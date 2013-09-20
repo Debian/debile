@@ -19,7 +19,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.desktop_file_validate\
+    import desktop_file_validate, version
+from debileslave.utils import run_command, cd
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(dsc, source, job, firehose):
+    run_command(["dpkg-source", "-x", dsc, "source"])
+    with cd('source'):
+        return desktop_file_validate('source', firehose)
+
+
+def get_version():
+    return version()

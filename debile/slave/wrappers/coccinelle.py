@@ -19,7 +19,14 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import StringIO
+from firehose.model import Analysis
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def parse_coccinelle(lines):
+    # we have to emulate a file for from_xml()
+    firehose = StringIO.StringIO(lines)
+    analysis = Analysis.from_xml(firehose)
+
+    for result in analysis.results:
+        yield result

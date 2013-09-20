@@ -19,7 +19,30 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.wrappers.lintian import parse_lintian
+from debileslave.utils import run_command
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def lintian(target, analysis, lintian_binary='lintian'):
+    log = ""
+    failed = False
+
+    out, err, ret = run_command([lintian_binary, "-IE", "--pedantic",
+                                 "--show-overrides", target])
+    for issue in parse_lintian(out.splitlines(), target):
+        analysis.results.append(issue)
+        if issue.severity in ['warning', 'error']:
+            failed = True
+    log += out
+
+    return (analysis, log, failed)
+
+
+def version(lintian_binary='lintian'):
+    out, err, ret = run_command([
+        lintian_binary, '--version'
+    ])
+    if ret != 0:
+        raise Exception(lintian_binary+" is not installed")
+    name, version = out.split(" ")
+    return (name, version.strip())

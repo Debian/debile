@@ -19,7 +19,26 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.piuparts import piuparts, version
+from debileslave.config import Config
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(target, package, job, firehose):
+    config = Config()
+    if not target.endswith(".deb"):
+        raise Exception("Non-deb given")
+
+    arch = package['arch']
+    if package['arch'] == 'all':
+        arch = config.get('capabilities', 'all-arch')
+
+    chroot_name = "{suite}-{arch}".format(
+        suite=package['suite'],
+        arch=arch
+    )
+
+    return piuparts(chroot_name, target, firehose)
+
+
+def get_version():
+    return version()

@@ -19,7 +19,26 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.wrappers.pep8 import parse_pep8
+from debileslave.utils import run_command, cd
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def pep8(dsc, analysis):
+    run_command(["dpkg-source", "-x", dsc, "source"])
+    with cd('source'):
+        out, err, ret = run_command(['pep8', '.'])
+        failed = ret != 0
+
+        for issue in parse_pep8(out.splitlines()):
+            analysis.results.append(issue)
+
+        return (analysis, out, failed)
+
+
+def version():
+    out, err, ret = run_command([
+        'pep8', '--version'
+    ])
+    if ret != 0:
+        raise Exception("pep8 is not installed")
+    return ('pep8', out.strip())

@@ -19,7 +19,37 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.wrappers.adequate import parse_adequate
+from schroot import schroot
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def adequate(chroot_name, target, package_name, analysis):
+    with schroot(chroot_name) as chroot:
+        chroot.copy(target, "/tmp")
+
+        out, err, ret = chroot.run([
+            'apt-get', 'install', '-y', 'adequate'
+        ], user='root')
+
+        out, err, ret = chroot.run([
+            'dpkg', '-i',
+            "/tmp/%s" % target
+        ], user='root', return_codes=(0, 1))
+
+        out, err, ret = chroot.run([
+            'apt-get', 'install', '-y', '-f'
+        ], user='root')
+
+        out, err, ret = chroot.run(['adequate', package_name])
+
+        failed = False
+        for issue in parse_adequate(out.splitlines()):
+            failed = True
+            analysis.results.append(issue)
+
+        return analysis, out, failed
+
+
+def version():
+    #TODO
+    return ('adequate', 'n/a')

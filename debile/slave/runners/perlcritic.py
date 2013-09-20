@@ -19,7 +19,29 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.wrappers.perlcritic import parse_perlcritic
+from debileslave.utils import run_command, cd
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def perlcritic(dsc, analysis):
+    run_command(["dpkg-source", "-x", dsc, "source"])
+    with cd('source'):
+        out, err, ret = run_command([
+            'perlcritic', '--brutal', '.', '--verbose',
+            '%f:%l:%c %s    %p    %m\n'
+        ])
+        if ret == 1:
+            raise Exception("Perlcritic had an internal error")
+
+        failed = ret == 2
+        for issue in parse_perlcritic(out.splitlines()):
+            analysis.results.append(issue)
+
+        return (analysis, out, failed)
+
+
+def version():
+    out, err, ret = run_command(['perlcritic', '--version'])
+    if ret != 0:
+        raise Exception("perlcritic is not installed")
+    return ('perlcritic', out.strip())

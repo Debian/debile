@@ -19,7 +19,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.perlcritic import perlcritic, version
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(dsc, package, job, firehose):
+    return perlcritic(dsc, firehose)
+
+
+def get_version():
+    return version()

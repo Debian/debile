@@ -19,7 +19,35 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.sbuild import sbuild, version
+from debileslave.utils import upload
+import glob
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(dsc, package, job, firehose):
+    suite = job['suite']
+    arch = job['arch']
+    compiler = job['subtype']
+
+    firehose, out, ftbfs = sbuild(dsc, suite, arch, compiler, firehose)
+
+    changes = "{source}*{arch}.changes".format(
+        source=package['name'],
+        arch=arch
+    )
+
+    changes = list(glob.glob(changes))
+
+    if changes == [] and not ftbfs:
+        print(out)
+        raise Exception("Um. No changes but no FTBFS.")
+
+    if not ftbfs:
+        changes = changes[0]
+        upload(changes, job, package)
+
+    return (firehose, out, ftbfs)
+
+
+def get_version():
+    return version()

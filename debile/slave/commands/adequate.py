@@ -19,7 +19,27 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.adequate import adequate, version
+from debileslave.config import Config
+
+# For binaries only
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(target, package, job, firehose):
+    if not target.endswith(".deb"):
+        raise Exception("Non-deb given")
+
+    config = Config()
+    arch = package['arch']
+    if package['arch'] == 'all':
+        arch = config.get('capabilities', 'all-arch')
+
+    chroot_name = "{suite}-{arch}".format(
+        suite=package['suite'],
+        arch=arch
+    )
+    return adequate(chroot_name, target, package['name'], firehose)
+
+
+def get_version():
+    return version()

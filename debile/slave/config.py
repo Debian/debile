@@ -19,7 +19,21 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import ConfigParser
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+class Config(ConfigParser.ConfigParser):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Config, cls).__new__(cls, *args, **kwargs)
+            return cls._instance
+
+    def __init__(self, location="/etc/debile-slave.ini"):
+        ConfigParser.ConfigParser.__init__(self)
+        self.read(location)
+
+    def verify():
+        # TODO, check that after constructor the conf is fine
+        return True

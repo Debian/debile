@@ -19,7 +19,28 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import importlib
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+PLUGINS = {
+    "build": "debileslave.commands.build",
+    "clanganalyzer": "debileslave.commands.clanganalyzer",
+
+    "pep8": "debileslave.commands.pep8",
+    "perlcritic": "debileslave.commands.perlcritic",
+    "cppcheck": "debileslave.commands.cppcheck",
+    "coccinelle": "debileslave.commands.coccinelle",
+
+    "lintian": "debileslave.commands.lintian",
+    "lintian4py": "debileslave.commands.lintian4py",
+
+    "adequate": "debileslave.commands.adequate",
+    "piuparts": "debileslave.commands.piuparts",
+    "desktop-file-validate": "debileslave.commands.desktop_file_validate",
+}
+
+
+def load_module(what):
+    path = PLUGINS[what]
+    mod = importlib.import_module(path)
+    return (mod.run, mod.get_version)

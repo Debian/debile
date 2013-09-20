@@ -21,5 +21,5 @@
 
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+class EthelError(Exception):
+    pass

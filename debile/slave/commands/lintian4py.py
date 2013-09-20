@@ -19,7 +19,14 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.lintian import lintian, version
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(dfiles, package, job, firehose):
+    if not isinstance(dfiles, list):
+        dfiles = [dfiles]
+    return lintian(dfiles, firehose, lintian_binary='lintian4py')
+
+
+def get_version():
+    return version(lintian_binary='lintian4py')

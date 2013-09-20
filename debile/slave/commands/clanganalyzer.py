@@ -19,7 +19,18 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debileslave.runners.clanganalyzer import clanganalyzer, version
+from debileslave.config import Config
 
 
-__appname__ = "debile-slave"
-__version__ = "0.0.1"
+def run(dsc, package, job, firehose):
+    config = Config()
+    suite = job['suite']
+    # clanganalyzer can only run on source packages
+    arch = config.get('capabilities', 'all-arch')
+
+    return clanganalyzer(dsc, suite, arch, firehose)
+
+
+def get_version():
+    return version()
