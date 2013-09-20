@@ -47,6 +47,12 @@ class Groups(Base):
     maintainer = Column(Integer, ForeignKey('people.id'))
 
 
+class Suite(Base):
+    __tablename__ = 'suites'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+
+
 class Sources(Base):
     __tablename__ = 'sources'
 
@@ -55,7 +61,8 @@ class Sources(Base):
     uploader = Column(Integer, ForeignKey('people.id'))
     name = Column(String(255))
     version = Column(String(255))
-    group = Column(Integer, ForeignKey('group.id'))
+    group = Column(Integer, ForeignKey('groups.id'))
+    suite = Column(Integer, ForeignKey('suites.id'))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
@@ -69,6 +76,7 @@ class Binaries(Base):
     builder = Column(Integer, ForeignKey('builder.id'))
     name = Column(String(255))
     version = Column(String(255))
+    suite = Column(Integer, ForeignKey('suites.id'))
     group = Column(Integer, ForeignKey('group.id'))
     arch = Column(Integer, ForeignKey('arches.id'))
     uploaded_at = Column(DateTime, nullable=False)
