@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.pep8 import parse_pep8
-from debileslave.utils import run_command, cd
+from debile.slave.wrappers.pep8 import parse_pep8
+from debile.slave.utils import run_command, cd
 
 
 def pep8(dsc, analysis):

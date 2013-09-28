@@ -23,20 +23,20 @@ import importlib
 
 
 PLUGINS = {
-    "build": "debileslave.commands.build",
-    "clanganalyzer": "debileslave.commands.clanganalyzer",
+    "build": "debile.slave.commands.build",
+    "clanganalyzer": "debile.slave.commands.clanganalyzer",
 
-    "pep8": "debileslave.commands.pep8",
-    "perlcritic": "debileslave.commands.perlcritic",
-    "cppcheck": "debileslave.commands.cppcheck",
-    "coccinelle": "debileslave.commands.coccinelle",
+    "pep8": "debile.slave.commands.pep8",
+    "perlcritic": "debile.slave.commands.perlcritic",
+    "cppcheck": "debile.slave.commands.cppcheck",
+    "coccinelle": "debile.slave.commands.coccinelle",
 
-    "lintian": "debileslave.commands.lintian",
-    "lintian4py": "debileslave.commands.lintian4py",
+    "lintian": "debile.slave.commands.lintian",
+    "lintian4py": "debile.slave.commands.lintian4py",
 
-    "adequate": "debileslave.commands.adequate",
-    "piuparts": "debileslave.commands.piuparts",
-    "desktop-file-validate": "debileslave.commands.desktop_file_validate",
+    "adequate": "debile.slave.commands.adequate",
+    "piuparts": "debile.slave.commands.piuparts",
+    "desktop-file-validate": "debile.slave.commands.desktop_file_validate",
 }
 
 

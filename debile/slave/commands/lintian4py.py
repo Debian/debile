@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.lintian import lintian, version
+from debile.slave.runners.lintian import lintian, version
 
 
 def run(dfiles, package, job, firehose):

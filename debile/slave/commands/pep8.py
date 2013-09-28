@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.pep8 import pep8, version
+from debile.slave.runners.pep8 import pep8, version
 
 
 def run(dsc, package, job, firehose):

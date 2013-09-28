@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.cppcheck import cppcheck, version
+from debile.slave.runners.cppcheck import cppcheck, version
 
 
 def run(dsc, package, job, firehose):

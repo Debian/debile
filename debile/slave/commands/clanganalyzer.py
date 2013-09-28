@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.clanganalyzer import clanganalyzer, version
-from debileslave.config import Config
+from debile.slave.runners.clanganalyzer import clanganalyzer, version
+from debile.slave.config import Config
 
 
 def run(dsc, package, job, firehose):

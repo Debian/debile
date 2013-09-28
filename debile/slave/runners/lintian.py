@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.lintian import parse_lintian
-from debileslave.utils import run_command
+from debile.slave.wrappers.lintian import parse_lintian
+from debile.slave.utils import run_command
 
 
 def lintian(target, analysis, lintian_binary='lintian'):

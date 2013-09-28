@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.adequate import adequate, version
-from debileslave.config import Config
+from debile.slave.runners.adequate import adequate, version
+from debile.slave.config import Config
 
 # For binaries only
 

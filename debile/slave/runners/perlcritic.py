@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.perlcritic import parse_perlcritic
-from debileslave.utils import run_command, cd
+from debile.slave.wrappers.perlcritic import parse_perlcritic
+from debile.slave.utils import run_command, cd
 
 
 def perlcritic(dsc, analysis):

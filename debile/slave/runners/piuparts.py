@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.piuparts import parse_piuparts
+from debile.slave.wrappers.piuparts import parse_piuparts
 
 from schroot.chroot import SchrootCommandError
 from schroot import schroot

@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.utils import tdir, cd, dget, run_command
-from debileslave.config import Config
+from debile.slave.utils import tdir, cd, dget, run_command
+from debile.slave.config import Config
 
 from contextlib import contextmanager
 import xmlrpclib

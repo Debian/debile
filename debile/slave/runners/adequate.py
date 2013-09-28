@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.adequate import parse_adequate
+from debile.slave.wrappers.adequate import parse_adequate
 from schroot import schroot
 
 

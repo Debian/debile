@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.error import EthelError
-from debileslave.config import Config
+from debile.slave.error import EthelError
+from debile.slave.config import Config
 
 from contextlib import contextmanager
 from schroot import schroot

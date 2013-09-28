@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.utils import run_command
+from debile.slave.utils import run_command
 
 from firehose.model import Stats
 import firehose.parsers.gcc as fgcc

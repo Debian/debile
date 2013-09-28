@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.piuparts import piuparts, version
-from debileslave.config import Config
+from debile.slave.runners.piuparts import piuparts, version
+from debile.slave.config import Config
 
 
 def run(target, package, job, firehose):

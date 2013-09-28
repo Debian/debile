@@ -22,11 +22,11 @@
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
-from debileslave.commands import PLUGINS, load_module
-from debileslave.client import get_proxy, checkout
+from debile.slave.commands import PLUGINS, load_module
+from debile.slave.client import get_proxy, checkout
 from contextlib import contextmanager
-from debileslave.utils import tdir, cd, run_command
-from debileslave.config import Config
+from debile.slave.utils import tdir, cd, run_command
+from debile.slave.config import Config
 
 import logging
 import time

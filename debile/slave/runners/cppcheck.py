@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.cppcheck import parse_cppcheck
-from debileslave.utils import run_command, cd
+from debile.slave.wrappers.cppcheck import parse_cppcheck
+from debile.slave.utils import run_command, cd
 
 
 def cppcheck(dsc, analysis):

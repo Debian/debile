@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.sbuild import sbuild, version
-from debileslave.utils import upload
+from debile.slave.runners.sbuild import sbuild, version
+from debile.slave.utils import upload
 import glob
 
 

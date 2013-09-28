@@ -19,9 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.wrappers.coccinelle import parse_coccinelle
-from debileslave.utils import run_command, cd
-from debileslave.config import Config
+from debile.slave.wrappers.coccinelle import parse_coccinelle
+from debile.slave.utils import run_command, cd
+from debile.slave.config import Config
 import glob
 
 

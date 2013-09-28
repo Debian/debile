@@ -19,9 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debileslave.runners.desktop_file_validate\
-    import desktop_file_validate, version
-from debileslave.utils import run_command, cd
+from debile.slave.runners.desktop_file_validate import (desktop_file_validate,
+                                                        version)
+from debile.slave.utils import run_command, cd
 
 
 def run(dsc, source, job, firehose):
