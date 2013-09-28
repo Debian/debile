@@ -73,11 +73,11 @@ class Binaries(Base):
     id = Column(Integer, primary_key=True)
 
     source = Column(Integer, ForeignKey('sources.id'))
-    builder = Column(Integer, ForeignKey('builder.id'))
+    builder = Column(Integer, ForeignKey('builders.id'))
     name = Column(String(255))
     version = Column(String(255))
     suite = Column(Integer, ForeignKey('suites.id'))
-    group = Column(Integer, ForeignKey('group.id'))
+    group = Column(Integer, ForeignKey('groups.id'))
     arch = Column(Integer, ForeignKey('arches.id'))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
@@ -89,7 +89,7 @@ class Checks(Base):
     id = Column(Integer, primary_key=True)
 
     name = Column(String(255))
-    group = Column(Integer, ForeignKey('group.id'))
+    group = Column(Integer, ForeignKey('groups.id'))
     source = Column(Boolean)
     binary = Column(Boolean)
 
@@ -101,7 +101,7 @@ class SourceJobs(Base):
 
     name = Column(String(255))
     score = Column(Integer)
-    builder = Column(Integer, ForeignKey('builder.id'))
+    builder = Column(Integer, ForeignKey('builders.id'))
     source = Column(Integer, ForeignKey('sources.id'))
     check = Column(Integer, ForeignKey('checks.id'))
 
@@ -113,7 +113,7 @@ class BinaryJobs(Base):
 
     name = Column(String(255))
     score = Column(Integer)
-    builder = Column(Integer, ForeignKey('builder.id'))
+    builder = Column(Integer, ForeignKey('builders.id'))
     source = Column(Integer, ForeignKey('sources.id'))
     binary = Column(Integer, ForeignKey('binaries.id'))
     check = Column(Integer, ForeignKey('checks.id'))
@@ -141,3 +141,8 @@ class BinaryResults(Base):
     source = Column(Integer, ForeignKey('sources.id'))
     binary = Column(Integer, ForeignKey('binaries.id'))
     # firehose = Column(Integer, ForeignKey('firehose.id'))
+
+
+def init():
+    from debile.master.core import engine
+    Base.metadata.create_all(engine)
