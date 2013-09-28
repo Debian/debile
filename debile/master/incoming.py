@@ -18,23 +18,26 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
-DELEGATE = {
-    "*.changes": process_changes,
-    "*.dud": process_dud,
-}
+import os
+import fnmatch
 
 
 def process_directory(path):
-    pass
+    path = os.path.abspath(path)
+    for fp in os.listdir(path):
+        path = os.path.join(path, fp)
+        for glob, handler in DELEGATE.items():
+            if fnmatch.fnmatch(path, glob):
+                handler(path)
+                break
 
 
 def process_changes(path):
-    pass
+    print "CHANGE: ", path
 
 
 def process_dud(path):
-    pass
+    print "DUD: ", path
 
 
 def reject_dud():
@@ -51,3 +54,9 @@ def reject_upload():
 
 def accept_upload():
     pass
+
+
+DELEGATE = {
+    "*.changes": process_changes,
+    "*.dud": process_dud,
+}
