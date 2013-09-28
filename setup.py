@@ -10,9 +10,9 @@ setup(
     scripts=[],
     packages=[
         'debile',
-        'debile.dud',
         'debile.slave',
         'debile.master',
+        'debile.utils.dud',
     ],
     author="Paul Tagliamonte",
     author_email="tag@pault.ag",

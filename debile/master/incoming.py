@@ -33,11 +33,11 @@ def process_directory(path):
 
 
 def process_changes(path):
-    print "CHANGE: ", path
+    pass
 
 
 def process_dud(path):
-    print "DUD: ", path
+    pass
 
 
 def reject_dud():
