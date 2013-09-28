@@ -67,6 +67,17 @@ class Sources(Base):
     updated_at = Column(DateTime, nullable=False)
 
 
+class Maintainers(Base):
+    __tablename__ = 'maintainers'
+
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String(255))
+    email = Column(String(255))
+    suite = Column(Integer, ForeignKey('sources.id'))
+    comaintainer = Column(Boolean)
+
+
 class Binaries(Base):
     __tablename__ = 'binaries'
 
