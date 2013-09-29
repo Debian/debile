@@ -21,11 +21,14 @@
 import os
 import fnmatch
 
+from debile.master.utils import session
+from debile.utils.changes import parse_changes_file
+
 
 def process_directory(path):
-    path = os.path.abspath(path)
-    for fp in os.listdir(path):
-        path = os.path.join(path, fp)
+    abspath = os.path.abspath(path)
+    for fp in os.listdir(abspath):
+        path = os.path.join(abspath, fp)
         for glob, handler in DELEGATE.items():
             if fnmatch.fnmatch(path, glob):
                 handler(path)
@@ -33,7 +36,8 @@ def process_directory(path):
 
 
 def process_changes(path):
-    pass
+    changes = parse_changes_file(path)
+    changes.validate()
 
 
 def process_dud(path):
