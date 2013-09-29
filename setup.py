@@ -25,6 +25,7 @@ setup(
         'console_scripts': [
             'debile-server-init = debile.master.cli:init',
             'debile-incoming = debile.master.cli:process_incoming',
+            'debile-import = debile.master.cli:import_db',
         ],
     }
 )
