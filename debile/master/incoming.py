@@ -22,7 +22,11 @@ import os
 import fnmatch
 
 from debile.master.utils import session
-from debile.utils.changes import parse_changes_file
+from debile.master.orm import People
+
+from sqlalchemy.orm.exc import NoResultFound
+
+from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
 def process_directory(path):
@@ -37,7 +41,20 @@ def process_directory(path):
 
 def process_changes(path):
     changes = parse_changes_file(path)
-    changes.validate()
+    try:
+        changes.validate()
+    except ChangesFileException as e:
+        return reject_changes(changes, "invalid-upload")
+
+    key = changes.validate_signature()
+
+    try:
+        with session() as s:
+            who = s.query(People).filter_by(key=key).one()
+    except NoResultFound:
+        return reject_changes(changes, "invalid-user")
+
+    print who
 
 
 def process_dud(path):
@@ -52,11 +69,16 @@ def accept_dud():
     pass
 
 
-def reject_upload():
-    pass
+def reject_changes(changes, tag):
+    print "REJECT: {source} because {tag}".format(
+        tag=tag, source=changes.get_package_name())
 
+    for fp in [changes.get_filename()] + changes.get_files():
+        os.unlink(fp)
 
-def accept_upload():
+    # Note this in the log.
+
+def accept_changes(changes, tag):
     pass
 
 

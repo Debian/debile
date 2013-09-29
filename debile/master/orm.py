@@ -1,13 +1,16 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Boolean,
+                        UniqueConstraint)
 
 Base = declarative_base()
 
 
 class People(Base):
     __tablename__ = 'people'
+    __table_args__ = (UniqueConstraint('username'),)
 
     id = Column(Integer, primary_key=True)
+    username = Column(String(255))  # Unique
 
     name = Column(String(255))
     key = Column(String(255))

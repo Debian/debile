@@ -1,0 +1,16 @@
+---
+Maintainer: # Who to send server-wide problems to
+    Name: Paul Tagliamonte
+    Email: paultag@debian.org
+
+Users:  # Users of Debile
+    - name: Paul Tagliamonte
+      username: paultag
+      key: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
+      email: paultag@debian.org
+      password: s3kr37
+
+Builders:  # Machines that can build
+    - name: leliel.pault.ag
+      key: DEADBEEF
+      maintainer: paultag  # Deref's to user's ID
