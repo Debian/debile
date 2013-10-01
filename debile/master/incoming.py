@@ -19,13 +19,15 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import re
 import fnmatch
-
-from debile.master.utils import session
-from debile.master.orm import People
+import datetime as dt
+from debian import deb822
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from debile.master.utils import session
+from debile.master.orm import People, Builders, Sources, Groups, Suite, Maintainers
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -58,7 +60,13 @@ def process_changes(path):
         return accept_source_changes(changes, who)
 
     if changes.is_binary_only_upload():
-        return accept_binary_changes(changes, who)
+        try:
+            with session() as s:
+                builder = s.query(Builders).filter_by(key=key).one()
+        except NoResultFound:
+            return reject_changes(changes, "invalid-builder")
+
+        return accept_binary_changes(changes, builder)
 
     raise Exception
 
@@ -84,10 +92,46 @@ def reject_changes(changes, tag):
 
 
 def accept_source_changes(changes, user):
-    pass
+
+    gid = changes.get('X-Lucy-Group', None)
+    sid = changes['Distribution']
+
+    MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
+
+    with session() as s:
+        group = s.query(Groups).filter_by(name=gid).one()
+        suite = s.query(Suite).filter_by(name=sid).one()
+
+        source = Sources(
+            uploader=user.id,
+            name=changes['Source'],
+            version=changes['Version'],
+            group=group.id,
+            suite=suite.id,
+            uploaded_at=dt.datetime.utcnow(),
+            updated_at=dt.datetime.utcnow()
+        )
+
+        s.add(source)
+
+        s.add(Maintainers(
+            comaintainer=False,
+            **MAINTAINER.match(changes['Maintainer']).groupdict()
+        ))
+
+        dsc = changes.get_dsc_obj()
+
+        whos = (x.strip() for x in
+                dsc.get("Uploaders", "").split(",") if x != "")
+
+        for who in whos:
+            s.add(Maintainers(
+                comaintainer=True,
+                **MAINTAINER.match(who).groupdict()
+            ))
 
 
-def accept_binary_changes(changes, user):
+def accept_binary_changes(changes, builder):
     pass
 
 

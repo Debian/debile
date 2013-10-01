@@ -14,3 +14,6 @@ Builders:  # Machines that can build
     - name: leliel.pault.ag
       key: DEADBEEF
       maintainer: paultag  # Deref's to user's ID
+
+Suites:
+    - name: unstable

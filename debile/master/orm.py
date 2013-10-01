@@ -34,6 +34,7 @@ class Builders(Base):
 
 class Groups(Base):
     __tablename__ = 'groups'
+    __table_args__ = (UniqueConstraint('name'),)
 
     id = Column(Integer, primary_key=True)
 
@@ -43,6 +44,8 @@ class Groups(Base):
 
 class Suite(Base):
     __tablename__ = 'suites'
+    __table_args__ = (UniqueConstraint('name'),)
+
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 

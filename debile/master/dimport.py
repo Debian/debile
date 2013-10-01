@@ -3,7 +3,7 @@ import datetime as dt
 
 
 from debile.master.utils import session
-from debile.master.orm import People, Builders
+from debile.master.orm import People, Builders, Groups, Suite
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -15,6 +15,8 @@ def import_dict(obj):
     maintainer = obj.pop("Maintainer")
     users = obj.pop("Users")
     builders = obj.pop("Builders")
+    suites = obj.pop("Suites")
+
     if obj != {}:
         for key in obj:
             print "Igorning key %s" % (key)
@@ -44,3 +46,9 @@ def import_dict(obj):
             builder['maintainer'] = who.id
             builder['last_ping'] = dt.datetime.utcnow()
             s.add(Builders(**builder))
+
+        for suite in suites:
+            s.add(Suite(**suite))
+
+        default_group = Groups(name=None, maintainer=None)
+        s.add(default_group)
