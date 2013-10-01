@@ -48,14 +48,19 @@ def process_changes(path):
 
     key = changes.validate_signature()
 
-    try:
-        with session() as s:
-            who = s.query(People).filter_by(key=key).one()
-    except NoResultFound:
-        return reject_changes(changes, "invalid-user")
+    if changes.is_source_only_upload():
+        try:
+            with session() as s:
+                who = s.query(People).filter_by(key=key).one()
+        except NoResultFound:
+            return reject_changes(changes, "invalid-user")
 
-    print who
+        return accept_source_changes(changes, who)
 
+    if changes.is_binary_only_upload():
+        return accept_binary_changes(changes, who)
+
+    raise Exception
 
 def process_dud(path):
     pass
@@ -75,10 +80,14 @@ def reject_changes(changes, tag):
 
     for fp in [changes.get_filename()] + changes.get_files():
         os.unlink(fp)
-
     # Note this in the log.
 
-def accept_changes(changes, tag):
+
+def accept_source_changes(changes, user):
+    pass
+
+
+def accept_binary_changes(changes, user):
     pass
 
 

@@ -1,0 +1,4 @@
+
+
+class Dud(object):
+    pass
