@@ -32,15 +32,6 @@ class Builders(Base):
 
 
 
-class Arch(Base):
-    __tablename__ = 'arches'
-
-    id = Column(Integer, primary_key=True)
-
-    name = Column(String(255))
-    maintainer = Column(Integer, ForeignKey('people.id'))
-
-
 class Groups(Base):
     __tablename__ = 'groups'
 
@@ -92,7 +83,7 @@ class Binaries(Base):
     version = Column(String(255))
     suite = Column(Integer, ForeignKey('suites.id'))
     group = Column(Integer, ForeignKey('groups.id'))
-    arch = Column(Integer, ForeignKey('arches.id'))
+    arch = Column(String(255))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
@@ -102,10 +93,11 @@ class Checks(Base):
 
     id = Column(Integer, primary_key=True)
 
+    built_at = Column(DateTime, nullable=True)
+
     name = Column(String(255))
-    group = Column(Integer, ForeignKey('groups.id'))
     source = Column(Boolean)
-    binary = Column(Boolean, nullable=True)
+    binary = Column(Boolean)
 
 
 class Jobs(Base):
@@ -113,13 +105,16 @@ class Jobs(Base):
 
     id = Column(Integer, primary_key=True)
 
+    assigned_at = Column(DateTime, nullable=False)
+    finished_at = Column(DateTime, nullable=True)
+
     name = Column(String(255))
     score = Column(Integer)
     builder = Column(Integer, ForeignKey('builders.id'))
     source = Column(Integer, ForeignKey('sources.id'))
     binary = Column(Integer, ForeignKey('binaries.id'), nullable=True)
     check = Column(Integer, ForeignKey('checks.id'))
-    arch = Column(Integer, ForeignKey('arches.id'))
+    arch = Column(String(255))
 
 
 class Results(Base):
@@ -127,10 +122,11 @@ class Results(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String(255))
     failed = Column(Boolean)
     source = Column(Integer, ForeignKey('sources.id'))
     binary = Column(Integer, ForeignKey('binaries.id'), nullable=True)
+    check = Column(Integer, ForeignKey('checks.id'))
+
     # firehose = Column(Integer, ForeignKey('firehose.id'))
 
 
