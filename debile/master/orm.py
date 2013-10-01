@@ -105,23 +105,11 @@ class Checks(Base):
     name = Column(String(255))
     group = Column(Integer, ForeignKey('groups.id'))
     source = Column(Boolean)
-    binary = Column(Boolean)
+    binary = Column(Boolean, nullable=True)
 
 
-class SourceJobs(Base):
-    __tablename__ = 'source_jobs'
-
-    id = Column(Integer, primary_key=True)
-
-    name = Column(String(255))
-    score = Column(Integer)
-    builder = Column(Integer, ForeignKey('builders.id'))
-    source = Column(Integer, ForeignKey('sources.id'))
-    check = Column(Integer, ForeignKey('checks.id'))
-
-
-class BinaryJobs(Base):
-    __tablename__ = 'binary_jobs'
+class Jobs(Base):
+    __tablename__ = 'jobs'
 
     id = Column(Integer, primary_key=True)
 
@@ -129,31 +117,20 @@ class BinaryJobs(Base):
     score = Column(Integer)
     builder = Column(Integer, ForeignKey('builders.id'))
     source = Column(Integer, ForeignKey('sources.id'))
-    binary = Column(Integer, ForeignKey('binaries.id'))
+    binary = Column(Integer, ForeignKey('binaries.id'), nullable=True)
     check = Column(Integer, ForeignKey('checks.id'))
     arch = Column(Integer, ForeignKey('arches.id'))
 
 
-class SourceResults(Base):
-    __tablename__ = 'source_results'
+class Results(Base):
+    __tablename__ = 'results'
 
     id = Column(Integer, primary_key=True)
 
     name = Column(String(255))
     failed = Column(Boolean)
     source = Column(Integer, ForeignKey('sources.id'))
-    # firehose = Column(Integer, ForeignKey('firehose.id'))
-
-
-class BinaryResults(Base):
-    __tablename__ = 'binary_results'
-
-    id = Column(Integer, primary_key=True)
-
-    name = Column(String(255))
-    failed = Column(Boolean)
-    source = Column(Integer, ForeignKey('sources.id'))
-    binary = Column(Integer, ForeignKey('binaries.id'))
+    binary = Column(Integer, ForeignKey('binaries.id'), nullable=True)
     # firehose = Column(Integer, ForeignKey('firehose.id'))
 
 
