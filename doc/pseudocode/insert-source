@@ -1,0 +1,24 @@
+
+
+accept-package(who, changes):
+
+    group = get_group(changes['X-Lucy-Group'], 'default')
+    suite = get_suite(changes['Distribution'])
+
+    source = Source(
+        uploader=who.id
+        name=changes['source'],
+        version=changes['version'],
+        group=group.id,
+        suite=suite.id,
+        uploaded_at=dt.datetime.utcnow(),
+        updated_at=dt.datetime.utcnow())
+
+    save source
+
+    for maintainer in changes['uploaders'], 'maintainers']:
+        comaint = is_comaint()
+        maint = Maintainer(name=name, email=email, source=source.id,
+                    comaintainer=comaint)
+
+        save maintainer

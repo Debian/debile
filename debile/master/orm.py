@@ -68,7 +68,7 @@ class Maintainers(Base):
 
     name = Column(String(255))
     email = Column(String(255))
-    suite = Column(Integer, ForeignKey('sources.id'))
+    source = Column(Integer, ForeignKey('sources.id'))
     comaintainer = Column(Boolean)
 
 
