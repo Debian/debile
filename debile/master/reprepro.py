@@ -21,6 +21,12 @@ Cleanup: on_deny on_error
 uploaders_stanza = """allow * by unsigned
 """
 
+CONFIG_FILES = {
+    "distributions": dist_stanza,
+    "incoming": incoming_stanza,
+    "uploaders": uploaders_stanza,
+}
+
 DIST = {
     "origin": "Paul Tagliamonte",
     "label": "Debile auto-managed repo",
