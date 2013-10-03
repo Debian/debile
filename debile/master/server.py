@@ -40,7 +40,7 @@ import os
 NAMESPACE = threading.local()
 
 
-def machine_method(fn):
+def builder_method(fn):
     def _(*args, **kwargs):
         try:
             get_builder()
@@ -61,6 +61,14 @@ def user_method(fn):
 
 
 class DebileMasterInterface(object):
+
+    @user_method
+    def user_hello(self):
+        return "You're a user"
+
+    @builder_method
+    def builder_hello(self):
+        return "You're a builder"
 
     def hello(self):
         return "Ohai"
