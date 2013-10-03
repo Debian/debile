@@ -23,7 +23,6 @@ class Person(Base):
     password = Column(String(255))  # Weak password. Not actually critical.
 
 
-
 class Builder(Base):
     __tablename__ = 'builders'
 
@@ -35,7 +34,6 @@ class Builder(Base):
     key = Column(String(255))
     password = Column(String(255))  # Weak password. Not actually critical.
     last_ping = Column(DateTime, nullable=False)
-
 
 
 class Group(Base):
@@ -140,7 +138,6 @@ class Maintainer(Base):
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source")
-
 
 
 class Binary(Base):
