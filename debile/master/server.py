@@ -24,34 +24,68 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
+from sqlalchemy.orm.exc import NoResultFound
+
+from debile.master.utils import session
+from debile.master.orm import Person, Builder
+
 from base64 import b64decode
 import datetime as dt
 import SocketServer
+import threading
+import logging
 import os.path
 import os
-import logging
+
+NAMESPACE = threading.local()
 
 
 class DebileMasterInterface(object):
 
-    def get_server_info(self):
-        """
-        """
-        return
+    def hello(self):
+        return "Ohai"
 
 
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
+
+        NAMESPACE.machine = None
+        NAMESPACE.user = None
+
         (basic, _, encoded) = self.headers.get('Authorization').partition(' ')
         if basic.lower() != 'basic':
             self.send_error(401, 'Only allowed basic type thing')
         entity, password = b64decode(encoded.encode()).decode().split(":", 1)
-        actor_type = self.headers.get('ActorType')  # Server or Machine
+
         actor_auth_methods = {
-            "user": self.authenticate_user,
-            "machine": self.authenticate_machine,
+            "@": self.authenticate_user,
+            "%": self.authenticate_machine,
         }
-        return actor_auth_methods[actor_type](entity, password)
+
+        actor_type = entity[0]
+        entity = entity[1:]
+
+        try:
+            method = actor_auth_methods[actor_type]
+        except KeyError:
+            return False
+
+        with session() as s:
+            return method(s, entity, password)
+
+    def authenticate_user(self, session, entity, password):
+        try:
+            luser = session.query(Person).filter_by(username=entity).one()
+            return luser.validate(password)
+        except NoResultFound:
+            return False
+
+    def authenticate_machine(self, session, entity, password):
+        try:
+            machine = session.query(Builder).filter_by(name=entity).one()
+            return machine.validate(password)
+        except NoResultFound:
+            return False
 
     def parse_request(self, *args):
         if SimpleXMLRPCRequestHandler.parse_request(self, *args):
@@ -82,7 +116,7 @@ def main():
         level=logging.DEBUG
     )
     logging.info("Booting debile-masterd daemon")
-    serve("0.0.0.0", 20017)
+    serve("0.0.0.0", 22017)
 
 
 if __name__ == "__main__":
