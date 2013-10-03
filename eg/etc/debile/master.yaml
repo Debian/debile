@@ -1,0 +1,2 @@
+database: sqlite:////home/tag/debile.db
+repo-base: /srv/debile
