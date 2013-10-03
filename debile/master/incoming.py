@@ -27,7 +27,7 @@ from debian import deb822
 from sqlalchemy.orm.exc import NoResultFound
 
 from debile.master.utils import session
-from debile.master.orm import Person, Builder, Source, Groups, Suite, Maintainer
+from debile.master.orm import Person, Builder, Source, Group, Suite, Maintainer
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -99,7 +99,7 @@ def accept_source_changes(changes, user):
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
     with session() as s:
-        group = s.query(Groups).filter_by(name=gid).one()
+        group = s.query(Group).filter_by(name=gid).one()
         suite = s.query(Suite).filter_by(name=sid).one()
 
         source = Source(
