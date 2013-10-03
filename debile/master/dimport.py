@@ -3,7 +3,7 @@ import datetime as dt
 
 
 from debile.master.utils import session
-from debile.master.orm import People, Builders, Groups, Suite
+from debile.master.orm import Person, Builder, Group, Suite
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -25,13 +25,13 @@ def import_dict(obj):
         for user in users:
             existing = None
             try:
-                existing = s.query(People).filter_by(
+                existing = s.query(Person).filter_by(
                     username=user['username']
                 ).one()
             except NoResultFound:
                 pass
 
-            p = People(**user)
+            p = Person(**user)
 
             if existing:
                 p.id = existing.id
@@ -42,13 +42,13 @@ def import_dict(obj):
     with session() as s:
         for builder in builders:
             username = builder.pop('maintainer')
-            who = s.query(People).filter_by(username=username).one()
+            who = s.query(Person).filter_by(username=username).one()
             builder['maintainer'] = who.id
             builder['last_ping'] = dt.datetime.utcnow()
-            s.add(Builders(**builder))
+            s.add(Builder(**builder))
 
         for suite in suites:
             s.add(Suite(**suite))
 
-        default_group = Groups(name=None, maintainer=None)
+        default_group = Group(name=None, maintainer=None)
         s.add(default_group)

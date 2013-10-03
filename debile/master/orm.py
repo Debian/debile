@@ -5,7 +5,7 @@ from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Boolean,
 Base = declarative_base()
 
 
-class People(Base):
+class Person(Base):
     __tablename__ = 'people'
     __table_args__ = (UniqueConstraint('username'),)
 
@@ -19,7 +19,7 @@ class People(Base):
 
 
 
-class Builders(Base):
+class Builder(Base):
     __tablename__ = 'builders'
 
     id = Column(Integer, primary_key=True)
@@ -32,7 +32,7 @@ class Builders(Base):
 
 
 
-class Groups(Base):
+class Group(Base):
     __tablename__ = 'groups'
     __table_args__ = (UniqueConstraint('name'),)
 
@@ -50,7 +50,7 @@ class Suite(Base):
     name = Column(String(255))
 
 
-class Sources(Base):
+class Source(Base):
     __tablename__ = 'sources'
 
     id = Column(Integer, primary_key=True)
@@ -64,7 +64,7 @@ class Sources(Base):
     updated_at = Column(DateTime, nullable=False)
 
 
-class Maintainers(Base):
+class Maintainer(Base):
     __tablename__ = 'maintainers'
 
     id = Column(Integer, primary_key=True)
@@ -75,7 +75,7 @@ class Maintainers(Base):
     comaintainer = Column(Boolean)
 
 
-class Binaries(Base):
+class Binary(Base):
     __tablename__ = 'binaries'
 
     id = Column(Integer, primary_key=True)
@@ -91,7 +91,7 @@ class Binaries(Base):
     updated_at = Column(DateTime, nullable=False)
 
 
-class Checks(Base):
+class Check(Base):
     __tablename__ = 'checks'
 
     id = Column(Integer, primary_key=True)
@@ -103,7 +103,7 @@ class Checks(Base):
     binary = Column(Boolean)
 
 
-class Jobs(Base):
+class Job(Base):
     __tablename__ = 'jobs'
 
     id = Column(Integer, primary_key=True)
@@ -120,7 +120,7 @@ class Jobs(Base):
     arch = Column(String(255))
 
 
-class Results(Base):
+class Result(Base):
     __tablename__ = 'results'
 
     id = Column(Integer, primary_key=True)

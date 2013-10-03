@@ -27,7 +27,7 @@ from debian import deb822
 from sqlalchemy.orm.exc import NoResultFound
 
 from debile.master.utils import session
-from debile.master.orm import People, Builders, Sources, Groups, Suite, Maintainers
+from debile.master.orm import Person, Builder, Source, Groups, Suite, Maintainer
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -53,7 +53,7 @@ def process_changes(path):
     if changes.is_source_only_upload():
         try:
             with session() as s:
-                who = s.query(People).filter_by(key=key).one()
+                who = s.query(Person).filter_by(key=key).one()
         except NoResultFound:
             return reject_changes(changes, "invalid-user")
 
@@ -62,7 +62,7 @@ def process_changes(path):
     if changes.is_binary_only_upload():
         try:
             with session() as s:
-                builder = s.query(Builders).filter_by(key=key).one()
+                builder = s.query(Builder).filter_by(key=key).one()
         except NoResultFound:
             return reject_changes(changes, "invalid-builder")
 
@@ -102,7 +102,7 @@ def accept_source_changes(changes, user):
         group = s.query(Groups).filter_by(name=gid).one()
         suite = s.query(Suite).filter_by(name=sid).one()
 
-        source = Sources(
+        source = Source(
             uploader=user.id,
             name=changes['Source'],
             version=changes['Version'],
@@ -114,7 +114,7 @@ def accept_source_changes(changes, user):
 
         s.add(source)
 
-        s.add(Maintainers(
+        s.add(Maintainer(
             comaintainer=False,
             **MAINTAINER.match(changes['Maintainer']).groupdict()
         ))
@@ -125,7 +125,7 @@ def accept_source_changes(changes, user):
                 dsc.get("Uploaders", "").split(",") if x != "")
 
         for who in whos:
-            s.add(Maintainers(
+            s.add(Maintainer(
                 comaintainer=True,
                 **MAINTAINER.match(who).groupdict()
             ))
