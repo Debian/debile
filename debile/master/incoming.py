@@ -24,7 +24,7 @@ import fnmatch
 import datetime as dt
 from debian import deb822
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.utils import session
 from debile.master.orm import Person, Builder, Source, Group, Suite, Maintainer
@@ -56,6 +56,26 @@ def process_changes(path):
                 who = s.query(Person).filter_by(key=key).one()
         except NoResultFound:
             return reject_changes(changes, "invalid-user")
+
+        with session() as s:
+            gid = changes.get('X-Lucy-Group', None)
+            group = s.query(Group).filter_by(name=gid).one()
+
+            sid = changes['Distribution']
+            suite = s.query(Suite).filter_by(name=sid).one()
+
+            try:
+                source = s.query(Source).filter_by(
+                    name=changes['Source'],
+                    version=changes['Version'],
+                    group=group.id,
+                    suite=suite.id,
+                ).one()
+                return reject_changes(changes, "source-already-in-group")
+            except MultipleResultsFound:
+                return reject_changes(changes, "fuck")
+            except NoResultFound:
+                pass
 
         return accept_source_changes(changes, who)
 

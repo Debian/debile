@@ -1,6 +1,10 @@
 from debile.utils import run_command
 
 
+class RepoException(Exception):
+    pass
+
+
 class Repo(object):
 
     def __init__(self, root):
@@ -12,7 +16,8 @@ class Repo(object):
 
     def _exec(self, *args):
         cmd = ["reprepro", "-Vb", self.root,] + list(args)
-        return run_command(cmd)
+        out, err, ret = run_command(cmd)
+        return (out, err, ret)
 
     def include(self, distribution, changes):
         return self._exec("include", distribution, changes)
