@@ -47,8 +47,8 @@ class Group(Base):
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person")
 
-    arches = relationship("GroupArches", backref="group")
-    suites = relationship("GroupSuites", backref="group")
+    arches = relationship("GroupArch", backref="group")
+    suites = relationship("GroupSuite", backref="group")
 
     checks = relationship("Check", backref="check")
 
@@ -66,7 +66,7 @@ class Arch(Base):
     name = Column(String(255))
 
 
-class GroupArches(Base):
+class GroupArch(Base):
     __tablename__ = 'group_arches'
 
     id = Column(Integer, primary_key=True)
@@ -78,7 +78,7 @@ class GroupArches(Base):
     arch = relationship("Arch")
 
 
-class GroupSuites(Base):
+class GroupSuite(Base):
     __tablename__ = 'group_suites'
 
     id = Column(Integer, primary_key=True)

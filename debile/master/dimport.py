@@ -4,7 +4,7 @@ import datetime as dt
 
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Group, Suite,
-                               GroupArches, GroupSuites, Check, Arch)
+                               GroupArch, GroupSuite, Check, Arch)
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -67,12 +67,12 @@ def import_dict(obj):
 
             for arch in arches:
                 arch = s.query(Arch).filter_by(name=arch).one()
-                ga = GroupArches(group=group, arch=arch)
+                ga = GroupArch(group=group, arch=arch)
                 s.add(ga)
 
             for suite in suites:
                 suite = s.query(Suite).filter_by(name=suite).one()
-                ga = GroupSuites(group=group, suite=suite)
+                ga = GroupSuite(group=group, suite=suite)
                 s.add(ga)
 
         for check in checks:
