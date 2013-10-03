@@ -106,24 +106,26 @@ class Source(Base):
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
-    def create_jobs(self, session):
+    def create_jobs(self, session, indep):
         group = self.group
         aall = session.query(Arch).filter_by(name='all').one()
 
         for check in group.checks:
-            if check.arched:
+            if check.arched and not indep:
                 for arch in group.arches:
                     arch = arch.arch  # GroupArch -> Arch
                     j = Job(assigned_at=None, finished_at=None,
                             name=check.name, score=100, builder=None,
                             source=self, binary=None, check=check,
                             arch=arch)
+                    #print j.arch.name, j.name
                     session.add(j)
             else:
                 j = Job(assigned_at=None, finished_at=None,
                         name=check.name, score=100, builder=None,
                         source=self, binary=None, check=check,
                         arch=aall)
+                #print j.arch.name, j.name
                 session.add(j)
 
 

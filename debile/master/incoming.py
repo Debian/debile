@@ -138,7 +138,13 @@ def accept_source_changes(session, changes, user):
             **MAINTAINER.match(who).groupdict()
         ))
 
-    source.create_jobs(session)
+    arches = dsc['Architecture'].split()
+
+    indep = True
+    if 'any' in arches or 'linux-any' in arches:
+        indep = False
+
+    source.create_jobs(session, indep)
 
     # OK. We have a changes in order. Let's roll.
     repo = group.get_repo()
