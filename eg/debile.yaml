@@ -15,9 +15,6 @@ Builders:  # Machines that can build
       key: DEADBEEF
       maintainer: paultag
 
-Suites:
-    - name: unstable
-
 Checks:
     - name: lintian
       group: default
@@ -34,6 +31,9 @@ Checks:
 Arches:
     - name: amd64
     - name: all
+
+Suites:
+    - name: unstable
 
 Groups:
     - name: default
