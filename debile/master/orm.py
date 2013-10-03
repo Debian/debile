@@ -1,3 +1,7 @@
+import os.path
+import debile.master.core
+from debile.master.reprepro import Repo
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Boolean,
                         UniqueConstraint)
@@ -40,6 +44,12 @@ class Group(Base):
 
     name = Column(String(255))
     maintainer = Column(Integer, ForeignKey('people.id'))
+
+    def get_repo(self):
+        root = debile.master.core.config['repo-base']
+        name = self.name or "default"
+        base = os.path.join(root, name)
+        return Repo(base)
 
 
 class Suite(Base):

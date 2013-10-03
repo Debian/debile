@@ -130,6 +130,10 @@ def accept_source_changes(changes, user):
                 **MAINTAINER.match(who).groupdict()
             ))
 
+        # OK. We have a changes in order. Let's roll.
+        repo = group.get_repo()
+        repo.add_changes(changes)
+
 
 def accept_binary_changes(changes, builder):
     pass
