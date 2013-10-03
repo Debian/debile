@@ -34,9 +34,12 @@ Arches:
 
 Suites:
     - name: unstable
+    - name: stable
 
 Groups:
     - name: default
       maintainer: paultag
       arches:
           - amd64
+      suites:
+          - unstable

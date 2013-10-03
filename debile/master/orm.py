@@ -48,6 +48,8 @@ class Group(Base):
     maintainer = relationship("Person")
 
     arches = relationship("GroupArches", backref="group")
+    suites = relationship("GroupSuites", backref="group")
+
     checks = relationship("Check", backref="check")
 
     def get_repo(self):
@@ -70,10 +72,22 @@ class GroupArches(Base):
     id = Column(Integer, primary_key=True)
 
     group_id = Column(Integer, ForeignKey('groups.id'))
-    # Group backref put in by group
+    #group = relationship("Group")
 
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch")
+
+
+class GroupSuites(Base):
+    __tablename__ = 'group_suites'
+
+    id = Column(Integer, primary_key=True)
+
+    group_id = Column(Integer, ForeignKey('groups.id'))
+    #group = relationship("Group")
+
+    suite_id = Column(Integer, ForeignKey('suites.id'))
+    suite = relationship("Suite")
 
 
 class Suite(Base):
