@@ -22,6 +22,9 @@ class Person(Base):
     email = Column(String(255))
     password = Column(String(255))  # Weak password. Not actually critical.
 
+    def validate(self, password):
+        return self.password == password
+
 
 class Builder(Base):
     __tablename__ = 'builders'
@@ -34,6 +37,9 @@ class Builder(Base):
     key = Column(String(255))
     password = Column(String(255))  # Weak password. Not actually critical.
     last_ping = Column(DateTime, nullable=False)
+
+    def validate(self, password):
+        return self.password == password
 
 
 class Group(Base):
