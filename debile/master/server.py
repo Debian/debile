@@ -76,6 +76,7 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate_user(self, session, entity, password):
         try:
             luser = session.query(Person).filter_by(username=entity).one()
+            NAMESPACE.user = luser
             return luser.validate(password)
         except NoResultFound:
             return False
@@ -83,6 +84,7 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate_machine(self, session, entity, password):
         try:
             machine = session.query(Builder).filter_by(name=entity).one()
+            NAMESPACE.machine = machine
             return machine.validate(password)
         except NoResultFound:
             return False
