@@ -17,3 +17,10 @@ Builders:  # Machines that can build
 
 Suites:
     - name: unstable
+
+Groups:
+    - name: default
+      maintainer: paultag
+      build: true
+      arches:
+          - amd64

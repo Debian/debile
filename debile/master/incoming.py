@@ -57,7 +57,7 @@ def process_changes(session, path):
         except NoResultFound:
             return reject_changes(session, changes, "invalid-user")
 
-        gid = changes.get('X-Lucy-Group', None)
+        gid = changes.get('X-Lucy-Group', "default")
         group = session.query(Group).filter_by(name=gid).one()
 
         sid = changes['Distribution']
@@ -67,8 +67,8 @@ def process_changes(session, path):
             source = session.query(Source).filter_by(
                 name=changes['Source'],
                 version=changes['Version'],
-                group=group.id,
-                suite=suite.id,
+                group=group,
+                suite=suite,
             ).one()
             return reject_changes(session, changes, "source-already-in-group")
         except MultipleResultsFound:
@@ -85,7 +85,8 @@ def process_changes(session, path):
             return reject_changes(session, changes, "invalid-builder")
         return accept_binary_changes(session, changes, builder)
 
-    raise Exception
+    return reject_changes(session, changes, "mixed-upload")
+
 
 def process_dud(session, path):
     pass
@@ -102,7 +103,7 @@ def reject_changes(session, changes, tag):
 
 def accept_source_changes(session, changes, user):
 
-    gid = changes.get('X-Lucy-Group', None)
+    gid = changes.get('X-Lucy-Group', "default")
     sid = changes['Distribution']
 
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
@@ -111,11 +112,11 @@ def accept_source_changes(session, changes, user):
     suite = session.query(Suite).filter_by(name=sid).one()
 
     source = Source(
-        uploader=user.id,
+        uploader=user,
         name=changes['Source'],
         version=changes['Version'],
-        group=group.id,
-        suite=suite.id,
+        group=group,
+        suite=suite,
         uploaded_at=dt.datetime.utcnow(),
         updated_at=dt.datetime.utcnow()
     )

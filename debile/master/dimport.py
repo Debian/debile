@@ -3,7 +3,7 @@ import datetime as dt
 
 
 from debile.master.utils import session
-from debile.master.orm import Person, Builder, Group, Suite
+from debile.master.orm import Person, Builder, Group, Suite, GroupArches
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -16,6 +16,7 @@ def import_dict(obj):
     users = obj.pop("Users")
     builders = obj.pop("Builders")
     suites = obj.pop("Suites")
+    groups = obj.pop("Groups")
 
     if obj != {}:
         for key in obj:
@@ -42,12 +43,19 @@ def import_dict(obj):
         for builder in builders:
             username = builder.pop('maintainer')
             who = s.query(Person).filter_by(username=username).one()
-            builder['maintainer'] = who.id
+            builder['maintainer'] = who
             builder['last_ping'] = dt.datetime.utcnow()
             s.add(Builder(**builder))
 
         for suite in suites:
             s.add(Suite(**suite))
 
-        default_group = Group(name=None, maintainer=None)
-        s.add(default_group)
+        for group in groups:
+            arches = group.pop('arches')
+            who = s.query(Person).filter_by(username=group['maintainer']).one()
+            group['maintainer'] = who
+            group = Group(**group)
+            s.add(group)
+            for arch in arches:
+                arch = GroupArches(group=group, arch=arch)
+                s.add(arch)

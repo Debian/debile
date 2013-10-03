@@ -3,6 +3,7 @@ import debile.master.core
 from debile.master.reprepro import Repo
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Boolean,
                         UniqueConstraint)
 
@@ -27,7 +28,8 @@ class Builder(Base):
     __tablename__ = 'builders'
 
     id = Column(Integer, primary_key=True)
-    maintainer = Column(Integer, ForeignKey('people.id'))
+    maintainer_id = Column(Integer, ForeignKey('people.id'))
+    maintainer = relationship("Person")
 
     name = Column(String(255))
     key = Column(String(255))
@@ -43,13 +45,30 @@ class Group(Base):
     id = Column(Integer, primary_key=True)
 
     name = Column(String(255))
-    maintainer = Column(Integer, ForeignKey('people.id'))
+
+    maintainer_id = Column(Integer, ForeignKey('people.id'))
+    maintainer = relationship("Person")
+
+    build = Column(Boolean, nullable=False)
+    arches = relationship("GroupArches", backref="group")
 
     def get_repo(self):
         root = debile.master.core.config['repo-base']
         name = self.name or "default"
         base = os.path.join(root, name)
         return Repo(base)
+
+
+
+class GroupArches(Base):
+    __tablename__ = 'group_arches'
+
+    id = Column(Integer, primary_key=True)
+
+    group_id = Column(Integer, ForeignKey('groups.id'))
+    # Group backref put in by group
+
+    arch = Column(String(255))
 
 
 class Suite(Base):
@@ -65,13 +84,23 @@ class Source(Base):
 
     id = Column(Integer, primary_key=True)
 
-    uploader = Column(Integer, ForeignKey('people.id'))
     name = Column(String(255))
     version = Column(String(255))
-    group = Column(Integer, ForeignKey('groups.id'))
-    suite = Column(Integer, ForeignKey('suites.id'))
+
+    group_id = Column(Integer, ForeignKey('groups.id'))
+    group = relationship("Group")
+
+    suite_id = Column(Integer, ForeignKey('suites.id'))
+    suite = relationship("Suite")
+
+    uploader_id = Column(Integer, ForeignKey('people.id'))
+    uploader = relationship("Person")
+
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
+
+    def create_jobs(self, session):
+        pass
 
 
 class Maintainer(Base):
@@ -81,8 +110,11 @@ class Maintainer(Base):
 
     name = Column(String(255))
     email = Column(String(255))
-    source = Column(Integer, ForeignKey('sources.id'))
     comaintainer = Column(Boolean)
+
+    source_id = Column(Integer, ForeignKey('sources.id'))
+    source = relationship("Source")
+
 
 
 class Binary(Base):
@@ -90,12 +122,20 @@ class Binary(Base):
 
     id = Column(Integer, primary_key=True)
 
-    source = Column(Integer, ForeignKey('sources.id'))
-    builder = Column(Integer, ForeignKey('builders.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'))
+    source = relationship("Source")
+
+    builder_id = Column(Integer, ForeignKey('builders.id'))
+    builder = relationship("Builder")
+
+    suite_id = Column(Integer, ForeignKey('suites.id'))
+    suite = relationship("Suite")
+
+    group_id = Column(Integer, ForeignKey('groups.id'))
+    group = relationship("Group")
+
     name = Column(String(255))
     version = Column(String(255))
-    suite = Column(Integer, ForeignKey('suites.id'))
-    group = Column(Integer, ForeignKey('groups.id'))
     arch = Column(String(255))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
@@ -106,7 +146,9 @@ class Check(Base):
 
     id = Column(Integer, primary_key=True)
 
-    group = Column(Integer, ForeignKey('groups.id'))
+    group_id = Column(Integer, ForeignKey('groups.id'))
+    group = relationship("Group")
+
     name = Column(String(255))
     source = Column(Boolean)
     binary = Column(Boolean)
