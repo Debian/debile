@@ -40,7 +40,6 @@ class DebileMasterInterface(object):
         return
 
 
-
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
         (basic, _, encoded) = self.headers.get('Authorization').partition(' ')
@@ -78,7 +77,10 @@ def serve(server, port):
 
 
 def main():
-    logging.basicConfig(format='%(asctime)s - %(levelname)8s - [debile-master] %(message)s', level=logging.DEBUG)
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)8s - [debile-master] %(message)s',
+        level=logging.DEBUG
+    )
     logging.info("Booting debile-masterd daemon")
     serve("0.0.0.0", 20017)
 
