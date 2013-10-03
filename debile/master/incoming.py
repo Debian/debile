@@ -139,6 +139,8 @@ def accept_source_changes(session, changes, user):
             **MAINTAINER.match(who).groupdict()
         ))
 
+    source.create_jobs(session)
+
     # OK. We have a changes in order. Let's roll.
     repo = group.get_repo()
     repo.add_changes(changes)

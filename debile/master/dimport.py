@@ -3,7 +3,8 @@ import datetime as dt
 
 
 from debile.master.utils import session
-from debile.master.orm import Person, Builder, Group, Suite, GroupArches
+from debile.master.orm import (Person, Builder, Group, Suite,
+                               GroupArches, Check)
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -17,6 +18,7 @@ def import_dict(obj):
     builders = obj.pop("Builders")
     suites = obj.pop("Suites")
     groups = obj.pop("Groups")
+    checks = obj.pop("Checks")
 
     if obj != {}:
         for key in obj:
@@ -59,3 +61,8 @@ def import_dict(obj):
             for arch in arches:
                 arch = GroupArches(group=group, arch=arch)
                 s.add(arch)
+
+        for check in checks:
+            group = s.query(Group).filter_by(name=check['group']).one()
+            check['group'] = group
+            s.add(Check(**check))

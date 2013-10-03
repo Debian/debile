@@ -18,9 +18,21 @@ Builders:  # Machines that can build
 Suites:
     - name: unstable
 
+Checks:
+    - name: lintian
+      group: default
+      source: true
+      binary: true
+      arched: false
+
+    - name: build
+      group: default
+      source: true
+      binary: false
+      arched: true
+
 Groups:
     - name: default
       maintainer: paultag
-      build: true
       arches:
           - amd64

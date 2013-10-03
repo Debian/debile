@@ -49,8 +49,8 @@ class Group(Base):
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person")
 
-    build = Column(Boolean, nullable=False)
     arches = relationship("GroupArches", backref="group")
+    checks = relationship("Check", backref="check")
 
     def get_repo(self):
         root = debile.master.core.config['repo-base']
@@ -100,7 +100,22 @@ class Source(Base):
     updated_at = Column(DateTime, nullable=False)
 
     def create_jobs(self, session):
-        pass
+        group = self.group
+
+        for check in group.checks:
+            if check.arched:
+                for arch in group.arches:
+                    j = Job(assigned_at=None, finished_at=None,
+                            name=check.name, score=100, builder=None,
+                            source=self, binary=None, check=check,
+                            arch=arch.arch)
+                    session.add(j)
+            else:
+                j = Job(assigned_at=None, finished_at=None,
+                        name=check.name, score=100, builder=None,
+                        source=self, binary=None, check=check,
+                        arch="all")
+                session.add(j)
 
 
 class Maintainer(Base):
@@ -152,6 +167,7 @@ class Check(Base):
     name = Column(String(255))
     source = Column(Boolean)
     binary = Column(Boolean)
+    arched = Column(Boolean, nullable=False)
 
 
 class Job(Base):
@@ -159,15 +175,24 @@ class Job(Base):
 
     id = Column(Integer, primary_key=True)
 
-    assigned_at = Column(DateTime, nullable=False)
+    assigned_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
 
     name = Column(String(255))
     score = Column(Integer)
-    builder = Column(Integer, ForeignKey('builders.id'))
-    source = Column(Integer, ForeignKey('sources.id'))
-    binary = Column(Integer, ForeignKey('binaries.id'), nullable=True)
-    check = Column(Integer, ForeignKey('checks.id'))
+
+    builder_id = Column(Integer, ForeignKey('builders.id'), nullable=True)
+    builder = relationship("Builder")
+
+    source_id = Column(Integer, ForeignKey('sources.id'))
+    source = relationship("Source")
+
+    binary_id = Column(Integer, ForeignKey('binaries.id'), nullable=True)
+    binary = relationship("Binary")
+
+    check_id = Column(Integer, ForeignKey('checks.id'))
+    check = relationship("Check")
+
     arch = Column(String(255))
 
 
