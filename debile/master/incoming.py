@@ -51,6 +51,7 @@ def process_changes(session, path):
 
     key = changes.validate_signature()
 
+    #### Sourceful Uploads
     if changes.is_source_only_upload():
         try:
             who = session.query(Person).filter_by(key=key).one()
@@ -78,9 +79,11 @@ def process_changes(session, path):
 
         return accept_source_changes(session, changes, who)
 
+    #### Binary Uploads
     if changes.is_binary_only_upload():
         try:
             builder = session.query(Builder).filter_by(key=key).one()
+            raise NotImplemented
         except NoResultFound:
             return reject_changes(session, changes, "invalid-builder")
         return accept_binary_changes(session, changes, builder)
@@ -139,10 +142,7 @@ def accept_source_changes(session, changes, user):
         ))
 
     arches = dsc['Architecture'].split()
-
-    indep = True
-    if 'any' in arches or 'linux-any' in arches:
-        indep = False
+    indep = not ('any' in arches or 'linux-any' in arches)
 
     source.create_jobs(session, indep)
 
