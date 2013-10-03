@@ -51,13 +51,12 @@ def process_changes(path):
     key = changes.validate_signature()
 
     if changes.is_source_only_upload():
-        try:
-            with session() as s:
-                who = s.query(Person).filter_by(key=key).one()
-        except NoResultFound:
-            return reject_changes(changes, "invalid-user")
-
         with session() as s:
+            try:
+                who = s.query(Person).filter_by(key=key).one()
+            except NoResultFound:
+                return reject_changes(changes, "invalid-user")
+
             gid = changes.get('X-Lucy-Group', None)
             group = s.query(Group).filter_by(name=gid).one()
 
@@ -80,12 +79,11 @@ def process_changes(path):
         return accept_source_changes(changes, who)
 
     if changes.is_binary_only_upload():
-        try:
-            with session() as s:
+        with session() as s:
+            try:
                 builder = s.query(Builder).filter_by(key=key).one()
-        except NoResultFound:
-            return reject_changes(changes, "invalid-builder")
-
+            except NoResultFound:
+                return reject_changes(changes, "invalid-builder")
         return accept_binary_changes(changes, builder)
 
     raise Exception

@@ -39,7 +39,6 @@ def import_dict(obj):
             else:
                 s.add(p)
 
-    with session() as s:
         for builder in builders:
             username = builder.pop('maintainer')
             who = s.query(Person).filter_by(username=username).one()
