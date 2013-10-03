@@ -106,8 +106,7 @@ class Check(Base):
 
     id = Column(Integer, primary_key=True)
 
-    built_at = Column(DateTime, nullable=True)
-
+    group = Column(Integer, ForeignKey('groups.id'))
     name = Column(String(255))
     source = Column(Boolean)
     binary = Column(Boolean)
