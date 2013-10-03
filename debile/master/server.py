@@ -38,6 +38,12 @@ import os
 NAMESPACE = threading.local()
 
 
+def get_builder():
+    if NAMESPACE.machine is None:
+        raise KeyError("What the shit, doing something you can't do")
+    return NAMESPACE.machine
+
+
 def builder_method(fn):
     def _(*args, **kwargs):
         try:
@@ -46,6 +52,12 @@ def builder_method(fn):
         except KeyError:
             raise Exception("You can't do that")
     return _
+
+
+def get_user():
+    if NAMESPACE.user is None:
+        raise KeyError("What the shit, doing something you can't do")
+    return NAMESPACE.user
 
 
 def user_method(fn):
@@ -145,18 +157,6 @@ def main():
     )
     logging.info("Booting debile-masterd daemon")
     serve("0.0.0.0", 22017)
-
-
-def get_builder():
-    if NAMESPACE.machine is None:
-        raise KeyError("What the shit, doing something you can't do")
-    return NAMESPACE.machine
-
-
-def get_user():
-    if NAMESPACE.user is None:
-        raise KeyError("What the shit, doing something you can't do")
-    return NAMESPACE.user
 
 
 if __name__ == "__main__":
