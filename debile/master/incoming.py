@@ -130,8 +130,7 @@ def accept_source_changes(session, changes, user):
 
     dsc = changes.get_dsc_obj()
 
-    whos = (x.strip() for x in
-            dsc.get("Uploaders", "").split(",") if x != "")
+    whos = (x.strip() for x in dsc.get("Uploaders", "").split(",") if x != "")
 
     for who in whos:
         session.add(Maintainer(
@@ -147,7 +146,7 @@ def accept_source_changes(session, changes, user):
 
 
 def accept_binary_changes(session, changes, builder):
-    pass
+    raise NotImplemented
 
 
 DELEGATE = {

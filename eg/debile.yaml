@@ -13,7 +13,7 @@ Users:  # Users of Debile
 Builders:  # Machines that can build
     - name: leliel.pault.ag
       key: DEADBEEF
-      maintainer: paultag  # Deref's to user's ID
+      maintainer: paultag
 
 Suites:
     - name: unstable

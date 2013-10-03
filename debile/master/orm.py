@@ -164,6 +164,9 @@ class Binary(Base):
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
+    def create_jobs(self, session):
+        raise NotImplemented
+
 
 class Check(Base):
     __tablename__ = 'checks'
