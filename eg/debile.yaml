@@ -31,6 +31,10 @@ Checks:
       binary: false
       arched: true
 
+Arches:
+    - name: amd64
+    - name: all
+
 Groups:
     - name: default
       maintainer: paultag
