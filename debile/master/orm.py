@@ -212,11 +212,17 @@ class Result(Base):
     id = Column(Integer, primary_key=True)
 
     failed = Column(Boolean)
-    source = Column(Integer, ForeignKey('sources.id'))
-    binary = Column(Integer, ForeignKey('binaries.id'), nullable=True)
-    check = Column(Integer, ForeignKey('checks.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'))
+    source = relationship("Source")
 
-    # firehose = Column(Integer, ForeignKey('firehose.id'))
+    binary_id = Column(Integer, ForeignKey('binaries.id'), nullable=True)
+    binary = relationship("Binary")
+
+    check_id = Column(Integer, ForeignKey('checks.id'))
+    check = relationship("Check")
+
+    # firehose_id = Column(Integer, ForeignKey('firehose.id'))
+    # firehose = relationship("Firehose")
 
 
 def init():
