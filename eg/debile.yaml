@@ -12,7 +12,7 @@ Users:  # Users of Debile
 
 Builders:  # Machines that can build
     - name: leliel.pault.ag
-      key: DEADBEEF
+      key: A998491ADCCB93C7A73A27403D3FDC7A47036CF7
       maintainer: paultag
 
 Checks:
