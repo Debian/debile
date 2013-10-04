@@ -23,9 +23,11 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import Session, sessionmaker
 
+import debile.master.core
 from debile.master.utils import session
-from debile.master.orm import Person, Builder
+from debile.master.orm import Person, Builder, Job
 
 from base64 import b64decode
 import datetime as dt
@@ -34,6 +36,7 @@ import threading
 import logging
 import os.path
 import os
+
 
 NAMESPACE = threading.local()
 
@@ -83,12 +86,24 @@ class DebileMasterInterface(object):
     def hello(self):
         return "Ohai"
 
+    def job_count(self):
+        return NAMESPACE.session.query(Job).count()
+
+
+def set_session():
+    Session = sessionmaker(bind=debile.master.core.engine)
+    session = Session()
+    NAMESPACE.session = session
+
+
 
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
 
         NAMESPACE.machine = None
         NAMESPACE.user = None
+        if not hasattr(NAMESPACE, 'session'):
+            set_session()
 
         (basic, _, encoded) = self.headers.get('Authorization').partition(' ')
         if basic.lower() != 'basic':
@@ -108,8 +123,7 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
         except KeyError:
             return False
 
-        with session() as s:
-            return method(s, entity, password)
+        return method(NAMESPACE.session, entity, password)
 
     def authenticate_user(self, session, entity, password):
         try:
