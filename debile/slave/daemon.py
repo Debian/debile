@@ -19,19 +19,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from firehose.model import (Analysis, Generator, Metadata,
-                            DebianBinary, DebianSource)
-
-from debile.slave.commands import PLUGINS, load_module
-from debile.slave.client import get_proxy, checkout
+from debile.slave.commands import PLUGINS
+from debile.slave.client import get_proxy
 from contextlib import contextmanager
-from debile.slave.utils import tdir, cd, run_command
 from debile.slave.core import config
 
 import logging
 import time
-import shutil
-import os
 
 proxy = get_proxy()
 
