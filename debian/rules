@@ -18,7 +18,7 @@ override_dh_auto_build:
 override_dh_auto_install:
 	set -xe; \
 	for py in $(PYVERS); do \
-		$$py setup.py install --skip-build --root tmp \
+		$$py setup.py install --skip-build --root debian/tmp \
 		--install-layout deb; \
 	done
 	# Remove me when dh_python2 can handle this file

@@ -1,0 +1,11 @@
+files
+python-debile-master.debhelper.log
+python-debile-master.substvars
+python-debile-master/
+python-debile-slave.debhelper.log
+python-debile-slave.substvars
+python-debile-slave/
+python-debile.debhelper.log
+python-debile.substvars
+python-debile/
+tmp/
