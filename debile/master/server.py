@@ -73,30 +73,6 @@ def user_method(fn):
     return _
 
 
-class DebileMasterInterface(object):
-    """
-    This is the exposed interface for the builders. Code enhacing the server
-    should likely go here, unless you know what you're doing.
-    """
-
-    @builder_method
-    def builder_whoami(self):
-        """
-        ID check
-        """
-        return NAMESPACE.machine.name
-
-    @builder_method
-    def get_next_job(self, suites, arches, capabilities):
-        raise NotImplemented
-
-    def job_count(self):
-        """
-        Work out the job count.
-        """
-        return NAMESPACE.session.query(Job).count()
-
-
 def set_session():
     Session = sessionmaker(bind=debile.master.core.engine)
     session = Session()
@@ -162,6 +138,10 @@ class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
 
 
 def serve(server, port):
+    # Don't move the stuff below above; it would cause a circular
+    # import; since it needs some of our kruft. I know it's bad form
+    # but I'm tired of it.
+    from debile.master.interface import DebileMasterInterface
     print("Serving on `{server}' on port `{port}'".format(**locals()))
     server = SimpleXMLRPCServer((server, port),
                                 requestHandler=AsyncXMLRPCServer,

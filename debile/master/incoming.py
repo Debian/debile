@@ -124,8 +124,6 @@ def accept_source_changes(session, changes, user):
         updated_at=dt.datetime.utcnow()
     )
 
-    session.add(source)
-
     source.maintainers.append(Maintainer(
         comaintainer=False,
         **MAINTAINER.match(changes['Maintainer']).groupdict()
@@ -144,9 +142,16 @@ def accept_source_changes(session, changes, user):
     arches = dsc['Architecture'].split()
     source.create_jobs(session, arches)
 
+    session.add(source)  # OK. Populated entry. Let's insert.
+    session.commit()  # Neato.
+
     # OK. We have a changes in order. Let's roll.
     repo = group.get_repo()
     repo.add_changes(changes)
+
+    # OK. It's safely in the database and repo. Let's cleanup.
+    for fp in [changes.get_filename()] + changes.get_files():
+        os.unlink(fp)
 
 
 def accept_binary_changes(session, changes, builder):
