@@ -17,7 +17,11 @@ Dear world:
 flavors = {
     "setup.py": ("debile", [
         'debile', 'debile.utils'
-    ], {}),  # Default config
+    ], {
+        'console_scripts': [
+            'aget = debile.utils.aget:main',
+        ],
+    }),  # Default config
     "setup.slave.py": ("debile.slave", [
         'debile.slave'
     ], {

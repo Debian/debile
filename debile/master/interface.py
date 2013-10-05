@@ -34,6 +34,7 @@ class DebileMasterInterface(object):
         ).filter(
             Check.name.in_(capabilities)
         ).first()
+        #
         if job is None:
             return None
         #job.assigned_at = dt.datetime.utcnow()
