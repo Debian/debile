@@ -1,4 +1,5 @@
 files
+tmp
 python-debile-master.debhelper.log
 python-debile-master.substvars
 python-debile-master/
@@ -8,4 +9,9 @@ python-debile-slave/
 python-debile.debhelper.log
 python-debile.substvars
 python-debile/
-tmp/
+python-debile-master.postinst.debhelper
+python-debile-master.prerm.debhelper
+python-debile-slave.postinst.debhelper
+python-debile-slave.prerm.debhelper
+python-debile.postinst.debhelper
+python-debile.prerm.debhelper
