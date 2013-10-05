@@ -26,6 +26,20 @@ Description: set of core débile builder routines
 Package: python-debile-slave
 Architecture: all
 Depends: python-debile, ${misc:Depends}, ${python:Depends}
+Recommends:
+ dpkg-dev,
+# For dpkg-source
+ libperl-critic-perl,
+# for perlcritic
+ desktop-file-validate,
+# for d-f-v
+ lintian,
+ lintian4python,
+# for lintian checks
+ sbuild,
+ schroot,
+ python-schroot
+# for sbuild (and others)
 Description: slave for the débile package builder system
  This contains slave kruft.
  .
