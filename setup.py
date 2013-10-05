@@ -1,4 +1,4 @@
-from debile import __appname__, __version__
+from debile import __version__
 from setuptools import setup
 
 
@@ -15,13 +15,15 @@ Dear world:
 """
 
 flavors = {
-    "setup.py": ([
+    "setup.py": ("debile", [
         'debile', 'debile.utils'
     ], {}),  # Default config
-    "setup.slave.py": ([
+    "setup.slave.py": ("debile.slave", [
         'debile.slave'
     ], {}),  # Slave config
-    "setup.master.py": (['debile.master'], {
+    "setup.master.py": ("debile.master", [
+        'debile.master'
+    ], {
         'console_scripts': [
             'debile-server-init = debile.master.cli:init',
             'debile-incoming = debile.master.cli:process_incoming',
@@ -30,12 +32,12 @@ flavors = {
     }),  # Master config
 }
 
-packages, scripts = flavors[__file__]
+appname, packages, scripts = flavors[__file__]
 
 long_description = ""
 
 setup(
-    name=__appname__,
+    name=appname,
     version=__version__,
     scripts=[],
     packages=packages,
