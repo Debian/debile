@@ -20,14 +20,15 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.runners.clanganalyzer import clanganalyzer, version
-from debile.slave.config import Config
+from debile.slave.core import config
 
 
 def run(dsc, package, job, firehose):
-    config = Config()
+    raise NotImplemented("Not ported yet")
+
     suite = job['suite']
     # clanganalyzer can only run on source packages
-    arch = config.get('capabilities', 'all-arch')
+    arch = config['capabilities']['all-arch']
 
     return clanganalyzer(dsc, suite, arch, firehose)
 

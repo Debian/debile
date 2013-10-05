@@ -20,19 +20,20 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.runners.adequate import adequate, version
-from debile.slave.config import Config
+from debile.slave.core import config
 
 # For binaries only
 
 
 def run(target, package, job, firehose):
+    raise NotImplemented("Not ported yet")
+
     if not target.endswith(".deb"):
         raise Exception("Non-deb given")
 
-    config = Config()
     arch = package['arch']
     if package['arch'] == 'all':
-        arch = config.get('capabilities', 'all-arch')
+        arch = config['capabilities']['all-arch']
 
     chroot_name = "{suite}-{arch}".format(
         suite=package['suite'],

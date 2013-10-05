@@ -20,7 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.error import EthelError
-from debile.slave.config import Config
+from debile.slave.core import config
 
 from contextlib import contextmanager
 from schroot import schroot
@@ -132,9 +132,11 @@ def jobize(path, job):
 
 
 def prepare_binary_for_upload(changes, job):
-    config = Config()
     jobize(changes, job)
-    gpg = config.get('gpg', 'fingerprint')
+    gpg = config.get('gpg', None)
+    if gpg is None:
+        raise Exception("No GPG in config YAML")
+
     out, err, ret = run_command(['debsign', '-k%s' % (gpg), changes])
     if ret != 0:
         print(out)

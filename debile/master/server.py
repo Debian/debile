@@ -83,8 +83,12 @@ class DebileMasterInterface(object):
     def builder_hello(self):
         return "You're a builder"
 
+    @builder_method
+    def builder_get_job(self):
+        return "pass"
+
     def hello(self):
-        return "Ohai"
+        return "Ohaio"
 
     def job_count(self):
         return NAMESPACE.session.query(Job).count()

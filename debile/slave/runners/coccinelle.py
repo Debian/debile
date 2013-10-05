@@ -21,14 +21,14 @@
 
 from debile.slave.wrappers.coccinelle import parse_coccinelle
 from debile.slave.utils import run_command, cd
-from debile.slave.config import Config
+from debile.slave.core import config
+import os.path
 import glob
 
 
 def list_semantic_patches():
-    config = Config()
-    return glob.iglob(
-        config.get("coccinelle", "coccinelle_patches_folder") + "*/*.cocci")
+    root = config['coccinelle']['coccinelle_patches_folder']
+    return glob.iglob(os.path.join(root, "*/*.cocci"))
 
 
 def coccinelle(dsc, analysis):

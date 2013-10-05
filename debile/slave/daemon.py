@@ -26,14 +26,13 @@ from debile.slave.commands import PLUGINS, load_module
 from debile.slave.client import get_proxy, checkout
 from contextlib import contextmanager
 from debile.slave.utils import tdir, cd, run_command
-from debile.slave.config import Config
+from debile.slave.core import config
 
 import logging
 import time
 import shutil
 import os
 
-config = Config()
 proxy = get_proxy()
 
 
@@ -101,8 +100,10 @@ def create_firehose(package, version_getter):
 
 
 def iterate():
-    suites = listize(config.get('capabilities', 'suites'))
-    arches = listize(config.get('capabilities', 'arches'))
+    raise NotImplemented("This hasn't been ported yet")
+
+    arches = config['arches']
+    suites = config['suites']
 
     # job is a serialized dictionary from debile-master ORM
     with workon(suites, arches, list(PLUGINS.keys())) as job:
