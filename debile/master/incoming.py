@@ -142,9 +142,7 @@ def accept_source_changes(session, changes, user):
         ))
 
     arches = dsc['Architecture'].split()
-    indep = not ('any' in arches or 'linux-any' in arches)
-
-    source.create_jobs(session, indep)
+    source.create_jobs(session, arches)
 
     # OK. We have a changes in order. Let's roll.
     repo = group.get_repo()
