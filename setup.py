@@ -12,7 +12,7 @@ setup(
         'debile',
         'debile.slave',
         'debile.master',
-        'debile.utils.dud',
+        'debile.utils',
     ],
     author="Paul Tagliamonte",
     author_email="tag@pault.ag",
