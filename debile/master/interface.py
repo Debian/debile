@@ -1,4 +1,4 @@
-from dbile.master.server import user_method, builder_method, namespace
+from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import Job
 
 

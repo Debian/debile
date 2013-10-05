@@ -16,3 +16,9 @@ def import_db():
     from debile.master.dimport import import_from_yaml
     import sys
     return import_from_yaml(*sys.argv[1:])
+
+
+def serve():
+    from debile.master.server import main
+    import sys
+    return main(*sys.argv[1:])
