@@ -169,13 +169,6 @@ def iterate():
                         raise Exception("SHIT.")
 
 
-def regenerate_dputcf():
-    dputcf = proxy.get_dputcf()
-    dputcf_file = os.path.join(os.environ['HOME'], '.dput.cf')
-    with open(dputcf_file, 'w') as f:
-        f.write(dputcf)
-
-
 def main():
     logging.basicConfig(
         format='%(asctime)s - %(levelname)8s - [debile-slave] %(message)s',
@@ -183,8 +176,6 @@ def main():
     logging.info("Booting debile-slave daemon")
     while True:
         try:
-            logging.debug("Regenerating dput.cf")
-            regenerate_dputcf()
             logging.debug("Checking for new jobs")
             iterate()
         except IDidNothingError:
