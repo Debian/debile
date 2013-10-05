@@ -20,7 +20,11 @@ flavors = {
     ], {}),  # Default config
     "setup.slave.py": ("debile.slave", [
         'debile.slave'
-    ], {}),  # Slave config
+    ], {
+#        'console_scripts': [
+#            'debile-rpc = debile.slave.cli:call',  # XXX: DO THIS
+#        ],
+    }),  # Slave config
     "setup.master.py": ("debile.master", [
         'debile.master'
     ], {
