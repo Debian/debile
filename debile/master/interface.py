@@ -1,6 +1,6 @@
 from debile.master.server import user_method, builder_method, NAMESPACE
-from debile.master.orm import Job
-
+from debile.master.orm import Job, Arch, Check
+import datetime as dt
 
 
 class DebileMasterInterface(object):
@@ -29,18 +29,31 @@ class DebileMasterInterface(object):
 
     @builder_method
     def get_next_job(self, suites, arches, capabilities):
-        jobs = NAMESPACE.session.query(Job)
-        raise NotImplemented
+        job = NAMESPACE.session.query(Job).filter(
+            Arch.name.in_(arches)
+        ).filter(
+            Check.name.in_(capabilities)
+        ).first()
+        if job is None:
+            return None
+        #job.assigned_at = dt.datetime.utcnow()
+        return job.debilize()
 
     @builder_method
     def close_job(self, job_id, failed):
         job = NAMESPACE.session.query(Job).get(job_id)
-        raise NotImplemented
+        job.finished_at = dt.datetime.utcnow()
+        NAMESPACE.session.add(job)
+        NAMESPACE.session.commit()
+        return True
 
     @builder_method
     def forfeit_job(self, job_id):
         job = NAMESPACE.session.query(Job).get(job_id)
-        raise NotImplemented
+        job.assigned_at = None
+        NAMESPACE.session.add(job)
+        NAMESPACE.session.commit()
+        return True
 
     # Useful methods below.
 

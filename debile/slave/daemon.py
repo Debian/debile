@@ -52,12 +52,11 @@ def workon(suites, arches, capabilities):
         yield
     else:
         logging.info("Acquired job id=%s (%s) for %s/%s",
-                     job['id'], job['type'], job['suite'], job['arch'])
+                     job['id'], job['name'], job['suite'], job['arch'])
         try:
             yield job
         except:
             logging.warn("Forfeiting the job because of internal exception")
-            print job
             proxy.forfeit_job(job['id'])
             raise
         else:
@@ -68,9 +67,10 @@ def workon(suites, arches, capabilities):
 def iterate():
     arches = config['arches']
     suites = config['suites']
+    checks = config.get('checks', list(PLUGINS.keys()))
 
     # job is a serialized dictionary from debile-master ORM
-    with workon(suites, arches, list(PLUGINS.keys())) as job:
+    with workon(suites, arches, checks) as job:
         if job is None:
             raise IDidNothingError("No more jobs")
         raise Exception
@@ -93,4 +93,5 @@ def main():
             logging.warning("Er, we got a fatal error: %s. Restarting" % (
                 str(e)
             ))
+            raise
             time.sleep(60)

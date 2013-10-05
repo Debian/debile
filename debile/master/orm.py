@@ -10,9 +10,34 @@ from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Boolean,
 Base = declarative_base()
 
 
+def _debilize(self):
+    def getthing(obj, name):
+        if "." in name:
+            local, remote = name.split(".", 1)
+            foo = getattr(obj, local)
+            if foo is None:
+                return foo
+            return getthing(foo, remote)
+        local = name
+        return getattr(obj, local)
+
+    ret = {}
+    for attribute, path in self._debile_objs.items():
+        ret[attribute] = getthing(self, path)
+
+    return ret
+
+
 class Person(Base):
     __tablename__ = 'people'
     __table_args__ = (UniqueConstraint('username'),)
+    _debile_objs = {
+        "id": "id",
+        "username": "username",
+        "name": "name",
+        "key": "key",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
     username = Column(String(255))  # Unique
@@ -28,6 +53,14 @@ class Person(Base):
 
 class Builder(Base):
     __tablename__ = 'builders'
+    _debile_objs = {
+        "id": "id",
+        "maintainer_id": "maintainer.username",
+        "name": "name",
+        "key": "key",
+        "last_ping": "last_ping",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
     maintainer_id = Column(Integer, ForeignKey('people.id'))
@@ -45,6 +78,12 @@ class Builder(Base):
 class Group(Base):
     __tablename__ = 'groups'
     __table_args__ = (UniqueConstraint('name'),)
+    _debile_objs = {
+        "id": "id",
+        "name": "name",
+        "maintainer_id": "maintainer.name",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -67,6 +106,11 @@ class Group(Base):
 
 class Arch(Base):
     __tablename__ = 'arches'
+    _debile_objs = {
+        "id": "id",
+        "name": "name",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
@@ -74,6 +118,12 @@ class Arch(Base):
 
 class GroupArch(Base):
     __tablename__ = 'group_arches'
+    _debile_objs = {
+        "id": "id",
+        "group_id": "group.name",
+        "arch_id": "arch.name",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -86,6 +136,12 @@ class GroupArch(Base):
 
 class GroupSuite(Base):
     __tablename__ = 'group_suites'
+    _debile_objs = {
+        "id": "id",
+        "group_id": "group.name",
+        "suite_id": "suite.name",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -99,6 +155,11 @@ class GroupSuite(Base):
 class Suite(Base):
     __tablename__ = 'suites'
     __table_args__ = (UniqueConstraint('name'),)
+    _debile_objs = {
+        "id": "id",
+        "name": "name",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
@@ -106,6 +167,16 @@ class Suite(Base):
 
 class Source(Base):
     __tablename__ = 'sources'
+    _debile_objs = {
+        "id": "id",
+        "name": "name",
+        "group_id": "group.name",
+        "suite_id": "suite.name",
+        "uploader_id": "uploader.username",
+        "uploaded_at": "uploaded_at",
+        "updated_at": "updated_at",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -153,6 +224,14 @@ class Source(Base):
 
 class Maintainer(Base):
     __tablename__ = 'maintainers'
+    _debile_objs = {
+        "id": "id",
+        "name": "name",
+        "email": "email",
+        "comaintainer": "comaintainer",
+        "source_id": "source_id",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -166,6 +245,19 @@ class Maintainer(Base):
 
 class Binary(Base):
     __tablename__ = 'binaries'
+    _debile_objs = {
+        "id": "id",
+        "source_id": "source_id",
+        "builder_id": "builder_id",
+        "suite_id": "suite.name",
+        "group_id": "group.name",
+        "name": "name",
+        "version": "version",
+        "arch_id": "arch.name",
+        "uploaded_at": "uploaded_at",
+        "updated_at": "updated_at",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -181,9 +273,11 @@ class Binary(Base):
     group_id = Column(Integer, ForeignKey('groups.id'))
     group = relationship("Group")
 
+    arch_id = Column(Integer, ForeignKey('arches.id'))
+    arch = relationship("Arch")
+
     name = Column(String(255))
     version = Column(String(255))
-    arch = Column(String(255))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
@@ -193,6 +287,15 @@ class Binary(Base):
 
 class Check(Base):
     __tablename__ = 'checks'
+    _debile_objs = {
+        "id": "id",
+        "group_id": "group.name",
+        "name": "name",
+        "source": "source",
+        "binary": "binary",
+        "arched": "arched",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -207,6 +310,20 @@ class Check(Base):
 
 class Job(Base):
     __tablename__ = 'jobs'
+    _debile_objs = {
+        "id": "id",
+        "name": "name",
+        "score": "score",
+        "assigned_at": "assigned_at",
+        "finished_at": "finished_at",
+        "builder": "builder.name",
+        "source_id": "source_id",
+        "binary_id": "binary_id",
+        "check": "check.name",
+        "arch": "arch.name",
+        "suite": "suite.name",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -234,9 +351,20 @@ class Job(Base):
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite")
 
+    results = relationship("Result")
+
 
 class Result(Base):
     __tablename__ = 'results'
+    _debile_objs = {
+        "id": "id",
+        "failed": "failed",
+        "source_id": "source_id",
+        "binary_id": "binary_id",
+        "check_id": "check.name",
+        "job_id": "job_id",
+    }
+    debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
@@ -249,6 +377,9 @@ class Result(Base):
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check")
+
+    job_id = Column(Integer, ForeignKey('jobs.id'))
+    job = relationship("Job")
 
     # firehose_id = Column(Integer, ForeignKey('firehose.id'))
     # firehose = relationship("Firehose")
