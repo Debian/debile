@@ -1,0 +1,44 @@
+Source: debile
+Section: python
+Priority: optional
+Maintainer: Debian Débile Hackers <pkg-debile-team@lists.alioth.debian.org>
+Uploaders: Paul Tagliamonte <paultag@debian.org>
+Build-Depends:
+ debhelper (>= 9),
+ python-all,
+ python-setuptools,
+Standards-Version: 3.9.4
+Homepage: http://debile.debian.net/
+Vcs-Git: git://anonscm.debian.org/pkg-debile/debile.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-debile/debile.git
+X-Python-Version: >= 2.7
+
+Package: python-debile
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: set of core débile builder routines
+ This contains core kruft.
+ .
+ .
+ .
+ Extra lines to fool Lintian. Someone fix this.
+
+Package: python-debile-slave
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: slave for the débile package builder system
+ This contains slave kruft.
+ .
+ .
+ .
+ Extra lines to fool Lintian. Someone fix this.
+
+Package: python-debile-master
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: master for the débile package builder system
+ This contains master kruft.
+ .
+ .
+ .
+ Extra lines to fool Lintian. Someone fix this.
