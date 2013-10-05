@@ -21,9 +21,9 @@ flavors = {
     "setup.slave.py": ("debile.slave", [
         'debile.slave'
     ], {
-#        'console_scripts': [
-#            'debile-rpc = debile.slave.cli:call',  # XXX: DO THIS
-#        ],
+        'console_scripts': [
+            'debile-slave = debile.slave.cli:daemon',
+        ],
     }),  # Slave config
     "setup.master.py": ("debile.master", [
         'debile.master'
