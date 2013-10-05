@@ -65,43 +65,7 @@ def workon(suites, arches, capabilities):
             proxy.close_job(job['id'], job['failed'])
 
 
-def generate_sut_from_source(package):
-    name = package['name']
-    local = None
-    version = package['version']
-    if "-" in version:
-        version, local = version.rsplit("-", 1)
-    return DebianSource(name, version, local)
-
-
-def generate_sut_from_binary(package):
-    arch = package['arch']
-    name = package['name']
-    local = None
-    version = package['version']
-    if "-" in version:
-        version, local = version.rsplit("-", 1)
-    return DebianBinary(name, version, local, arch)
-
-
-def create_firehose(package, version_getter):
-    logging.info("Initializing empty firehose report")
-    sut = {
-        "source": generate_sut_from_source,
-        "binary": generate_sut_from_binary
-    }[package['type']](package)
-
-    gname_, gversion = version_getter()
-    gname = "debile/%s" % gname_
-
-    return Analysis(metadata=Metadata(
-        generator=Generator(name=gname, version=gversion),
-        sut=sut, file_=None, stats=None), results=[])
-
-
 def iterate():
-    raise NotImplemented("This hasn't been ported yet")
-
     arches = config['arches']
     suites = config['suites']
 
@@ -109,70 +73,14 @@ def iterate():
     with workon(suites, arches, list(PLUGINS.keys())) as job:
         if job is None:
             raise IDidNothingError("No more jobs")
-
-        package = job['package']
-
-        # Retrieve functions in the module to launch the command and version
-        handler, version_getter = load_module(job['type'])
-        # Create an empty firehose report with SUT metadata
-        firehose = create_firehose(package, version_getter)
-
-        with tdir() as fd:
-            with cd(fd):
-                with checkout(package) as target:
-                    firehose, log, failed = handler(target, package,
-                                                    job, firehose)
-
-                    logging.info("Job worker returned, filing reports")
-#                    report = proxy.submit_report(firehose.to_json(),
-#                                                 job['_id'], err)
-
-                    logging.info("Sending the XML firehose report to the pool")
-                    open('firehose.xml', 'w').write(firehose.to_xml_bytes())
-                    remote_firehose_path = \
-                        proxy.get_write_location(job['id'])
-                    remote_firehose_path = \
-                        os.path.join(remote_firehose_path, 'firehose.xml')
-                    cmd = config.get('master', 'copy')\
-                        .format(src='firehose.xml', dest=remote_firehose_path)
-                    out, err, ret = run_command(cmd)
-                    ### SCANDALOUS HACK
-                    ### failed contains potential scan-build report directory
-                    if job['type'] == 'clanganalyzer':
-                        if len(failed) == 0:
-                            job['failed'] = False
-                        else:
-                            job['failed'] = True
-                            remote_scanbuild_path = \
-                                proxy.get_write_location(job['id'])
-                            remote_scanbuild_path = \
-                                os.path.join(
-                                    remote_scanbuild_path,
-                                    'scan-build')
-                            cmd = config.get('master', 'copy')\
-                                .format(src=failed[0],
-                                        dest=remote_scanbuild_path)
-                            out, err, ret = run_command(cmd)
-                            shutil.rmtree(failed[0])
-                    else:
-                        job['failed'] = failed
-
-                    logging.info("Sending the logs to the pool")
-                    remote_log_path = proxy.get_write_location(job['id'])
-                    remote_log_path = os.path.join(remote_log_path, 'log.txt')
-                    open('job-log', 'wb').write(log.encode('utf-8'))
-                    cmd = config.get('master', 'copy')\
-                        .format(src='job-log', dest=remote_log_path)
-                    out, err, ret = run_command(cmd)
-                    if ret != 0:
-                        print(out)
-                        raise Exception("SHIT.")
+        raise Exception
 
 
 def main():
     logging.basicConfig(
         format='%(asctime)s - %(levelname)8s - [debile-slave] %(message)s',
-        level=logging.DEBUG)
+        level=logging.DEBUG
+    )
     logging.info("Booting debile-slave daemon")
     while True:
         try:
