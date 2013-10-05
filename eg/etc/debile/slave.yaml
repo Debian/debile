@@ -4,9 +4,14 @@ xmlrpc:
     host: localhost
     port: 22017
 
+gpg: null
+
 checks:
     - lintian
 
 arches:
     - amd64
     - all
+
+suites:
+    - unstable
