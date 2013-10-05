@@ -124,6 +124,9 @@ class Source(Base):
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
+    jobs = relationship("Job")
+    maintainers = relationship("Maintainer")
+
     def create_jobs(self, session, arches):
         group = self.group
         aall = session.query(Arch).filter_by(name='all').one()  # All
@@ -136,16 +139,16 @@ class Source(Base):
                     j = Job(assigned_at=None, finished_at=None,
                             name=check.name, score=100, builder=None,
                             source=self, binary=None, check=check,
-                            arch=arch)
-                    session.add(j)
+                            suite=self.suite, arch=arch)
+                    self.jobs.append(j)
 
             if 'all' in arches or check.arched is False:
                 #print self.name, check.name, 'all'
                 j = Job(assigned_at=None, finished_at=None,
                         name=check.name, score=100, builder=None,
                         source=self, binary=None, check=check,
-                        arch=aall)
-                session.add(j)
+                        suite=self.suite, arch=aall)
+                self.jobs.append(j)
 
 
 class Maintainer(Base):
@@ -227,6 +230,9 @@ class Job(Base):
 
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch")
+
+    suite_id = Column(Integer, ForeignKey('suites.id'))
+    suite = relationship("Suite")
 
 
 class Result(Base):

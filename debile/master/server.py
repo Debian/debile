@@ -74,23 +74,26 @@ def user_method(fn):
 
 
 class DebileMasterInterface(object):
-
-    @user_method
-    def user_hello(self):
-        return "You're a user"
-
-    @builder_method
-    def builder_hello(self):
-        return "You're a builder"
+    """
+    This is the exposed interface for the builders. Code enhacing the server
+    should likely go here, unless you know what you're doing.
+    """
 
     @builder_method
-    def builder_get_job(self):
-        return "pass"
+    def builder_whoami(self):
+        """
+        ID check
+        """
+        return NAMESPACE.machine.name
 
-    def hello(self):
-        return "Ohaio"
+    @builder_method
+    def get_next_job(self, suites, arches, capabilities):
+        raise NotImplemented
 
     def job_count(self):
+        """
+        Work out the job count.
+        """
         return NAMESPACE.session.query(Job).count()
 
 

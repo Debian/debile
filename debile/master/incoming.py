@@ -126,7 +126,7 @@ def accept_source_changes(session, changes, user):
 
     session.add(source)
 
-    session.add(Maintainer(
+    source.maintainers.append(Maintainer(
         comaintainer=False,
         **MAINTAINER.match(changes['Maintainer']).groupdict()
     ))
@@ -136,7 +136,7 @@ def accept_source_changes(session, changes, user):
     whos = (x.strip() for x in dsc.get("Uploaders", "").split(",") if x != "")
 
     for who in whos:
-        session.add(Maintainer(
+        source.maintainers.append(Maintainer(
             comaintainer=True,
             **MAINTAINER.match(who).groupdict()
         ))
