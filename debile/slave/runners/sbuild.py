@@ -35,7 +35,7 @@ STATS = re.compile("Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space")
 VERSION = re.compile("sbuild \(Debian sbuild\) (?P<version>)")
 
 
-def parse_sbuild_log(log, sut, compiler):
+def parse_sbuild_log(log, sut):
     gccversion = None
     stats = None
 
@@ -72,7 +72,7 @@ def parse_sbuild_log(log, sut, compiler):
     return obj
 
 
-def sbuild(package, suite, arch, compiler, analysis):
+def sbuild(package, suite, arch, analysis):
     chroot_name = "%s-%s" % (suite, arch)
 
     dsc = os.path.basename(package)
@@ -85,70 +85,17 @@ def sbuild(package, suite, arch, compiler, analysis):
     if "-" in version:
         version, local = version.rsplit("-", 1)
 
-    if compiler == "gcc-4.8":
-        out, err, ret = run_command([
-            "sbuild",
-            "-A",
-            "-c", chroot_name,
-            "-v",
-            "-d", suite,
-            "-j", "8",
-            package,
-        ])
-    elif compiler == "clang-3.3":
-        with schroot(chroot_name) as chroot:
-            out = ""
-            out_, err, ret = chroot.run([
-                'apt-get', 'update'
-            ], user='root')
-            out += out_
-            out_, err, ret = chroot.run([
-                'apt-get', 'dist-upgrade'
-            ], user='root')
-            out += out_
-            out_, err, ret = chroot.run([
-                'apt-get', 'install', '-y', '--no-install-recommends',
-                'cpp', 'g++', 'gcc', 'clang-3.3'
-            ], user='root')
-            out += out_
-            versions = ['4.6', '4.7', '4.8']
-            for v in versions:
-                out, err, ret = chroot.run([
-                    'rm', '-f',
-                    '/usr/bin/g++-%s' % v,
-                    '/usr/bin/gcc-%s' % v,
-                    '/usr/bin/cpp-%s' % v
-                ], user='root')
-                out += out_
-                out_, err, ret = chroot.run([
-                    'ln', '-s', '/usr/bin/clang++', '/usr/bin/g++-%s' % v
-                ], user='root')
-                out += out_
-                out_, err, ret = chroot.run([
-                    'ln', '-s', '/usr/bin/clang', '/usr/bin/gcc-%s' % v
-                ], user='root')
-                out += out_
-                out_, err, ret = chroot.run([
-                    'ln', '-s', '/usr/bin/clang', '/usr/bin/cpp-%s' % v
-                ], user='root')
-                out += out_
-            out_, err, ret = run_command([
-                "sbuild",
-                "-A",
-                "--use-schroot-session", chroot.session,
-                "-v",
-                "-d", suite,
-                "-j", "8",
-                '--no-apt-update',
-                '--no-apt-upgrade',
-                '--no-apt-distupgrade',
-                package,
-            ])
-            out += out_
-        # TODO : we don't have a parser for clang output !!
+    out, err, ret = run_command([
+        "sbuild",
+        "-A",
+        "-c", chroot_name,
+        "-v",
+        "-d", suite,
+        "-j", "8",
+        package,
+    ])
 
     ftbfs = ret != 0
-
     return analysis, out, ftbfs
 
 

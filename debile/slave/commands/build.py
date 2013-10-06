@@ -27,9 +27,8 @@ import glob
 def run(dsc, package, job, firehose):
     suite = job['suite']
     arch = job['arch']
-    compiler = job['subtype']
 
-    firehose, out, ftbfs = sbuild(dsc, suite, arch, compiler, firehose)
+    firehose, out, ftbfs = sbuild(dsc, suite, arch, firehose)
 
     changes = "{source}*{arch}.changes".format(
         source=package['name'],

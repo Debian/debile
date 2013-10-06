@@ -31,7 +31,10 @@ class DebileMasterInterface(object):
 
     @builder_method
     def get_next_job(self, suites, arches, capabilities):
-        job = NAMESPACE.session.query(Job).filter(
+        job = NAMESPACE.session.query(Job).filter_by(
+            assigned_at=None,
+            finished_at=None,
+        ).filter(
             Arch.name.in_(arches)
         ).filter(
             Check.name.in_(capabilities)

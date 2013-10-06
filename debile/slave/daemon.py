@@ -161,10 +161,13 @@ def iterate():
             else:
                 raise Exception("Unknown type")
 
-            firehose, log, failed = run(target, package, job, firehose)
-            print firehose, log, failed
+            firehose, log, job['failed'] = run(target, package, job, firehose)
+            prefix = "%s" % (job['id'])
 
-        raise Exception
+            open('{prefix}-firehose.xml'.format(prefix=prefix), 'w').write(
+                firehose.to_xml_bytes())
+            open('%s-log' % (prefix), 'w').write(log)
+
 
 
 def main():

@@ -5,7 +5,7 @@ from debile.utils import run_command
 
 
 class Dud(object):
-    def __init__(self, filename):
+    def __init__(self):
         pass
 
     def add_file(self, fp):
@@ -22,3 +22,7 @@ class Dud(object):
 
     def get_files(self):
         pass
+
+
+def from_file(fp):
+    pass
