@@ -38,7 +38,7 @@ class DebileMasterInterface(object):
             Arch.name.in_(arches)
         ).filter(
             Check.name.in_(capabilities)
-        ).first()
+        ).first()  # XXX: ORDER BY SCORE
         #
         if job is None:
             return None
