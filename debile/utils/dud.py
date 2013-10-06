@@ -1,28 +1,79 @@
 # -*- coding: utf-8 -*-
 
-from debian import deb822
 from debile.utils import run_command
+from debile import __version__
+from debian import deb822
+
+from email.Utils import formatdate
+import hashlib
+import os
+
+
+class DudFileException(Exception):
+    pass
 
 
 class Dud(object):
+
+    defaults = {
+        "Format": "1.0",
+        "Generator": "debile.utils.dud/%s" % (__version__)
+    }
+    required = ["Format", "Created-By", "Date", "Files",
+                "Source", "Version", "Architecture"]
+
     def __init__(self):
-        pass
+        self._files = []
+        self._data = deb822.Deb822()
+        self._data['Date'] = formatdate()
+        for k, v in self.defaults.items():
+            self._data[k] = v
+
+    def __setitem__(self, entry, value):
+        self._data[entry] = value
+
+    def __getitem__(self, entry):
+        return self._data[entry]
 
     def add_file(self, fp):
-        pass
+        self._files.append(fp)
 
-    def validate_signature(self):
-        pass
+    def get_file_digest(self):
+        digest = ""
+        for fp in self.files():
+            statinfo = os.stat(fp)
+            size = statinfo.st_size
 
-    def validate_hashes(self):
-        pass
+            m = hashlib.sha256()
+            with open(fp, 'r') as fd:
+                for buf in fd.read(128):
+                    m.update(buf)
+            digest += "\n {hash} {size} {path}".format(
+                hash=m.hexdigest(),
+                size=size,
+                path=fp
+            )
+        return digest
 
-    def validate(self):
-        pass
+    def write_dud(self, fp, key=None):
+        self._data['Files'] = self.get_file_digest()
 
-    def get_files(self):
-        pass
+        for entry in self.required:
+            if entry not in self._data:
+                raise ValueError("Missing key: %s" % (entry))
+
+        with open(fp, 'w') as fd:
+            self._data.dump(fd=fd)
+
+        if key is not None:
+            run_command(['gpg', '-u', key, '--clearsign', fp])
+            os.unlink(fp)
+            os.rename("%s.asc" % (fp), fp)
+
+    def files(self):
+        for fp in self._files:
+            yield fp
 
 
 def from_file(fp):
-    pass
+    data = deb822.Deb822(open(fp, 'r'))
