@@ -43,7 +43,7 @@ def cppcheck(dsc, analysis):
             ]:
                 failed = True
 
-        return (analysis, err, failed)
+        return (analysis, err, failed, None)
 
 
 def version():

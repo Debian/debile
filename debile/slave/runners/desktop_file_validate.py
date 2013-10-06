@@ -35,7 +35,7 @@ def desktop_file_validate(package_root, analysis):
                 failed = True
             log += out
     log = log.strip()
-    return (analysis, log, failed)
+    return (analysis, log, failed, None)
 
 
 def version():

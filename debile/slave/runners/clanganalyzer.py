@@ -27,6 +27,8 @@ import glob
 
 
 def clanganalyzer(package, suite, arch, analysis):
+    raise NotImplemented("Not ported")
+
     chroot_name = "%s-%s" % (suite, arch)
     with schroot(chroot_name) as chroot:
         # We should have the dsc file to bulid
@@ -93,7 +95,7 @@ def clanganalyzer(package, suite, arch, analysis):
         reports_dir = glob.glob(internal_report_dir+'*')
 
         ### SCANDALOUS HACK !!
-        return analysis, out, reports_dir
+        return analysis, out, reports_dir, None
 
 
 def version():

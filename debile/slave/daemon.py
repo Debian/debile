@@ -161,12 +161,16 @@ def iterate():
             else:
                 raise Exception("Unknown type")
 
-            firehose, log, job['failed'] = run(target, package, job, firehose)
-            prefix = "%s" % (job['id'])
+            firehose, log, job['failed'], changes = run(
+                target, package, job, firehose)
 
+            # XXX: If changes is not None, upload it to the slave target.
+
+            prefix = "%s" % (job['id'])
             open('{prefix}-firehose.xml'.format(prefix=prefix), 'w').write(
                 firehose.to_xml_bytes())
             open('%s-log' % (prefix), 'w').write(log)
+            # XXX: Create DUD; upload it.
 
 
 

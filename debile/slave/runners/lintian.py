@@ -35,7 +35,7 @@ def lintian(target, analysis, lintian_binary='lintian'):
             failed = True
     log += out
 
-    return (analysis, log, failed)
+    return (analysis, log, failed, None)
 
 
 def version(lintian_binary='lintian'):
@@ -43,6 +43,6 @@ def version(lintian_binary='lintian'):
         lintian_binary, '--version'
     ])
     if ret != 0:
-        raise Exception(lintian_binary+" is not installed")
+        raise Exception(lintian_binary + " is not installed")
     name, version = out.split(" ")
     return (name, version.strip())

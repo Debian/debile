@@ -37,7 +37,7 @@ def perlcritic(dsc, analysis):
         for issue in parse_perlcritic(out.splitlines()):
             analysis.results.append(issue)
 
-        return (analysis, out, failed)
+        return (analysis, out, failed, None)
 
 
 def version():

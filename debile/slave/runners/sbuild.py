@@ -27,6 +27,7 @@ import firehose.parsers.gcc as fgcc
 from schroot import schroot
 from datetime import timedelta
 from io import StringIO
+import glob
 import re
 import os
 
@@ -96,7 +97,7 @@ def sbuild(package, suite, arch, analysis):
     ])
 
     ftbfs = ret != 0
-    return analysis, out, ftbfs
+    return analysis, out, ftbfs, glob.glob("*changes")
 
 
 def version():

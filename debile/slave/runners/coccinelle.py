@@ -32,6 +32,8 @@ def list_semantic_patches():
 
 
 def coccinelle(dsc, analysis):
+    raise NotImplemented("Not ported")
+
     run_command(["dpkg-source", "-x", dsc, "source"])
     with cd('source'):
         log = ""
@@ -57,7 +59,7 @@ def coccinelle(dsc, analysis):
             log += "DEAL patch %s\n" % semantic_patch
             log += "  %d results\n" % result_count
 
-    return (analysis, log, failed)
+    return (analysis, log, failed, None)
 
 
 def version():
