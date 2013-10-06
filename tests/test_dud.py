@@ -17,4 +17,4 @@ def test_dud():
 
         assert ["file1", "file2"] == list(d.files())
 
-        d.write_dud("test.dud", 'A998491ADCCB93C7A73A27403D3FDC7A47036CF7')
+        d.write_dud("test.dud")

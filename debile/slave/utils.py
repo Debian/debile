@@ -138,13 +138,24 @@ def prepare_binary_for_upload(changes, job):
     if gpg is None:
         raise Exception("No GPG in config YAML")
 
-    out, err, ret = run_command(['debsign', '-k%s' % (gpg), changes])
-    if ret != 0:
-        print(out)
-        print(err)
-        raise Exception("bad debsign")
+    if changes.endswith(".dud"):
+        out, err, ret = run_command(['gpg', '-u', key, '--clearsign', changes])
+        if ret != 0:
+            print(out)
+            print(err)
+            raise Exception("bad clearsign")
+        os.unlink(changes)
+        os.rename("%s.asc" % (changes), changes)
+        return
+    else:
+        out, err, ret = run_command(['debsign', '-k%s' % (gpg), changes])
+        if ret != 0:
+            print(out)
+            print(err)
+            raise Exception("bad debsign")
+        return
 
 
 def upload(changes, job, package):
     prepare_binary_for_upload(changes, job)
-    dput.upload(changes, config['dput']['host'])
+    return dput.upload(changes, config['dput']['host'])
