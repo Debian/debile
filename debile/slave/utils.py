@@ -151,15 +151,5 @@ def upload(changes, job, package):
     """
 
     prepare_binary_for_upload(changes, job)
-    # Find the dput target we need
-    dput_target = "%s-%s" % (package['user']['login'], job['subtype'])
 
-    out, err, ret = run_command([
-        'dput',
-        dput_target,
-        changes
-    ])
-    if ret != 0:
-        print(out)
-        print(err)
-        raise Exception("dput sux")
+    raise NotImplemented("Fix this; use dput-ng's python-dput")
