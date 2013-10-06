@@ -8,7 +8,7 @@ SOURCE = "dists/{suite}/{section}/source/Sources.gz"
 
 
 def dget(path):
-    out, err, ret = run_command(["dget", "-ux", path])
+    out, err, ret = run_command(["dget", "-u", path])
     if ret != 0:
         print ret, err
         raise Exception("DAMNIT; dget fucked us")
