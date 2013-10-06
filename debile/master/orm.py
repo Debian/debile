@@ -98,7 +98,7 @@ class Group(Base):
     checks = relationship("Check", backref="check")
 
     def get_repo(self):
-        root = debile.master.core.config['repo-base']
+        root = debile.master.core.config['repo']['base']
         name = self.name or "default"
         base = os.path.join(root, name)
         return Repo(base)
@@ -170,9 +170,10 @@ class Source(Base):
     _debile_objs = {
         "id": "id",
         "name": "name",
-        "group_id": "group.name",
-        "suite_id": "suite.name",
-        "uploader_id": "uploader.username",
+        "version": "version",
+        "group": "group.name",
+        "suite": "suite.name",
+        "uploader": "uploader.username",
         "uploaded_at": "uploaded_at",
         "updated_at": "updated_at",
     }
@@ -247,13 +248,13 @@ class Binary(Base):
     __tablename__ = 'binaries'
     _debile_objs = {
         "id": "id",
-        "source_id": "source_id",
-        "builder_id": "builder_id",
-        "suite_id": "suite.name",
-        "group_id": "group.name",
+        "source": "source_id",
+        "builder": "builder_id",
+        "suite": "suite.name",
+        "group": "group.name",
         "name": "name",
         "version": "version",
-        "arch_id": "arch.name",
+        "arch": "arch.name",
         "uploaded_at": "uploaded_at",
         "updated_at": "updated_at",
     }

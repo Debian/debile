@@ -19,12 +19,18 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.slave.commands import PLUGINS
+from debile.slave.commands import PLUGINS, load_module
 from debile.slave.client import get_proxy
 from contextlib import contextmanager
 from debile.slave.core import config
+from debile.slave.utils import tdir, cd
+from debile.utils.aget import aget
+
+from firehose.model import (Analysis, Generator, Metadata,
+                            DebianBinary, DebianSource)
 
 import logging
+import glob
 import time
 
 proxy = get_proxy()
@@ -37,6 +43,59 @@ class IDidNothingError(Exception):
 def listize(entry):
     items = [x.strip() for x in entry.split(",")]
     return [None if x == "null" else x for x in items]
+
+
+def generate_sut_from_source(package):
+    name = package['name']
+    version = package['version']
+    local = None
+    if "-" in version:
+        version, local = version.rsplit("-", 1)
+    return DebianSource(name, version, local)
+
+
+def generate_sut_from_binary(package):
+    name = package['name']
+    version = package['version']
+    arch = package['arch']
+    local = None
+    if "-" in version:
+        version, local = version.rsplit("-", 1)
+    return DebianBinary(name, version, local, arch)
+
+
+def create_firehose(package, version_getter):
+    logging.info("Initializing empty firehose report")
+    sut = {
+        "source": generate_sut_from_source,
+        "binary": generate_sut_from_binary
+    }[package['type']](package)
+
+    gname_, gversion = version_getter()
+    gname = "debile/%s" % gname_
+
+    return Analysis(metadata=Metadata(
+        generator=Generator(name=gname, version=gversion),
+        sut=sut, file_=None, stats=None), results=[])
+
+
+@contextmanager
+def checkout(job, package):
+    with tdir() as path:
+        with cd(path):
+            if package['type'] == "source":
+                server_info = proxy.get_info()
+                src = package['source']
+                archive = "{url}/{group}".format(
+                    url=server_info['repo']['base'],
+                    group=src['group'],
+                )
+                aget(archive, src['suite'], 'main', src['name'], src['version'])
+                yield
+            elif package['type'] == "binary":
+                raise NotImplemented
+            else:
+                raise Exception
 
 
 @contextmanager
@@ -67,6 +126,44 @@ def iterate():
     with workon(suites, arches, checks) as job:
         if job is None:
             raise IDidNothingError("No more jobs")
+
+        source = proxy.get_source(job['source_id'])
+
+        package = {
+            "name": source['name'],
+            "version": source['version'],
+            "type": "source",
+            "arch": "all",
+            "source": source,
+            "binary": None,
+        }
+
+        if job['binary_id']:
+            binary = proxy.get_binary(job['binary_id'])
+            package = {
+                "name": binary['name'],
+                "version": binary['version'],
+                "type": "binary",
+                "arch": binary['arch'],
+                "source": source,
+                "binary": binary,
+            }
+
+        with checkout(job, package):
+            run, version = load_module(job['name'])
+            firehose = create_firehose(package, version)
+
+            type_ = package['type']
+            if type_ == "source":
+                target = glob.glob("*dsc")[0]
+            elif type_ == "binary":
+                target = glob.glob("*deb")
+            else:
+                raise Exception("Unknown type")
+
+            firehose, log, failed = run(target, package, job, firehose)
+            print firehose, log, failed
+
         raise Exception
 
 

@@ -1,5 +1,7 @@
 from debile.master.server import user_method, builder_method, NAMESPACE
-from debile.master.orm import Job, Arch, Check
+from debile.master.orm import Job, Arch, Check, Source, Binary
+from debile.master.core import config
+
 import datetime as dt
 
 
@@ -57,6 +59,19 @@ class DebileMasterInterface(object):
         return True
 
     # Useful methods below.
+
+    def get_source(self, source_id):
+        return NAMESPACE.session.query(Source).get(source_id).debilize()
+
+    def get_binary(self, binary_id):
+        return NAMESPACE.session.query(Binary).get(binary_id).debilize()
+
+    def get_info(self):
+        return {
+            "repo": {
+                "base": config['repo']['url']
+            },
+        }
 
     def job_count(self):
         """

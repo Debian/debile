@@ -17,6 +17,9 @@ class Repo(object):
     def _exec(self, *args):
         cmd = ["reprepro", "-Vb", self.root,] + list(args)
         out, err, ret = run_command(cmd)
+        if ret != 0:
+            print out, err
+            raise Exception
         return (out, err, ret)
 
     def include(self, distribution, changes):
