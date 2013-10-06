@@ -21,6 +21,7 @@
 
 from debile.slave.error import EthelError
 from debile.slave.core import config
+import dput
 
 from contextlib import contextmanager
 from schroot import schroot
@@ -145,11 +146,5 @@ def prepare_binary_for_upload(changes, job):
 
 
 def upload(changes, job, package):
-    """
-    This is called when we need to upload a binary to debile pool after
-    a build job.
-    """
-
     prepare_binary_for_upload(changes, job)
-
-    raise NotImplemented("Fix this; use dput-ng's python-dput")
+    dput.upload(changes, config['dput']['host'])

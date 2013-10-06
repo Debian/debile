@@ -38,25 +38,34 @@ class Dud(object):
     def add_file(self, fp):
         self._files.append(fp)
 
-    def get_file_digest(self):
+    def get_file_digest(self, type_):
         digest = ""
         for fp in self.files():
             statinfo = os.stat(fp)
             size = statinfo.st_size
 
-            m = hashlib.sha256()
+            m = hashlib.new(type_)
             with open(fp, 'r') as fd:
                 for buf in fd.read(128):
                     m.update(buf)
-            digest += "\n {hash} {size} {path}".format(
-                hash=m.hexdigest(),
-                size=size,
-                path=fp
-            )
+            if type_ != 'md5':
+                digest += "\n {hash} {size} {path}".format(
+                    hash=m.hexdigest(),
+                    size=size,
+                    path=fp
+                )
+            else:
+                digest += "\n {hash} {size} debile debile {path}".format(
+                    hash=m.hexdigest(),
+                    size=size,
+                    path=fp
+                )
         return digest
 
     def write_dud(self, fp, key=None):
-        self._data['Files'] = self.get_file_digest()
+        self._data['Files'] = self.get_file_digest('md5')
+        self._data['Checksum-Sha1'] = self.get_file_digest('sha1')
+        self._data['Checksum-Sha256'] = self.get_file_digest('sha256')
 
         for entry in self.required:
             if entry not in self._data:
