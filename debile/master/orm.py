@@ -4,8 +4,8 @@ from debile.master.reprepro import Repo
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Boolean,
-                        UniqueConstraint)
+from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey,
+                        Boolean, UniqueConstraint)
 
 Base = declarative_base()
 
