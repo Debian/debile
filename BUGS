@@ -1,5 +1,7 @@
  - Add init script for the server
  - Have the client crash in less sucky ways
+   - Server being down
+   - Network breaking / can't dput
  - Find a way to keep chroots updated
  - Fix adequite to no longer prompt for things (see how piuparts does
    this?)
