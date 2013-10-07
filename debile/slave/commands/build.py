@@ -28,7 +28,7 @@ def run(dsc, package, job, firehose):
     suite = job['suite']
     arch = job['arch']
 
-    firehose, out, ftbfs = sbuild(dsc, suite, arch, firehose)
+    firehose, out, ftbfs, changes, = sbuild(dsc, suite, arch, firehose)
 
     changes = "{source}*{arch}.changes".format(
         source=package['name'],
@@ -45,7 +45,7 @@ def run(dsc, package, job, firehose):
         changes = changes[0]
         upload(changes, job, package)
 
-    return (firehose, out, ftbfs)
+    return (firehose, out, ftbfs, changes)
 
 
 def get_version():

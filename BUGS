@@ -1,0 +1,7 @@
+ - Add init script for the server
+ - Have the client crash in less sucky ways
+ - Find a way to keep chroots updated
+ - Fix adequite to no longer prompt for things (see how piuparts does
+   this?)
+ - Find a way to forward "clean" builds via magic to other servers (to allow
+   PPA-alikes)
