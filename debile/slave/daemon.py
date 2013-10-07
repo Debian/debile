@@ -168,12 +168,13 @@ def iterate():
             if changes:
                 upload(changes, job, package)
 
+            print package
             prefix = "%s" % (str(job['id']))
             dud = Dud()
             dud['Created-By'] = "Dummy Entry <dummy@example.com>"
             dud['Source'] = package['source']
             dud['Version'] = package['version']
-            dud['Architecture'] = package['arch']
+            dud['Architecture'] = package['arch']['name']
             dudf = "{prefix}.dud".format(prefix=prefix)
 
             open('{prefix}-firehose.xml'.format(prefix=prefix), 'w').write(
