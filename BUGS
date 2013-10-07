@@ -7,3 +7,5 @@
    this?)
  - Find a way to forward "clean" builds via magic to other servers (to allow
    PPA-alikes)
+ - Docker integration? Allow hosts to spawn Docker containers? Adding new nodes
+   will be easier and safer
