@@ -20,7 +20,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.runners.sbuild import sbuild, version
-from debile.slave.utils import upload
 import glob
 
 
@@ -43,7 +42,8 @@ def run(dsc, package, job, firehose):
 
     if not ftbfs:
         changes = changes[0]
-        upload(changes, job, package)
+    else:
+        changes = None
 
     return (firehose, out, ftbfs, changes)
 

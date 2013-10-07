@@ -23,8 +23,9 @@ from debile.slave.commands import PLUGINS, load_module
 from debile.slave.client import get_proxy
 from contextlib import contextmanager
 from debile.slave.core import config
-from debile.slave.utils import tdir, cd
+from debile.slave.utils import tdir, cd, upload
 from debile.utils.aget import aget
+from debile.utils.dud import Dud
 
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
@@ -164,13 +165,26 @@ def iterate():
             firehose, log, job['failed'], changes = run(
                 target, package, job, firehose)
 
-            # XXX: If changes is not None, upload it to the slave target.
+            if changes:
+                upload(changes, job, package)
 
-            prefix = "%s" % (job['id'])
+            prefix = "%s" % (str(job['id']))
+            dud = Dud()
+            dud['Created-By'] = "Dummy Entry <dummy@example.com>"
+            dud['Source'] = package['source']
+            dud['Version'] = package['version']
+            dud['Architecture'] = package['arch']
+            dudf = "{prefix}.dud".format(prefix=prefix)
+
             open('{prefix}-firehose.xml'.format(prefix=prefix), 'w').write(
                 firehose.to_xml_bytes())
-            open('%s-log' % (prefix), 'w').write(log)
-            # XXX: Create DUD; upload it.
+            open('{prefix}-log'.format(prefix=prefix), 'w').write(log)
+
+            dud.add_file('{prefix}-firehose.xml'.format(prefix=prefix))
+            dud.add_file('{prefix}-log'.format(prefix=prefix))
+
+            dud.write_dud(dudf)
+            upload(dudf, job, package)
 
 
 
