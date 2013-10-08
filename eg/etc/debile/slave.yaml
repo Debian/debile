@@ -1,10 +1,14 @@
+---
 xmlrpc:
-    user: %leliel.pault.ag
+    user: "%leliel.pault.ag"
     password: s3kr37
     host: localhost
     port: 22017
 
-gpg: null
+gpg: A998491ADCCB93C7A73A27403D3FDC7A47036CF7
+
+dput:
+    host: lucy
 
 checks:
     - lintian
