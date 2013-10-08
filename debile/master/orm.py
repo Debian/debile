@@ -1,4 +1,5 @@
 import os.path
+import datetime as dt
 import debile.master.core
 from debile.master.reprepro import Repo
 
@@ -281,6 +282,18 @@ class Binary(Base):
     version = Column(String(255))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
+
+    @classmethod
+    def from_source(cls, source, **kwargs):
+        return Binary(
+            source=source,
+            suite=source.suite,
+            group=source.group,
+            name=source.name,
+            version=source.version,
+            uploaded_at=dt.datetime.utcnow(),
+            updated_at=dt.datetime.utcnow(),
+            **kwargs)
 
     def create_jobs(self, session):
         raise NotImplemented

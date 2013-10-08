@@ -88,7 +88,7 @@ def sbuild(package, suite, arch, analysis):
 
     out, err, ret = run_command([
         "sbuild",
-        "-A",
+        ("--arch-all" if arch == 'all' else '--no-arch-all'),
         "-c", chroot_name,
         "-v",
         "-d", suite,

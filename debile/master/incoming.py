@@ -27,7 +27,8 @@ from debian import deb822
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.utils import session
-from debile.master.orm import Person, Builder, Source, Group, Suite, Maintainer
+from debile.master.orm import (Person, Builder, Source, Group, Suite,
+                               Maintainer, Job, Binary, Arch)
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -83,7 +84,6 @@ def process_changes(session, path):
     if changes.is_binary_only_upload():
         try:
             builder = session.query(Builder).filter_by(key=key).one()
-            raise NotImplemented
         except NoResultFound:
             return reject_changes(session, changes, "invalid-builder")
         return accept_binary_changes(session, changes, builder)
@@ -155,6 +155,28 @@ def accept_source_changes(session, changes, user):
 
 
 def accept_binary_changes(session, changes, builder):
+    # OK. We'll relate this back to a build job.
+    job = changes.get('X-Debile-Job', None)
+    if job is None:
+        return reject_changes(session, changes, "no-job")
+    job = session.query(Job).get(job)
+    source = job.source
+
+    if changes.get('Source') != source.name:
+        return reject_changes(session, changes, "binary-source-name-mismatch")
+
+    if changes.get("Version") != source.version:
+        return reject_changes(
+            session, changes, "binary-source-version-mismatch")
+
+    arch = changes['Architecture']
+    if " " in arch:
+        return reject_changes(session, changes, "multi-arch-upload")
+
+    arch = session.query(Arch).filter_by(name=arch).one()
+    binary = Binary.from_source(source, arch=arch)
+    print binary
+
     raise NotImplemented
 
 
