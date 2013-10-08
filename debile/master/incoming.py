@@ -26,6 +26,7 @@ from debian import deb822
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
+from debile.utils.dud import from_file
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
                                Maintainer, Job, Binary, Arch)
@@ -92,7 +93,8 @@ def process_changes(session, path):
 
 
 def process_dud(session, path):
-    pass
+    dud = from_file(path)
+    print dud
 
 
 def reject_changes(session, changes, tag):

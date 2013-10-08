@@ -85,4 +85,11 @@ class Dud(object):
 
 
 def from_file(fp):
+    raise NotImplemented
+
     data = deb822.Deb822(open(fp, 'r'))
+    d = Dud()
+    for k, v in data.items():
+        d[k] = v
+
+    # Handle the fucky files.
