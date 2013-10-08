@@ -174,10 +174,19 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(session, changes, "multi-arch-upload")
 
     arch = session.query(Arch).filter_by(name=arch).one()
-    binary = Binary.from_source(source, arch=arch)
-    print binary
+    binary = Binary.from_source(source, builder=builder, arch=arch)
 
-    raise NotImplemented
+    binary.create_jobs(session)
+
+    session.add(source)
+    session.commit()
+
+    repo = binary.group.get_repo()
+    repo.add_changes(changes)
+
+    # OK. It's safely in the database and repo. Let's cleanup.
+    for fp in [changes.get_filename()] + changes.get_files():
+        os.unlink(fp)
 
 
 DELEGATE = {

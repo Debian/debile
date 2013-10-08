@@ -205,6 +205,9 @@ class Source(Base):
         aall = session.query(Arch).filter_by(name='all').one()  # All
 
         for check in group.checks:
+            if not check.source:
+                continue
+
             if check.arched:
                 for arch in group.arches:
                     #print self.name, check.name, arch.arch.name
@@ -278,25 +281,31 @@ class Binary(Base):
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch")
 
+    jobs = relationship("Job")
+
     name = Column(String(255))
     version = Column(String(255))
     uploaded_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
     @classmethod
-    def from_source(cls, source, **kwargs):
-        return Binary(
-            source=source,
-            suite=source.suite,
-            group=source.group,
-            name=source.name,
-            version=source.version,
-            uploaded_at=dt.datetime.utcnow(),
-            updated_at=dt.datetime.utcnow(),
-            **kwargs)
+    def from_source(cls, source, arch, builder):
+        return Binary(arch=arch, source=source, builder=builder,
+                      suite=source.suite, group=source.group, name=source.name,
+                      version=source.version, uploaded_at=dt.datetime.utcnow(),
+                      updated_at=dt.datetime.utcnow())
 
     def create_jobs(self, session):
-        raise NotImplemented
+        group = self.group
+        for check in group.checks:
+            if not check.binary:
+                continue
+
+            j = Job(assigned_at=None, finished_at=None,
+                    name=check.name, score=100, builder=None,
+                    source=self.source, binary=self, check=check,
+                    suite=self.suite, arch=self.arch)
+            self.jobs.append(j)
 
 
 class Check(Base):
