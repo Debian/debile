@@ -172,14 +172,14 @@ def iterate():
             prefix = "%s" % (str(job['id']))
             dud = Dud()
             dud['Created-By'] = "Dummy Entry <dummy@example.com>"
-            dud['Source'] = package['source']
-            dud['Version'] = package['version']
-            dud['Architecture'] = package['arch']['name']
+            dud['Source'] = package['source']['name']
+            dud['Version'] = package['source']['version']
+            dud['Architecture'] = package['arch']
             dudf = "{prefix}.dud".format(prefix=prefix)
 
-            open('{prefix}-firehose.xml'.format(prefix=prefix), 'w').write(
+            open('{prefix}-firehose.xml'.format(prefix=prefix), 'wb').write(
                 firehose.to_xml_bytes())
-            open('{prefix}-log'.format(prefix=prefix), 'w').write(log)
+            open('{prefix}-log'.format(prefix=prefix), 'wb').write(log)
 
             dud.add_file('{prefix}-firehose.xml'.format(prefix=prefix))
             dud.add_file('{prefix}-log'.format(prefix=prefix))
