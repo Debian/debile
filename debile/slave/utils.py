@@ -139,7 +139,7 @@ def prepare_binary_for_upload(changes, job):
         raise Exception("No GPG in config YAML")
 
     if changes.endswith(".dud"):
-        out, err, ret = run_command(['gpg', '-u', key, '--clearsign', changes])
+        out, err, ret = run_command(['gpg', '-u', gpg, '--clearsign', changes])
         if ret != 0:
             print(out)
             print(err)

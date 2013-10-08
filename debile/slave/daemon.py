@@ -179,7 +179,8 @@ def iterate():
 
             open('{prefix}-firehose.xml'.format(prefix=prefix), 'wb').write(
                 firehose.to_xml_bytes())
-            open('{prefix}-log'.format(prefix=prefix), 'wb').write(log)
+            open('{prefix}-log'.format(prefix=prefix), 'wb').write(
+                log.encode('utf-8'))
 
             dud.add_file('{prefix}-firehose.xml'.format(prefix=prefix))
             dud.add_file('{prefix}-log'.format(prefix=prefix))
