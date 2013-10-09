@@ -25,7 +25,7 @@ from contextlib import contextmanager
 from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
 from debile.utils.aget import aget
-from debile.utils.dud import Dud
+from debile.utils.dud import Dud_
 
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
@@ -168,24 +168,26 @@ def iterate():
             if changes:
                 upload(changes, job, package)
 
-            print package
             prefix = "%s" % (str(job['id']))
-            dud = Dud()
+
+            dudf = "{prefix}.dud".format(prefix=prefix)
+            dud = Dud_()
             dud['Created-By'] = "Dummy Entry <dummy@example.com>"
             dud['Source'] = package['source']['name']
             dud['Version'] = package['source']['version']
             dud['Architecture'] = package['arch']
-            dudf = "{prefix}.dud".format(prefix=prefix)
 
-            open('{prefix}-firehose.xml'.format(prefix=prefix), 'wb').write(
+            open('{prefix}.firehose.xml'.format(prefix=prefix), 'wb').write(
                 firehose.to_xml_bytes())
-            open('{prefix}-log'.format(prefix=prefix), 'wb').write(
+            open('{prefix}.log'.format(prefix=prefix), 'wb').write(
                 log.encode('utf-8'))
 
-            dud.add_file('{prefix}-firehose.xml'.format(prefix=prefix))
-            dud.add_file('{prefix}-log'.format(prefix=prefix))
+            dud.add_file('{prefix}.firehose.xml'.format(prefix=prefix))
+            dud.add_file('{prefix}.log'.format(prefix=prefix))
 
-            dud.write_dud(dudf)
+            with open(dudf, 'w') as fd:
+                dud.dump(fd=fd)
+
             upload(dudf, job, package)
 
 
