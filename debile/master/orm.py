@@ -207,7 +207,7 @@ class Source(Base):
         arch_list = []
         for arch in arches:
             if arch in ['any', 'linux-any']:
-                arch_list += group.arches
+                arch_list += [x.arch for x in group.arches]
             else:
                 arch_list.append(session.query(Arch).filter_by(
                     name=arch
