@@ -42,5 +42,6 @@ Groups:
       maintainer: paultag
       arches:
           - amd64
+          - all
       suites:
           - unstable

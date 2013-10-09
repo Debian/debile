@@ -207,11 +207,16 @@ class Source(Base):
         arch_list = []
         for arch in arches:
             if arch in ['any', 'linux-any']:
-                arch_list += [x.arch for x in group.arches]
+                arch_list += [x.arch for x in group.arches if
+                              x.arch.name != 'all']
+                # The reason we filter all out is because all packages
+                # with any packages are marked `any all' not just `any'
             else:
                 arch_list.append(session.query(Arch).filter_by(
                     name=arch
                 ).one())
+
+        #print [x.name for x in arch_list]
 
         for check in group.checks:
             if not check.source:
