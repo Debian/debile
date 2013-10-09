@@ -1,0 +1,67 @@
+
+
+
+    org.anized
+
+        -> [dev,stage,prod]
+
+            -> debile
+
+                === v 1.0 ===
+
+                -> package
+                    -> uploaded
+                    -> cleaned
+                    -> removed
+
+                -> build
+                    -> finished
+                    -> assigned
+                    -> built
+                    -> released
+                    -> failed
+
+                -> upload
+                    -> accepted
+                    -> rejected
+
+                -> job
+                    -> finished
+                    -> assigned
+                    -> built
+                    -> released
+                    -> failed
+
+                -> report
+                    -> finished
+                    -> assigned
+                    -> built
+                    -> released
+                    -> failed
+
+                === v 2.0 ===
+
+                -> user
+                    -> added
+                    -> disabled
+                    -> removed
+
+                -> builder
+                    -> added
+                    -> disabled
+                    -> removed
+
+                -> group
+                    -> added
+                    -> disabled
+                    -> removed
+
+                === v 3.0 ===
+
+                -> slave-driver
+                    -> added
+                    -> disabled
+                    -> removed
+
+
+    [org.anized.dev.debile.build.finished]
