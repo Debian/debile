@@ -181,7 +181,7 @@ class Dud(object):
 
         (gpg_output, gpg_output_stderr, exit_status) = run_command([
             gpg_path, "--status-fd", "1", "--verify",
-            "--batch", self.get_changes_file()
+            "--batch", self.get_dud_file(),
         ])
 
         if exit_status == -1:
