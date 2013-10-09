@@ -59,7 +59,7 @@ class Dud_(deb822.Changes):
 
             m = hashlib.new(algo)
             with open(fp, 'r') as fd:
-                for buf in fd.read(128):
+                for buf in fd.read(1024):
                     m.update(buf)
 
             if key != "Files":
@@ -169,10 +169,6 @@ class Dud(object):
         return self._data.get(key, default)
 
     def validate(self, check_hash="md5", check_signature=True):
-        """
-        See :meth:`validate_checksums` for ``check_hash``, and
-        :meth:`validate_signature` if ``check_signature`` is True.
-        """
         self.validate_checksums(check_hash)
         if check_signature:
             self.validate_signature(check_signature)
