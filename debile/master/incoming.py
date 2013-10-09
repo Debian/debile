@@ -194,8 +194,17 @@ def process_dud(session, path):
         return reject_dud(session, dud, "invalid-dud-upload")
 
     key = dud.validate_signature()
-    print dud
-    raise Exception
+
+    try:
+        builder = session.query(Builder).filter_by(key=key).one()
+    except NoResultFound:
+        return reject_dud(session, dud, "invalid-dud-builder")
+
+    accept_dud(session, dud, builder)
+
+
+def accept_dud(session, dud, builder):
+    raise NotImplemented
 
 
 DELEGATE = {

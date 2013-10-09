@@ -204,14 +204,22 @@ class Source(Base):
         group = self.group
         aall = session.query(Arch).filter_by(name='all').one()  # All
 
+        arch_list = []
+        for arch in arches:
+            if arch in ['any', 'linux-any']:
+                arch_list += group.arches
+            else:
+                arch_list.append(session.query(Arch).filter_by(
+                    name=arch
+                ).one())
+
         for check in group.checks:
             if not check.source:
                 continue
 
             if check.arched:
-                for arch in group.arches:
+                for arch in arch_list:
                     #print self.name, check.name, arch.arch.name
-                    arch = arch.arch  # GroupArch -> Arch
                     j = Job(assigned_at=None, finished_at=None,
                             name=check.name, score=100, builder=None,
                             source=self, binary=None, check=check,
