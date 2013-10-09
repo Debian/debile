@@ -92,12 +92,6 @@ def process_changes(session, path):
     return reject_changes(session, changes, "mixed-upload")
 
 
-def process_dud(session, path):
-    dud = Dud(filename=path)
-    print dud
-    raise Exception
-
-
 def reject_changes(session, changes, tag):
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=changes.get_package_name())
@@ -190,6 +184,18 @@ def accept_binary_changes(session, changes, builder):
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
         os.unlink(fp)
+
+
+def process_dud(session, path):
+    dud = Dud(filename=path)
+    try:
+        dud.validate()
+    except ChangesFileException as e:
+        return reject_dud(session, dud, "invalid-dud-upload")
+
+    key = dud.validate_signature()
+    print dud
+    raise Exception
 
 
 DELEGATE = {

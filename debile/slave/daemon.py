@@ -177,12 +177,15 @@ def iterate():
             dud['Version'] = package['source']['version']
             dud['Architecture'] = package['arch']
 
-            open('{prefix}.firehose.xml'.format(prefix=prefix), 'wb').write(
-                firehose.to_xml_bytes())
-            open('{prefix}.log'.format(prefix=prefix), 'wb').write(
-                log.encode('utf-8'))
+            with open('{prefix}.firehose.xml'.format(
+                    prefix=prefix), 'wb') as fd:
+                fd.write(firehose.to_xml_bytes())
 
             dud.add_file('{prefix}.firehose.xml'.format(prefix=prefix))
+
+            with open('{prefix}.log'.format(prefix=prefix), 'wb') as fd:
+                fd.write(log.encode('utf-8'))
+
             dud.add_file('{prefix}.log'.format(prefix=prefix))
 
             with open(dudf, 'w') as fd:
