@@ -162,11 +162,8 @@ def iterate():
             else:
                 raise Exception("Unknown type")
 
-            firehose, log, job['failed'], changes = run(
+            firehose, log, failed, changes = run(
                 target, package, job, firehose)
-
-            if changes:
-                upload(changes, job, package)
 
             prefix = "%s" % (str(job['id']))
 
@@ -176,6 +173,8 @@ def iterate():
             dud['Source'] = package['source']['name']
             dud['Version'] = package['source']['version']
             dud['Architecture'] = package['arch']
+            dud['X-Debile-Failed'] = "Yes" if failed else "No"
+            job['failed'] = failed
 
             with open('{prefix}.firehose.xml'.format(
                     prefix=prefix), 'wb') as fd:
@@ -190,6 +189,9 @@ def iterate():
 
             with open(dudf, 'w') as fd:
                 dud.dump(fd=fd)
+
+            if changes:
+                upload(changes, job, package)
 
             upload(dudf, job, package)
 

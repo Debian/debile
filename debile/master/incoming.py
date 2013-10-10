@@ -26,7 +26,7 @@ from debian import deb822
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
-from debile.utils.dud import Dud
+from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
                                Maintainer, Job, Binary, Arch)
@@ -188,9 +188,13 @@ def accept_binary_changes(session, changes, builder):
 
 def process_dud(session, path):
     dud = Dud(filename=path)
+    jid = dud.get("X-Debile-Job", None)
+    if jid is None:
+        return reject_dud(session, dud, "missing-dud-job")
+
     try:
         dud.validate()
-    except ChangesFileException as e:
+    except DudFileException as e:
         return reject_dud(session, dud, "invalid-dud-upload")
 
     key = dud.validate_signature()
@@ -200,10 +204,33 @@ def process_dud(session, path):
     except NoResultFound:
         return reject_dud(session, dud, "invalid-dud-builder")
 
+    try:
+        job = session.query(Job).get(jid)
+    except NoResultFound:
+        return reject_dud(session, dud, "invalid-dud-job")
+
+    if dud.get("X-Debile-Failed", None) is None:
+        return reject_dud(session, dud, "no-failure-notice")
+
+    if job.builder != builder:
+        return reject_dud(session, dud, "invalid-dud-uploader")
+
     accept_dud(session, dud, builder)
 
 
+def reject_dud(session, dud, tag):
+    print "REJECT: {source} because {tag}".format(
+        tag=tag, source=dud['Source'])
+
+    for fp in [dud.get_filename()] + dud.get_files():
+        os.unlink(fp)
+    # Note this in the log.
+
+
 def accept_dud(session, dud, builder):
+    fire = dud.get_firehose()
+    # HELLA INSERT INTO DATABASE RIGHT MOTHERFUCKING HERE
+
     raise NotImplemented
 
 

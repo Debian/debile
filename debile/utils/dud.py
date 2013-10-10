@@ -35,6 +35,7 @@
 from debile.utils import run_command
 from debile import __version__
 from debian import deb822
+import firehose.model
 import hashlib
 import os.path
 import sys
@@ -115,11 +116,15 @@ class Dud(object):
         return self.basename
 
     def get_firehose(self):
+        return firehose.model.Analysis.from_xml(
+            open(self.get_firehose_file(), 'r'))
+
+    def get_firehose_file(self):
         for item in self.get_files():
             if item.endswith('.firehose.xml'):
                 return item
 
-    def get_log(self):
+    def get_log_file(self):
         for item in self.get_files():
             if item.endswith('.log.txt'):
                 return item

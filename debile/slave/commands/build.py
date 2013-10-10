@@ -29,9 +29,19 @@ def run(dsc, package, job, firehose):
 
     firehose, out, ftbfs, changes, = sbuild(dsc, suite, arch, firehose)
 
-    changes = "{source}*{arch}.changes".format(
+    # ['python-schroot_0.3-1.debian.tar.gz',
+    # 'python3-schroot_0.3-1_all.deb',
+    # 'python-schroot_0.3-1.dsc',
+    # 'python-schroot_0.3-1_amd64.build',
+    # 'python-schroot-0.3',
+    # 'python-schroot_0.3-1_all.deb',
+    # 'python-schroot_0.3.orig.tar.gz',
+    # 'python-schroot_0.3-1_amd64.changes',
+    # 'python-schroot_0.3-1_amd64-20131009-2159.build']
+
+    changes = "{source}_{version}*.changes".format(
         source=package['name'],
-        arch=arch
+        version=package['version'],
     )
 
     changes = list(glob.glob(changes))

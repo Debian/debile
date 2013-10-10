@@ -42,7 +42,10 @@ class DebileMasterInterface(object):
         #
         if job is None:
             return None
-        #job.assigned_at = dt.datetime.utcnow()
+        job.assigned_at = dt.datetime.utcnow()
+        job.builder = NAMESPACE.machine
+        NAMESPACE.session.add(job)
+        NAMESPACE.session.commit()
         return job.debilize()
 
     @builder_method
@@ -57,6 +60,7 @@ class DebileMasterInterface(object):
     def forfeit_job(self, job_id):
         job = NAMESPACE.session.query(Job).get(job_id)
         job.assigned_at = None
+        job.builder = None
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
         return True
