@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+set -u
+
+if [ "$1" = "configure" ]; then
+    adduser --system --quiet --group --home /dev/null --no-create-home \
+        --disabled-login --gecos "Debile unpriv user" \
+        --force-badname Debian-debile-unpriv
+fi
+
+#DEBHELPER#
