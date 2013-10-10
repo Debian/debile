@@ -1,0 +1,23 @@
+#!/bin/bash
+
+SCHROOT_BASE="/var/schroot"
+DIST=$1
+
+if [ ! -d ${SCHROOT_BASE} ]; then
+    echo "No such base. Make it!"
+    echo ""
+    echo "sudo mkdir -p ${SCHROOT_BASE}"
+    exit 1
+fi
+
+if [ "x${DIST}" = "x" ]; then
+    echo "No dist given. ugh."
+    echo ""
+    echo "${0} unstable"
+    exit 2
+fi
+
+sudo sbuild-createchroot \
+    --make-sbuild-tarball=${SCHROOT_BASE}/${DIST}.tar.gz \
+    ${DIST} `mktemp -d` \
+    http://http.debian.net/debian
