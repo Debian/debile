@@ -196,7 +196,6 @@ def iterate():
             upload(dudf, job, package)
 
 
-
 def main():
     logging.basicConfig(
         format='%(asctime)s - %(levelname)8s - [debile-slave] %(message)s',

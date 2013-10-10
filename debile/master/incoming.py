@@ -195,6 +195,7 @@ def process_dud(session, path):
     try:
         dud.validate()
     except DudFileException as e:
+        print e
         return reject_dud(session, dud, "invalid-dud-upload")
 
     key = dud.validate_signature()
@@ -230,7 +231,6 @@ def reject_dud(session, dud, tag):
 def accept_dud(session, dud, builder):
     fire = dud.get_firehose()
     # HELLA INSERT INTO DATABASE RIGHT MOTHERFUCKING HERE
-
     raise NotImplemented
 
 
