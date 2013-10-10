@@ -74,7 +74,8 @@ def parse_sbuild_log(log, sut):
 
 
 def sbuild(package, suite, arch, analysis):
-    chroot_name = "%s-%s" % (suite, arch)
+    #chroot_name = "%s-%s" % (suite, arch)
+    chroot_name = suite
 
     dsc = os.path.basename(package)
     if not dsc.endswith('.dsc'):
