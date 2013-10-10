@@ -210,8 +210,8 @@ def main():
             logging.debug("Nothing to do for now, sleeping 30s")
             time.sleep(30)
         except Exception as e:
-            logging.warning("Er, we got a fatal error: %s. Restarting" % (
-                str(e)
+            logging.warning(
+                "Er, we got a fatal error: %s. Restarting in a minute" % (
+                    str(e)
             ))
-            raise
             time.sleep(60)
