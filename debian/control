@@ -17,11 +17,11 @@ Package: python-debile
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
 Description: set of core débile builder routines
- This contains core kruft.
+ This package contains the core utils and libraries used by both the
+ client and server modules. This contains routines for handling `dud` files,
+ which are similar to .changes files, as well as a few other generic routines.
  .
- .
- .
- Extra lines to fool Lintian. Someone fix this.
+ This package contains Python 2 bindings only.
 
 Package: python-debile-slave
 Architecture: all
@@ -41,18 +41,20 @@ Recommends:
  python-schroot
 # for sbuild (and others)
 Description: slave for the débile package builder system
- This contains slave kruft.
+ The débile client/server software is designed to help moderate to
+ experienced Debian package builders set up their own build infastructure
+ without having to learn about the big (and quite professional) wanna-build
+ software.
  .
- .
- .
- Extra lines to fool Lintian. Someone fix this.
+ This contains the slave (package build node) software only.
 
 Package: python-debile-master
 Architecture: all
 Depends: python-debile, ${misc:Depends}, ${python:Depends}
 Description: master for the débile package builder system
- This contains master kruft.
+ The débile client/server software is designed to help moderate to
+ experienced Debian package builders set up their own build infastructure
+ without having to learn about the big (and quite professional) wanna-build
+ software.
  .
- .
- .
- Extra lines to fool Lintian. Someone fix this.
+ This contains the master (package central server) software only.
