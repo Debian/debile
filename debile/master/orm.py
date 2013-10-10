@@ -216,7 +216,7 @@ class Source(Base):
                     name=arch
                 ).one())
 
-        #print [x.name for x in arch_list]
+        print [x.name for x in arch_list]
 
         for check in group.checks:
             if not check.source:
@@ -224,14 +224,14 @@ class Source(Base):
 
             if check.arched:
                 for arch in arch_list:
-                    #print self.name, check.name, arch.arch.name
+                    #print self.name, check.name, arch.name
                     j = Job(assigned_at=None, finished_at=None,
                             name=check.name, score=100, builder=None,
                             source=self, binary=None, check=check,
                             suite=self.suite, arch=arch)
                     self.jobs.append(j)
 
-            if 'all' in arches or check.arched is False:
+            if check.arched is False:
                 #print self.name, check.name, 'all'
                 j = Job(assigned_at=None, finished_at=None,
                         name=check.name, score=100, builder=None,
@@ -313,6 +313,8 @@ class Binary(Base):
         for check in group.checks:
             if not check.binary:
                 continue
+
+            print self.name, check.name, self.arch
 
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=100, builder=None,
