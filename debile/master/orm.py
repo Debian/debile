@@ -3,12 +3,14 @@ import datetime as dt
 import debile.master.core
 from debile.master.reprepro import Repo
 
+from firewoes.lib.orm import metadata
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey,
                         Boolean, UniqueConstraint)
 
-Base = declarative_base()
+Base = declarative_base(metadata=metadata)
 
 
 def _debilize(self):
@@ -419,8 +421,8 @@ class Result(Base):
     job_id = Column(Integer, ForeignKey('jobs.id'))
     job = relationship("Job")
 
-    # firehose_id = Column(Integer, ForeignKey('firehose.id'))
-    # firehose = relationship("Firehose")
+    firehose_id = Column(Integer, ForeignKey('analysis.id'))
+    #firehose = relationship("analysis")
 
 
 def init():
