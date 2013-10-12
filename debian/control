@@ -50,7 +50,13 @@ Description: slave for the débile package builder system
 
 Package: python-debile-master
 Architecture: all
-Depends: python-debile, ${misc:Depends}, ${python:Depends}
+Depends:
+ python-debile,
+ ${misc:Depends},
+ ${python:Depends},
+ python-firewoes,
+ python-firehose,
+ python-sqlalchemy
 Description: master for the débile package builder system
  The débile client/server software is designed to help moderate to
  experienced Debian package builders set up their own build infastructure
