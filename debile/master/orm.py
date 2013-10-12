@@ -4,6 +4,7 @@ import debile.master.core
 from debile.master.reprepro import Repo
 
 from firewoes.lib.orm import metadata
+from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
@@ -422,7 +423,7 @@ class Result(Base):
     job = relationship("Job")
 
     firehose_id = Column(Integer, ForeignKey('analysis.id'))
-    #firehose = relationship("analysis")
+    firehose = relationship(Analysis)
 
 
 def init():

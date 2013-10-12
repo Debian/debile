@@ -29,7 +29,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
-                               Maintainer, Job, Binary, Arch)
+                               Maintainer, Job, Binary, Arch, Result)
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -195,7 +195,6 @@ def process_dud(session, path):
     try:
         dud.validate()
     except DudFileException as e:
-        print e
         return reject_dud(session, dud, "invalid-dud-upload")
 
     key = dud.validate_signature()
@@ -230,8 +229,22 @@ def reject_dud(session, dud, tag):
 
 def accept_dud(session, dud, builder):
     fire = dud.get_firehose()
-    # HELLA INSERT INTO DATABASE RIGHT MOTHERFUCKING HERE
-    raise NotImplemented
+    failed = True if dud['X-Debile-Failed'] == "Yes" else False
+
+    job = session.query(Job).get(dud['X-Debile-Job'])
+
+    result = Result()
+    result.job = job
+    result.source = job.source
+    result.check = job.check
+    result.firehose = fire
+    # result.binary = # XXX: FIX THIS
+    session.add(result)
+    session.commit()  # Neato.
+
+    # OK. It's safely in the database and repo. Let's cleanup.
+    for fp in [dud.get_filename()] + dud.get_files():
+        os.unlink(fp)
 
 
 DELEGATE = {
