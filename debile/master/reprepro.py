@@ -5,6 +5,10 @@ class RepoException(Exception):
     pass
 
 
+class RepoSourceAlreadyRegistered(RepoException):
+    pass
+
+
 class Repo(object):
 
     def __init__(self, root):
@@ -18,12 +22,17 @@ class Repo(object):
         cmd = ["reprepro", "-Vb", self.root,] + list(args)
         out, err, ret = run_command(cmd)
         if ret != 0:
-            print out, err
-            raise Exception
+            raise RepoException(ret)
         return (out, err, ret)
 
     def include(self, distribution, changes):
-        return self._exec("include", distribution, changes)
+        try:
+            return self._exec("include", distribution, changes)
+        except RepoException as e:
+            error = e.message
+            if error == 254:
+                raise RepoSourceAlreadyRegistered()
+            raise
 
     def includedeb(self, distribution, deb):
         raise NotImplemented()

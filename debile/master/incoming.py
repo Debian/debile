@@ -24,8 +24,10 @@ import fnmatch
 import datetime as dt
 from debian import deb822
 
+from firewoes.lib.hash import idify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
+from debile.master.reprepro import RepoSourceAlreadyRegistered
 from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
@@ -173,13 +175,17 @@ def accept_binary_changes(session, changes, builder):
     arch = session.query(Arch).filter_by(name=arch).one()
     binary = Binary.from_source(source, builder=builder, arch=arch)
 
+    ## OK. Let's make sure we can add this.
+    repo = binary.group.get_repo()
+    try:
+        repo.add_changes(changes)
+    except RepoSourceAlreadyRegistered:
+        return reject_changes(session, changes, 'stupid-source-thing')
+
     binary.create_jobs(session)
 
     session.add(source)
     session.commit()
-
-    repo = binary.group.get_repo()
-    repo.add_changes(changes)
 
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
@@ -232,6 +238,8 @@ def accept_dud(session, dud, builder):
     failed = True if dud['X-Debile-Failed'] == "Yes" else False
 
     job = session.query(Job).get(dud['X-Debile-Job'])
+
+    idify(fire)
 
     result = Result()
     result.job = job
