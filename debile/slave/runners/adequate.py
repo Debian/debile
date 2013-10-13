@@ -22,6 +22,8 @@
 from debile.slave.wrappers.adequate import parse_adequate
 from schroot import schroot
 
+import os
+
 
 def adequate(chroot_name, target, package_name, analysis):
     with schroot(chroot_name) as chroot:
@@ -31,14 +33,15 @@ def adequate(chroot_name, target, package_name, analysis):
             'apt-get', 'install', '-y', 'adequate'
         ], user='root')
 
+        os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
         out, err, ret = chroot.run([
             'dpkg', '-i',
             "/tmp/%s" % target
-        ], user='root', return_codes=(0, 1))
+        ], user='root', return_codes=(0, 1), preserve_environment=True)
 
         out, err, ret = chroot.run([
             'apt-get', 'install', '-y', '-f'
-        ], user='root')
+        ], user='root', preserve_environment=True)
 
         out, err, ret = chroot.run(['adequate', package_name])
 
