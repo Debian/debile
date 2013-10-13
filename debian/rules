@@ -3,7 +3,7 @@
 
 
 PYVERS  = $(shell pyversions -r)
-DEBIAN_SETUP_PY_INSTALL_ARGS = install --skip-build --install-layout deb
+DEBIAN_SETUP_PY_INSTALL_ARGS = install --install-layout deb
 
 
 %:
@@ -16,21 +16,26 @@ override_dh_auto_clean:
 
 
 override_dh_auto_build:
-	for py in $(PYVERS) $(PY3VERS); do \
-		$$py setup.py build; \
-		$$py setup.master.py build; \
-		$$py setup.slave.py build; \
-	done
 
+# Everything's fucked, the world is fucked. Fucked fucked fucked.
+# I'm moving the build logic to the install logic because crack rules.
+# We need to build, install, remove build/, repeat.
+#
+# Uch.
+#   - PRT
 
 override_dh_auto_install:
 	set -xe; \
-	for py in $(PYVERS) $(PY3VERS); do \
+	for py in $(PYVERS); do \
+		$$py setup.py build; \
 		$$py setup.py $(DEBIAN_SETUP_PY_INSTALL_ARGS) \
 			--root debian/python-debile; \
+		rm -rf build; \
 		for setup in "master" "slave"; do \
-			$$py setup.$$setup.py $(DEBIAN_SETUP_PY_INSTALL_ARGS) \
+			$$py setup.$${setup}.py build; \
+			$$py setup.$${setup}.py $(DEBIAN_SETUP_PY_INSTALL_ARGS) \
 				--root debian/python-debile-$$setup; \
+			rm -rf build; \
 		done; \
 	done
 	# Remove me when dh_python2 can handle this file

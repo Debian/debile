@@ -31,13 +31,6 @@ RUN_AS='Debian-debile'
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-# Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
-
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-. /lib/lsb/init-functions
-
 #
 # create /var/run/debile-server and ensure right permissions
 #
@@ -52,12 +45,6 @@ init_run_dir()
     return 0
 }
 
-#
-# create /var/log/debile.log and ensure right permissions
-#  XXX: Implement me when it's right to do so
-#
-init_log_file() {
-}
 
 
 #
@@ -70,7 +57,6 @@ do_start()
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
         init_run_dir || return 2
-        init_log_file || return 2
 	start-stop-daemon --start --quiet --chuid $RUN_AS --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --quiet --chuid $RUN_AS --pidfile $PIDFILE --exec $DAEMON -- \
@@ -111,7 +97,6 @@ do_stop()
 # Function that sends a SIGHUP to the daemon/service
 #
 do_reload() {
-	init_log_file || return 2
 	start-stop-daemon --stop --signal 1 --quiet --pidfile $PIDFILE --name $NAME
 	return 0
 }
@@ -120,7 +105,6 @@ do_reload() {
 # Function that sends a SIGQUIT to the daemon/service
 #
 do_soft_restart() {
-	init_log_file || return 2
 	start-stop-daemon --stop --signal 3 --quiet --pidfile $PIDFILE --name $NAME
 	return 0
 }
