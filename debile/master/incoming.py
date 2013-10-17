@@ -228,6 +228,12 @@ def reject_dud(session, dud, tag):
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=dud['Source'])
 
+    try:
+        dud.validate()
+    except DudFileException as e:
+        print e
+
+    return
     for fp in [dud.get_filename()] + dud.get_files():
         os.unlink(fp)
     # Note this in the log.

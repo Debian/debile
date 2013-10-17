@@ -59,9 +59,9 @@ class Dud_(deb822.Changes):
                 self[key] = []
 
             m = hashlib.new(algo)
-            with open(fp, 'r') as fd:
-                for buf in fd.read(1024):
-                    m.update(buf)
+            with open(fp, "rb") as fd:
+                for chunk in iter((lambda: fd.read(128 * m.block_size)), b''):
+                    m.update(chunk)
 
             if key != "Files":
                 self[key].append({
@@ -253,12 +253,11 @@ class Dud(object):
                     "get_files() returns different files than Files: knows?!")
 
             with open(filename, "rb") as fc:
-                while True:
-                    chunk = fc.read(131072)
-                    if not chunk:
-                        break
+                for chunk in iter(
+                    (lambda: fc.read(128 * hash_type.block_size)),
+                    b''
+                ):
                     hash_type.update(chunk)
-            fc.close()
 
             if not hash_type.hexdigest() == changed_files[field_name]:
                 raise DudFileException(
