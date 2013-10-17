@@ -253,7 +253,8 @@ def accept_dud(session, dud, builder):
     result.check = job.check
     result.firehose = fire
     # result.binary = # XXX: FIX THIS
-    session.add(result)
+    session.merge(result)  # Needed because a *lot* of the Firehose is 
+    # going to need unique ${WORLD}.
     session.commit()  # Neato.
 
     # OK. It's safely in the database and repo. Let's cleanup.
