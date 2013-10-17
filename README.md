@@ -1,1 +1,1 @@
-Open for Development :)
+Debile runs things. It knows about Debian.
