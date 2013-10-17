@@ -23,7 +23,7 @@ Description: set of core débile builder routines
  .
  This package contains Python 2 bindings only.
 
-Package: python-debile-slave
+Package: debile-slave
 Architecture: all
 Depends: python-debile, ${misc:Depends}, ${python:Depends}
 Recommends:
@@ -48,7 +48,7 @@ Description: slave for the débile package builder system
  .
  This contains the slave (package build node) software only.
 
-Package: python-debile-master
+Package: debile-master
 Architecture: all
 Depends:
  ${misc:Depends},
