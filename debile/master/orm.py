@@ -219,8 +219,6 @@ class Source(Base):
                     name=arch
                 ).one())
 
-        print [x.name for x in arch_list]
-
         for check in group.checks:
             if not check.source:
                 continue
@@ -313,12 +311,12 @@ class Binary(Base):
 
     def create_jobs(self, session):
         group = self.group
-        for check in group.checks:
-            if not check.binary:
-                continue
-
-            print self.name, check.name, self.arch
-
+        for check in (x for x in group.checks if x.binary):
+            print "New job ({arch}) for {name} - {check}".format(
+                arch=self.arch.name,
+                name=self.name,
+                check=check.name
+            )
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=100, builder=None,
                     source=self.source, binary=self, check=check,

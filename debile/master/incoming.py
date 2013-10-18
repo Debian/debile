@@ -184,7 +184,7 @@ def accept_binary_changes(session, changes, builder):
 
     binary.create_jobs(session)
 
-    session.add(source)
+    session.add(binary)
     session.commit()
 
     # OK. It's safely in the database and repo. Let's cleanup.
