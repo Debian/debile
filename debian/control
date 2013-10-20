@@ -41,7 +41,8 @@ Recommends:
  python-schroot,
 # for sbuild (and others)
  python-lxml,
- python-yaml
+ python-yaml,
+ python-dput (>= 1.7),
 Description: slave for the débile package builder system
  The débile client/server software is designed to help moderate to
  experienced Debian package builders set up their own build infastructure
