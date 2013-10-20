@@ -27,6 +27,7 @@ Package: debile-slave
 Architecture: all
 Depends: python-debile, ${misc:Depends}, ${python:Depends}
 Recommends:
+ python-requests,
  dpkg-dev,
 # For dpkg-source
  libperl-critic-perl,
