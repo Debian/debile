@@ -5,7 +5,7 @@
 [ ] - Find a way to keep chroots updated
           (Ideas: docker based updater on the central server - tarballs
            as a service / TaaS :) )
-[ ] - Fix adequite to no longer prompt for things (see how piuparts does
+[x] - Fix adequite to no longer prompt for things (see how piuparts does
       this?)
 [ ] - Find a way to forward "clean" builds via magic to other servers after
       they get fully built in debile (to allow PPA-alikes backed by debile)
