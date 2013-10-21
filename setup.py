@@ -33,10 +33,10 @@ flavors = {
         'debile.master'
     ], {
         'console_scripts': [
-            'debile-server-init = debile.master.cli:init',
+            'debile-master-init = debile.master.cli:init',
             'debile-incoming = debile.master.cli:process_incoming',
             'debile-import = debile.master.cli:import_db',
-            'debile-server = debile.master.cli:serve',
+            'debile-master = debile.master.cli:serve',
         ],
     }),  # Master config
 }
