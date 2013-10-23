@@ -25,7 +25,7 @@ Description: set of core débile builder routines
 
 Package: debile-slave
 Architecture: all
-Depends: python-debile, ${misc:Depends}, ${python:Depends}
+Depends: python-debile, python-firehose, ${misc:Depends}, ${python:Depends}
 Recommends:
  python-requests,
  dpkg-dev,

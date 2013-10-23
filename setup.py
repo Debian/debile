@@ -23,7 +23,8 @@ flavors = {
         ],
     }),  # Default config
     "setup.slave.py": ("debile.slave", [
-        'debile.slave'
+        'debile.slave',
+        'debile.slave.commands',
     ], {
         'console_scripts': [
             'debile-slave = debile.slave.cli:daemon',
