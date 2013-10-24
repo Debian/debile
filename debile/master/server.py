@@ -34,6 +34,7 @@ import datetime as dt
 import SocketServer
 import threading
 import logging
+from logging.handlers import SysLogHandler
 import os.path
 import os
 
@@ -142,7 +143,8 @@ def serve(server, port):
     # import; since it needs some of our kruft. I know it's bad form
     # but I'm tired of it.
     from debile.master.interface import DebileMasterInterface
-    print("Serving on `{server}' on port `{port}'".format(**locals()))
+    logger = logging.getLogger('debile')
+    logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
     server = SimpleXMLRPCServer((server, port),
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
@@ -152,11 +154,14 @@ def serve(server, port):
 
 
 def main():
-    logging.basicConfig(
-        format='%(asctime)s - %(levelname)8s - [debile-master] %(message)s',
-        level=logging.DEBUG
-    )
-    logging.info("Booting debile-masterd daemon")
+    logger = logging.getLogger('debile')
+    logger.setLevel(logging.DEBUG)
+    syslog = SysLogHandler(address='/dev/log')
+    formatter = logging.Formatter('[debile-master] %(levelname)7s - %(message)s')
+    syslog.setFormatter(formatter)
+    logger.addHandler(syslog)
+
+    logger.info("Booting debile-masterd daemon")
     serve("0.0.0.0", 22017)
 
 
