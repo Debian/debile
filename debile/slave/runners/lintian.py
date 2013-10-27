@@ -28,10 +28,9 @@ def lintian(targets, analysis, lintian_binary='lintian'):
     if not isinstance(targets, list):
         targets = [targets,]
 
+    log = ""
+    failed = False
     for target in targets:
-        log = ""
-        failed = False
-
         out, err, ret = run_command([lintian_binary, "-IE", "--pedantic",
                                      "--show-overrides", target])
         for issue in parse_lintian(out.splitlines(), target):
@@ -40,7 +39,7 @@ def lintian(targets, analysis, lintian_binary='lintian'):
                 failed = True
         log += out
 
-        return (analysis, log, failed, None)
+    return (analysis, log, failed, None)
 
 
 def version(lintian_binary='lintian'):
