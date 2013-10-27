@@ -181,7 +181,7 @@ def iterate():
             dud['Architecture'] = package['arch']
             dud['X-Debile-Failed'] = "Yes" if failed else "No"
             if type_ == 'binary':
-                dud['Binary'] = package['binary']
+                dud['Binary'] = package['binary']['name']
 
             job['failed'] = failed
 
@@ -234,4 +234,8 @@ def main():
                 "Er, we got a fatal error: %s. Restarting in a minute" % (
                     str(e)
             ))
+
+            import traceback
+            logger.warning(traceback.format_exc())
+
             time.sleep(60)
