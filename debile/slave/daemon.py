@@ -180,6 +180,9 @@ def iterate():
             dud['Version'] = package['source']['version']
             dud['Architecture'] = package['arch']
             dud['X-Debile-Failed'] = "Yes" if failed else "No"
+            if type_ == 'binary':
+                dud['Binary'] = package['binary']
+
             job['failed'] = failed
 
             with open('{prefix}.firehose.xml'.format(
