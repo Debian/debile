@@ -20,6 +20,7 @@ flavors = {
     ], {
         'console_scripts': [
             'aget = debile.utils.aget:main',
+            'bget = debile.utils.bget:main',
         ],
     }),  # Default config
     "setup.slave.py": ("debile.slave", [
