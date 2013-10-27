@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
 from debile.utils.aget import aget
+from debile.utils.bget import bget
 from debile.utils.dud import Dud_
 
 from firehose.model import (Analysis, Generator, Metadata,
@@ -94,8 +95,11 @@ def checkout(job, package):
                 yield aget(archive, src['suite'], 'main',
                            src['name'], src['version'])
             elif package['type'] == "binary":
+                arch = job['arch']
+                if arch == 'all':
+                    arch = 'amd64'  # XXX: THIS IS A HACK. FIX THIS.
                 yield bget(archive, src['suite'], 'main',
-                           job['arch'], src['name'], src['version'])
+                           arch, src['name'], src['version'])
             else:
                 raise Exception
 
