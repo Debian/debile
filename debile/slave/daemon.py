@@ -199,12 +199,12 @@ def iterate():
 
 
 def main():
-    logger = logging.getLogger('debile')                                 
-    logger.setLevel(logging.DEBUG)                                              
-    syslog = SysLogHandler(address='/dev/log')                                  
+    logger = logging.getLogger('debile')
+    logger.setLevel(logging.DEBUG)
+    syslog = SysLogHandler(address='/dev/log')
     formatter = logging.Formatter('[debile-slave] %(levelname)7s - %(message)s')
-    syslog.setFormatter(formatter)                                              
-    logger.addHandler(syslog) 
+    syslog.setFormatter(formatter)
+    logger.addHandler(syslog)
 
     logger.info("Booting debile-slave daemon")
     while True:
