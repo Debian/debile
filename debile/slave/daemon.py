@@ -31,6 +31,7 @@ from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
 import logging
+from logging.handlers import SysLogHandler
 import glob
 import time
 
@@ -66,7 +67,8 @@ def generate_sut_from_binary(package):
 
 
 def create_firehose(package, version_getter):
-    logging.info("Initializing empty firehose report")
+    logger = logging.getLogger('debile')
+    logger.info("Initializing empty firehose report")
     sut = {
         "source": generate_sut_from_source,
         "binary": generate_sut_from_binary
@@ -101,20 +103,21 @@ def checkout(job, package):
 
 @contextmanager
 def workon(suites, arches, capabilities):
+    logger = logging.getLogger('debile')
     job = proxy.get_next_job(suites, arches, capabilities)
     if job is None:
         yield
     else:
-        logging.info("Acquired job id=%s (%s) for %s/%s",
+        logger.info("Acquired job id=%s (%s) for %s/%s",
                      job['id'], job['name'], job['suite'], job['arch'])
         try:
             yield job
         except:
-            logging.warn("Forfeiting the job because of internal exception")
+            logger.warn("Forfeiting the job because of internal exception")
             proxy.forfeit_job(job['id'])
             raise
         else:
-            logging.info("Successfully closing the job")
+            logger.info("Successfully closing the job")
             proxy.close_job(job['id'], job['failed'])
 
 
@@ -197,20 +200,23 @@ def iterate():
 
 
 def main():
-    logging.basicConfig(
-        format='%(asctime)s - %(levelname)8s - [debile-slave] %(message)s',
-        level=logging.DEBUG
-    )
-    logging.info("Booting debile-slave daemon")
+    logger = logging.getLogger('debile')                                 
+    logger.setLevel(logging.DEBUG)                                              
+    syslog = SysLogHandler(address='/dev/log')                                  
+    formatter = logging.Formatter('[debile-slave] %(levelname)7s - %(message)s')
+    syslog.setFormatter(formatter)                                              
+    logger.addHandler(syslog) 
+
+    logger.info("Booting debile-slave daemon")
     while True:
         try:
-            logging.debug("Checking for new jobs")
+            logger.debug("Checking for new jobs")
             iterate()
         except IDidNothingError:
-            logging.debug("Nothing to do for now, sleeping 30s")
+            logger.debug("Nothing to do for now, sleeping 30s")
             time.sleep(30)
         except Exception as e:
-            logging.warning(
+            logger.warning(
                 "Er, we got a fatal error: %s. Restarting in a minute" % (
                     str(e)
             ))
