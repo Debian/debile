@@ -23,19 +23,24 @@ from debile.slave.wrappers.lintian import parse_lintian
 from debile.slave.utils import run_command
 
 
-def lintian(target, analysis, lintian_binary='lintian'):
-    log = ""
-    failed = False
+def lintian(targets, analysis, lintian_binary='lintian'):
 
-    out, err, ret = run_command([lintian_binary, "-IE", "--pedantic",
-                                 "--show-overrides", target])
-    for issue in parse_lintian(out.splitlines(), target):
-        analysis.results.append(issue)
-        if issue.severity in ['warning', 'error']:
-            failed = True
-    log += out
+    if not isinstance(targets, list):
+        targets = [targets,]
 
-    return (analysis, log, failed, None)
+    for target in targets:
+        log = ""
+        failed = False
+
+        out, err, ret = run_command([lintian_binary, "-IE", "--pedantic",
+                                     "--show-overrides", target])
+        for issue in parse_lintian(out.splitlines(), target):
+            analysis.results.append(issue)
+            if issue.severity in ['warning', 'error']:
+                failed = True
+        log += out
+
+        return (analysis, log, failed, None)
 
 
 def version(lintian_binary='lintian'):
