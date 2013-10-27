@@ -199,14 +199,22 @@ def iterate():
 
 
 def main():
-    logger = logging.getLogger('debile')
-    logger.setLevel(logging.DEBUG)
-    syslog = SysLogHandler(address='/dev/log')
-    formatter = logging.Formatter('[debile-slave] %(levelname)7s - %(message)s')
-    syslog.setFormatter(formatter)
-    logger.addHandler(syslog)
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)8s - [debile-master] %(message)s',
+        level=logging.DEBUG
+    )
 
-    logger.info("Booting debile-slave daemon")
+    #logger = logging.getLogger('debile')
+    #logger.setLevel(logging.DEBUG)
+    #syslog = SysLogHandler(address='/dev/log')
+    #formatter = logging.Formatter('[debile-slave] %(levelname)7s - %(message)s')
+    #syslog.setFormatter(formatter)
+    #logger.addHandler(syslog)
+    #logger.info("Booting debile-slave daemon")
+
+    logger = logging
+    logger.info("Booting debile-masterd daemon")
+
     while True:
         try:
             logger.debug("Checking for new jobs")
