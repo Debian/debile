@@ -86,17 +86,16 @@ def create_firehose(package, version_getter):
 def checkout(job, package):
     with tdir() as path:
         with cd(path):
+            server_info = proxy.get_info()
+            src = package['source']
+            archive = "{url}/{group}".format(url=server_info['repo']['base'],
+                                             group=src['group'],)
             if package['type'] == "source":
-                server_info = proxy.get_info()
-                src = package['source']
-                archive = "{url}/{group}".format(
-                    url=server_info['repo']['base'],
-                    group=src['group'],
-                )
-                aget(archive, src['suite'], 'main', src['name'], src['version'])
-                yield
+                yield aget(archive, src['suite'], 'main',
+                           src['name'], src['version'])
             elif package['type'] == "binary":
-                raise NotImplemented
+                yield bget(archive, src['suite'], 'main',
+                           job['arch'], src['name'], src['version'])
             else:
                 raise Exception
 
@@ -153,15 +152,15 @@ def iterate():
                 "binary": binary,
             }
 
-        with checkout(job, package):
+        with checkout(job, package) as check:
             run, version = load_module(job['name'])
             firehose = create_firehose(package, version)
 
             type_ = package['type']
             if type_ == "source":
-                target = glob.glob("*dsc")[0]
+                target = check  # Only get one.
             elif type_ == "binary":
-                target = glob.glob("*deb")
+                target = check  # tons and tons
             else:
                 raise Exception("Unknown type")
 

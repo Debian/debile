@@ -3,6 +3,7 @@ import deb822
 import StringIO
 import requests
 import gzip
+import os
 
 SOURCE = "dists/{suite}/{section}/source/Sources.gz"
 
@@ -40,7 +41,8 @@ def aget(archive, suite, section, source, version):
                 pool=path,
                 dsc=dsc,
             ))
-            break
+            # break
+            return os.path.basename(dsc)
     else:
         print "BALLS."
         raise Exception
