@@ -24,7 +24,7 @@ import fnmatch
 import datetime as dt
 from debian import deb822
 
-from firewoes.lib.hash import idify
+from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.reprepro import RepoSourceAlreadyRegistered
