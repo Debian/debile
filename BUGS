@@ -1,5 +1,5 @@
-[ ] - Add init script for the server
-[ ] - Have the client crash in less sucky ways
+[x] - Add init script for the server
+[x] - Have the client crash in less sucky ways
 [x]   - Server being down 
 [ ]   - Network breaking / can't dput
 [ ] - Find a way to keep chroots updated
