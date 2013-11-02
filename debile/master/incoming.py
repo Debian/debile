@@ -245,7 +245,8 @@ def accept_dud(session, dud, builder):
 
     job = session.query(Job).get(dud['X-Debile-Job'])
 
-    idify(fire)
+    fire, _ = idify(fire)
+    fire = uniquify(session, fire)
 
     result = Result()
     result.job = job
