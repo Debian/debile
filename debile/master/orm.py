@@ -423,10 +423,10 @@ class JobDependencies(Base):
     id = Column(Integer, primary_key=True)
 
     job_id = Column(Integer, ForeignKey('jobs.id'))
-    job = relationship("Job")
+    job = relationship("Job", foreign_keys=[job_id])
 
     required_job_id = Column(Integer, ForeignKey('jobs.id'))
-    required_job = relationship("Job")
+    required_job = relationship("Job", foreign_keys=[required_job_id])
 
 
 class Result(Base):
