@@ -413,6 +413,22 @@ class Job(Base):
     results = relationship("Result")
 
 
+class JobDependencies(Base):
+    __tablename__ = 'job_dependencies'
+    _debile_objs = {
+        "id": "id",
+    }
+    debilize = _debilize
+
+    id = Column(Integer, primary_key=True)
+
+    job_id = Column(Integer, ForeignKey('jobs.id'))
+    job = relationship("Job")
+
+    required_job_id = Column(Integer, ForeignKey('jobs.id'))
+    required_job = relationship("Job")
+
+
 class Result(Base):
     __tablename__ = 'results'
     _debile_objs = {
