@@ -417,6 +417,8 @@ class JobDependencies(Base):
     __tablename__ = 'job_dependencies'
     _debile_objs = {
         "id": "id",
+        "job_id": "job_id",
+        "required_job_id": "required_job_id",
     }
     debilize = _debilize
 
