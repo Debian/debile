@@ -417,18 +417,20 @@ class JobDependencies(Base):
     __tablename__ = 'job_dependencies'
     _debile_objs = {
         "id": "id",
-        "job_id": "job_id",
-        "required_job_id": "required_job_id",
+        "blocked_job_id": "blocked_job_id",
+        "blocking_job_id": "blocking_job_id",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
 
-    job_id = Column(Integer, ForeignKey('jobs.id'))
-    job = relationship("Job", foreign_keys=[job_id])
+    # The job that can not run until
+    blocked_job_id = Column(Integer, ForeignKey('jobs.id'))
+    blocked_job = relationship("Job", foreign_keys=[blocked_job_id])
 
-    required_job_id = Column(Integer, ForeignKey('jobs.id'))
-    required_job = relationship("Job", foreign_keys=[required_job_id])
+    # this job is done
+    blocking_job_id = Column(Integer, ForeignKey('jobs.id'))
+    blocking_job = relationship("Job", foreign_keys=[blocking_job_id])
 
 
 class Result(Base):
