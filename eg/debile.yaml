@@ -28,12 +28,14 @@ Checks:
       source: true
       binary: true
       arched: false
+      build: false
 
     - name: build
       group: default
       source: true
       binary: false
       arched: true
+      build: true
 
 Arches:
     - name: amd64

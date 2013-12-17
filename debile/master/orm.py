@@ -127,6 +127,15 @@ class Group(Base):
         base = os.path.join(root, name)
         return Repo(base)
 
+    def get_source_checks(self):
+        raise NotImplementedError()
+
+    def get_build_checks(self):
+        raise NotImplementedError()
+
+    def get_binary_checks(self):
+        raise NotImplementedError()
+
 
 class Arch(Base):
     __tablename__ = 'arches'
@@ -353,6 +362,7 @@ class Check(Base):
         "source": "source",
         "binary": "binary",
         "arched": "arched",
+        "build": "build",
     }
     debilize = _debilize
 
@@ -364,6 +374,7 @@ class Check(Base):
     name = Column(String(255))
     source = Column(Boolean)
     binary = Column(Boolean)
+    build = Column(Boolean)
     arched = Column(Boolean, nullable=False)
 
 
@@ -462,6 +473,19 @@ class Result(Base):
 
     firehose_id = Column(Integer, ForeignKey('analysis.id'))
     firehose = relationship(Analysis)
+
+
+def create_jobs(source, session, arches):
+    """
+    Create jobs for Source `source', in Session `session`, for each arch in
+    `arches', which should be pulled from the dsc. We'll use the Group
+    limiting internally.
+    """
+    # o Create a job for each `source' check that's not a build.
+    # o Create a build job for each arch. Keep them hot.
+    # o For each arched job, create a Job that depends on the arch:all and
+    #   arch'd job.
+    pass
 
 
 def init():
