@@ -1,2 +1,3 @@
 pyyaml
 sqlalchemy
+chardet
