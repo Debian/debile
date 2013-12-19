@@ -127,14 +127,25 @@ class Group(Base):
         base = os.path.join(root, name)
         return Repo(base)
 
-    def get_source_checks(self):
-        raise NotImplementedError()
+    def get_source_checks(self, session):
+        return session.query(Check).filter_by(
+            group=self,
+            build=False,
+            source=True,
+        )
 
-    def get_build_checks(self):
-        raise NotImplementedError()
+    def get_build_checks(self, session):
+        return session.query(Check).filter_by(
+            group=self,
+            build=True,
+        )
 
-    def get_binary_checks(self):
-        raise NotImplementedError()
+    def get_binary_checks(self, session):
+        return session.query(Check).filter_by(
+            group=self,
+            binary=True,
+            build=False,
+        )
 
 
 class Arch(Base):
@@ -485,8 +496,61 @@ def create_jobs(source, session, arches):
     # o Create a build job for each arch. Keep them hot.
     # o For each arched job, create a Job that depends on the arch:all and
     #   arch'd job.
-    pass
 
+    group = source.group
+    aall = session.query(Arch).filter_by(name='all').one()  # All
+    arch_list = []
+    for arch in arches:
+        if arch in ['any', 'linux-any']:
+            arch_list += [x.arch for x in group.arches if
+                          x.arch.name != 'all']
+            # The reason we filter all out is because all packages
+            # with any packages are marked `any all' not just `any'
+        else:
+            arch_list.append(session.query(Arch).filter_by(
+                name=arch
+            ).one())
+
+    for check in group.get_source_checks(session):
+        if check.arched:
+            for arch in arch_list:
+                j = Job(assigned_at=None, finished_at=None,
+                        name=check.name, score=100, builder=None,
+                        source=source, binary=None, check=check,
+                        suite=source.suite, arch=arch)
+                source.jobs.append(j)
+
+        if check.arched is False:
+            j = Job(assigned_at=None, finished_at=None,
+                    name=check.name, score=100, builder=None,
+                    source=source, binary=None, check=check,
+                    suite=source.suite, arch=aall)
+            source.jobs.append(j)
+
+    builds = {}
+
+    for check in group.get_build_checks(session):
+        for arch in arch_list:
+            j = Job(assigned_at=None, finished_at=None,
+                    name=check.name, score=200, builder=None,
+                    source=source, binary=None, check=check,
+                    suite=source.suite, arch=arch)
+            builds[arch] = j
+            source.jobs.append(j)
+
+    for check in group.get_binary_checks(session):
+        for arch in builds:
+            deps = []
+            if aall in builds:
+                deps.append(builds[aall])
+            deps.append(builds[arch])
+
+            j = Job(assigned_at=None, finished_at=None,
+                    name=check.name, score=100, builder=None,
+                    source=source, binary=None, check=check,
+                    suite=source.suite, arch=arch)
+            source.jobs.append(j)
+            print j, "depends on", deps
 
 def init():
     from debile.master.core import engine

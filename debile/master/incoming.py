@@ -31,7 +31,8 @@ from debile.master.reprepro import RepoSourceAlreadyRegistered
 from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
-                               Maintainer, Job, Binary, Arch, Result)
+                               Maintainer, Job, Binary, Arch, Result,
+                               create_jobs)
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -139,7 +140,7 @@ def accept_source_changes(session, changes, user):
         ))
 
     arches = dsc['Architecture'].split()
-    source.create_jobs(session, arches)
+    create_jobs(source, session, arches)
 
     session.add(source)  # OK. Populated entry. Let's insert.
     session.commit()  # Neato.
@@ -181,8 +182,6 @@ def accept_binary_changes(session, changes, builder):
         repo.add_changes(changes)
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
-
-    binary.create_jobs(session)
 
     session.add(binary)
     session.commit()
