@@ -243,43 +243,6 @@ class Source(Base):
     jobs = relationship("Job")
     maintainers = relationship("Maintainer")
 
-    def create_jobs(self, session, arches):
-        group = self.group
-        aall = session.query(Arch).filter_by(name='all').one()  # All
-
-        arch_list = []
-        for arch in arches:
-            if arch in ['any', 'linux-any']:
-                arch_list += [x.arch for x in group.arches if
-                              x.arch.name != 'all']
-                # The reason we filter all out is because all packages
-                # with any packages are marked `any all' not just `any'
-            else:
-                arch_list.append(session.query(Arch).filter_by(
-                    name=arch
-                ).one())
-
-        for check in group.checks:
-            if not check.source:
-                continue
-
-            if check.arched:
-                for arch in arch_list:
-                    #print self.name, check.name, arch.name
-                    j = Job(assigned_at=None, finished_at=None,
-                            name=check.name, score=100, builder=None,
-                            source=self, binary=None, check=check,
-                            suite=self.suite, arch=arch)
-                    self.jobs.append(j)
-
-            if check.arched is False:
-                #print self.name, check.name, 'all'
-                j = Job(assigned_at=None, finished_at=None,
-                        name=check.name, score=100, builder=None,
-                        source=self, binary=None, check=check,
-                        suite=self.suite, arch=aall)
-                self.jobs.append(j)
-
 
 class Maintainer(Base):
     __tablename__ = 'maintainers'
@@ -348,20 +311,6 @@ class Binary(Base):
                       suite=source.suite, group=source.group, name=source.name,
                       version=source.version, uploaded_at=dt.datetime.utcnow(),
                       updated_at=dt.datetime.utcnow())
-
-    def create_jobs(self, session):
-        group = self.group
-        for check in (x for x in group.checks if x.binary):
-            print "New job ({arch}) for {name} - {check}".format(
-                arch=self.arch.name,
-                name=self.name,
-                check=check.name
-            )
-            j = Job(assigned_at=None, finished_at=None,
-                    name=check.name, score=100, builder=None,
-                    source=self.source, binary=self, check=check,
-                    suite=self.suite, arch=self.arch)
-            self.jobs.append(j)
 
 
 class Check(Base):
@@ -448,11 +397,13 @@ class JobDependencies(Base):
 
     # The job that can not run until
     blocked_job_id = Column(Integer, ForeignKey('jobs.id'))
-    blocked_job = relationship("Job", foreign_keys=[blocked_job_id])
+    blocked_job = relationship("Job", foreign_keys=[blocked_job_id],
+                               backref='depedencies')
 
     # this job is done
     blocking_job_id = Column(Integer, ForeignKey('jobs.id'))
-    blocking_job = relationship("Job", foreign_keys=[blocking_job_id])
+    blocking_job = relationship("Job", foreign_keys=[blocking_job_id],
+                                backref='blocking')
 
 
 class Result(Base):
@@ -549,8 +500,14 @@ def create_jobs(source, session, arches):
                     name=check.name, score=100, builder=None,
                     source=source, binary=None, check=check,
                     suite=source.suite, arch=arch)
+
+            jds = [JobDependencies(blocked_job=j, blocking_job=x)
+                   for x in deps]
+
+            for dep in jds:
+                j.depedencies.append(dep)
+
             source.jobs.append(j)
-            print j, "depends on", deps
 
 def init():
     from debile.master.core import engine
