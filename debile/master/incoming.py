@@ -183,6 +183,7 @@ def accept_binary_changes(session, changes, builder):
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
 
+    job.close(session)
     session.add(binary)
     session.commit()
 
@@ -255,6 +256,8 @@ def accept_dud(session, dud, builder):
     # result.binary = # XXX: FIX THIS
     session.merge(result)  # Needed because a *lot* of the Firehose is 
     # going to need unique ${WORLD}.
+
+    job.close(session)
     session.commit()  # Neato.
 
     # OK. It's safely in the database and repo. Let's cleanup.
