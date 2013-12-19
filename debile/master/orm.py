@@ -383,6 +383,11 @@ class Job(Base):
 
     results = relationship("Result")
 
+    def close(self, session):
+        self.finished_at = dt.datetime.utcnow()
+        for job in self.blocking:
+            session.delete(job)
+
 
 class JobDependencies(Base):
     __tablename__ = 'job_dependencies'
@@ -463,6 +468,8 @@ def create_jobs(source, session, arches):
             ).one())
 
     for check in group.get_source_checks(session):
+        # XXX: Can we get rid of this?
+        # ------------8<----------------
         if check.arched:
             for arch in arch_list:
                 j = Job(assigned_at=None, finished_at=None,
@@ -472,6 +479,7 @@ def create_jobs(source, session, arches):
                 source.jobs.append(j)
 
         if check.arched is False:
+        # ------------8<----------------
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=100, builder=None,
                     source=source, binary=None, check=check,
@@ -508,6 +516,7 @@ def create_jobs(source, session, arches):
                 j.depedencies.append(dep)
 
             source.jobs.append(j)
+
 
 def init():
     from debile.master.core import engine
