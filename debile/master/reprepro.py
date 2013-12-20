@@ -42,7 +42,7 @@ class Repo(object):
 
     def _exec(self, *args):
         cmd = ["reprepro", "-Vb", self.root,] + list(args)
-        self.logger.debug("Running: %s" % (" ".join(cmd)))
+        self.logger.info("Running: %s" % (" ".join(cmd)))
         out, err, ret = run_command(cmd)
         if ret != 0:
             raise RepoException(ret)
