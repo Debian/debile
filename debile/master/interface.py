@@ -52,23 +52,20 @@ class DebileMasterInterface(object):
 
     @builder_method
     def get_next_job(self, suites, arches, capabilities):
-        # XXX: GET JOBS WITH NO DEPS
-
         job = NAMESPACE.session.query(Job).filter_by(
             assigned_at=None,
             finished_at=None,
-        ).outerjoin(
-            Job.depedencies
-        ).filter(
+        ).outerjoin(Job.depedencies).filter(
             JobDependencies.id==None
         ).filter(
             Arch.name.in_(arches)
         ).filter(
             Check.name.in_(capabilities)
-        ).first()  # XXX: ORDER BY SCORE
-        #
+        ).first()
+
         if job is None:
             return None
+
         job.assigned_at = dt.datetime.utcnow()
         job.builder = NAMESPACE.machine
         NAMESPACE.session.add(job)
