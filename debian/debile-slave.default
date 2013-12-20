@@ -1,4 +1,0 @@
-# Debile Debian Package builder configuration options
-
-# Swich to =1 if you' d like to enable the init script
-BOT_ENABLED=
