@@ -19,6 +19,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.utils import run_command
+import logging
 
 
 class RepoException(Exception):
@@ -33,6 +34,7 @@ class Repo(object):
 
     def __init__(self, root):
         self.root = root
+        self.logger = logging.getLogger('debile')
 
     def add_changes(self, changes):
         dist = changes['distribution']
@@ -40,6 +42,7 @@ class Repo(object):
 
     def _exec(self, *args):
         cmd = ["reprepro", "-Vb", self.root,] + list(args)
+        logger.debug("Running: %s" % (" ".join(cmd)))
         out, err, ret = run_command(cmd)
         if ret != 0:
             raise RepoException(ret)
