@@ -19,9 +19,10 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.master.server import user_method, builder_method, NAMESPACE
-from debile.master.orm import Job, Arch, Check, Source, Binary
+from debile.master.orm import Job, Arch, Check, Source, Binary, JobDependencies
 from debile.master.core import config
 
+from sqlalchemy import exists
 import datetime as dt
 
 
@@ -56,6 +57,10 @@ class DebileMasterInterface(object):
         job = NAMESPACE.session.query(Job).filter_by(
             assigned_at=None,
             finished_at=None,
+        ).outerjoin(
+            Job.depedencies
+        ).filter(
+            JobDependencies.id==None
         ).filter(
             Arch.name.in_(arches)
         ).filter(
