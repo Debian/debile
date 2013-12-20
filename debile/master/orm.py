@@ -502,7 +502,9 @@ def create_jobs(source, session, arches):
             deps = []
             if aall in builds:
                 deps.append(builds[aall])
-            deps.append(builds[arch])
+
+            if aall != arch:
+                deps.append(builds[arch])
 
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=100, builder=None,
