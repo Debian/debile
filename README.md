@@ -18,11 +18,11 @@ All topics are under:
 
     org.anized.{dev,sage,prod}.debile
     `-- source
-    |   |--
+    |   |-- (accept/reject)
     |   |--
     |
     `-- binary
-    |   |--
+    |   |-- (accept/reject)
     |   |--
     |
     `-- build
