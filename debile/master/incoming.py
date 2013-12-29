@@ -253,7 +253,7 @@ def accept_dud(session, dud, builder):
     result.source = job.source
     result.check = job.check
     result.firehose = fire
-    # result.binary = # XXX: FIX THIS
+    result.binary = job.binary  # It's nullable. That's cool.
     session.merge(result)  # Needed because a *lot* of the Firehose is 
     # going to need unique ${WORLD}.
 
