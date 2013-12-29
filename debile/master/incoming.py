@@ -27,6 +27,7 @@ from debian import deb822
 from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
+from debile.master.messaging import emit
 from debile.master.reprepro import RepoSourceAlreadyRegistered
 from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
@@ -96,6 +97,12 @@ def process_changes(session, path):
 
 
 def reject_changes(session, changes, tag):
+
+    emit('reject', 'package-upload', {
+        "tag": tag,
+        "source": changes.get_package_name(),
+    })
+
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=changes.get_package_name())
 
@@ -149,6 +156,14 @@ def accept_source_changes(session, changes, user):
     repo = group.get_repo()
     repo.add_changes(changes)
 
+    emit('accept', 'package-upload', {
+        "type": "source",
+        "group": group.debilize(),
+        "suite": suite.debilize(),
+        "source": source.debilize(),
+        "arches": arches,
+    })
+
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
         os.unlink(fp)
@@ -186,6 +201,13 @@ def accept_binary_changes(session, changes, builder):
     job.close(session)
     session.add(binary)
     session.commit()
+
+    emit('accept', 'package-upload', {
+        "type": "binary",
+        "source": source.debilize(),
+        "arch": arch.debilize(),
+        "job": job.debilize(),
+    })
 
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
@@ -228,6 +250,11 @@ def reject_dud(session, dud, tag):
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=dud['Source'])
 
+    emit('reject', 'dud-upload', {
+        "tag": tag,
+        "source": dud['Source'],
+    })
+
     try:
         dud.validate()
     except DudFileException as e:
@@ -259,6 +286,13 @@ def accept_dud(session, dud, builder):
 
     job.close(session)
     session.commit()  # Neato.
+
+    emit('accept', 'dud-upload', {
+        "result": result.debilize(),
+        "job": job.debilize(),
+        "failed": failed,
+        "source": dud['Source'],
+    })
 
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [dud.get_filename()] + dud.get_files():
