@@ -22,6 +22,11 @@ Builders:  # Machines that can build
       maintainer: paultag
       password: s3kr37
 
+    - name: helios.pault.ag
+      key: 0C267E932994895CDE7B6B3ECB4315D1BC490D41
+      maintainer: paultag
+      password: s3kr375
+
 Checks:
     - name: lintian
       group: default
