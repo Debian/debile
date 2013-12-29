@@ -21,6 +21,7 @@
 from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import Job, Arch, Check, Source, Binary, JobDependencies
 from debile.master.core import config
+from debile.master.messaging import emit
 
 from sqlalchemy import exists
 import datetime as dt
