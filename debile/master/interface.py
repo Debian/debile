@@ -71,6 +71,9 @@ class DebileMasterInterface(object):
         job.builder = NAMESPACE.machine
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
+
+        emit('job', 'start', job.debilize())
+
         return job.debilize()
 
     @builder_method
@@ -79,6 +82,9 @@ class DebileMasterInterface(object):
         job.finished_at = dt.datetime.utcnow()
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
+
+        emit('job', 'complete', job.debilize())
+
         return True
 
     @builder_method
@@ -88,6 +94,9 @@ class DebileMasterInterface(object):
         job.builder = None
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
+
+        emit('job', 'abort', job.debilize())
+
         return True
 
     # Useful methods below.
