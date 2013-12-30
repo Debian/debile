@@ -72,7 +72,7 @@ class DebileMasterInterface(object):
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
 
-        emit('job', 'start', job.debilize())
+        emit('start', 'job', job.debilize())
 
         return job.debilize()
 
@@ -83,7 +83,7 @@ class DebileMasterInterface(object):
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
 
-        emit('job', 'complete', job.debilize())
+        emit('complete', 'job', job.debilize())
 
         return True
 
@@ -95,7 +95,7 @@ class DebileMasterInterface(object):
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
 
-        emit('job', 'abort', job.debilize())
+        emit('abort', 'job', job.debilize())
 
         return True
 

@@ -40,5 +40,6 @@ if fedmsg:
 
 def emit(topic, modname, message):
     # <topic_prefix>.<env>.<modname>.<topic>
+    modname = "debile.%s" % (modname)
     if fedmsg:
         return fedmsg.publish(topic=topic, modname=modname, msg=message)
