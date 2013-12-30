@@ -438,7 +438,7 @@ class Result(Base):
     job_id = Column(Integer, ForeignKey('jobs.id'))
     job = relationship("Job")
 
-    firehose_id = Column(Integer, ForeignKey('analysis.id'))
+    firehose_id = Column(String, ForeignKey('analysis.id'))
     firehose = relationship(Analysis)
 
 
