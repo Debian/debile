@@ -23,6 +23,20 @@ try:
 except ImportError:
     fedmsg = None
 
+if fedmsg:
+    fedmsg.init(
+        topic_prefix='org.anized',
+        environment='dev',
+        sign_messages=False,
+        endpoints={
+            "debile.leliel":  [
+                  "tcp://localhost:3000",
+                  "tcp://localhost:3001",
+                  "tcp://localhost:3002",
+                  "tcp://localhost:3003",
+            ],
+        },
+    )
 
 def emit(topic, modname, message):
     # <topic_prefix>.<env>.<modname>.<topic>
