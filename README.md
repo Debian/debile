@@ -18,12 +18,12 @@ All topics are under:
 
     org.anized.{dev,sage,prod}.debile
     `-- source
-    |   |-- (accept/reject)
-    |   |--
+    |   |-- accept
+    |   |-- reject
     |
     `-- binary
-    |   |-- (accept/reject)
-    |   |--
+    |   |-- accept
+    |   |-- reject
     |
     `-- job
     |   |-- start
@@ -31,5 +31,4 @@ All topics are under:
     |   |-- abort
     |
     `-- result
-        |--
-        |--
+        |-- receive
