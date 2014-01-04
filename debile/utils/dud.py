@@ -126,7 +126,7 @@ class Dud(object):
 
     def get_log_file(self):
         for item in self.get_files():
-            if item.endswith('.log.txt'):
+            if item.endswith('.log'):
                 return item
 
     def get_dud_file(self):
