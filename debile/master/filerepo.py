@@ -20,6 +20,7 @@
 
 from debile.utils import run_command
 import os
+import shutil
 
 
 class FilesException(Exception):
@@ -38,9 +39,9 @@ class FileRepo(object):
     def add_dud(self, dud):
         source, version, jid = (dud[x] for x in [
             'Source', 'Version', 'X-Debile-Job'])
-        self.include(source, version, jid, dud.get_files())
+        self.include(source, version, jid, dud)
 
-    def include(self, source, version, jid, files):
+    def include(self, source, version, jid, dud):
         path = "{root}/{source}/{version}/{jid}".format(
             root=self.root,
             source=source,
@@ -50,4 +51,4 @@ class FileRepo(object):
         os.makedirs(path)
 
         for fp in [dud.get_filename()] + dud.get_files():
-            os.move(fp, path)
+            shutil.move(fp, path)

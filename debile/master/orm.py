@@ -22,7 +22,7 @@ import os.path
 import datetime as dt
 import debile.master.core
 from debile.master.reprepro import Repo
-from debile.master.filerepro import FileRepo
+from debile.master.filerepo import FileRepo
 
 from firewoes.lib.orm import metadata
 from firehose.model import Analysis
@@ -444,7 +444,7 @@ class Result(Base):
 
     def get_repo(self):
         root = debile.master.core.config['repo']['files']
-        name = self.name or "default"
+        name = self.source.group.name or "default"
         base = os.path.join(root, name)
         return FileRepo(base)
 

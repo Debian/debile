@@ -28,6 +28,7 @@ from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.reprepro import RepoSourceAlreadyRegistered
+from debile.master.filerepo import FilesAlreadyRegistered
 from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.messaging import emit
