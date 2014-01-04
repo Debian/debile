@@ -35,6 +35,12 @@ if fedmsg:
                   "tcp://localhost:3002",
                   "tcp://localhost:3003",
             ],
+            "debile.irill6":  [
+                  "tcp://irill6.inria.fr:3000",
+                  "tcp://irill6.inria.fr:3001",
+                  "tcp://irill6.inria.fr:3002",
+                  "tcp://irill6.inria.fr:3003",
+            ],
         },
     )
 
