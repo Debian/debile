@@ -1,4 +1,5 @@
 database: sqlite:////home/tag/debile.db
 repo:
-    base: /srv/debile
-    url: http://localhost/debile-pool
+    base: /srv/debile/pool
+    url: http://localhost/debile/pool
+    files: /srv/debile/files
