@@ -276,11 +276,14 @@ def accept_dud(session, dud, builder):
     job.close(session)
     session.commit()  # Neato.
 
-    emit('receive', 'result', result.debilize())
+    repo = result.get_repo()
+    try:
+        repo.add_dud(dud)
+    except FilesAlreadyRegistered:
+        return reject_dud(session, dud, "dud-files-already-registered")
 
-    # OK. It's safely in the database and repo. Let's cleanup.
-    for fp in [dud.get_filename()] + dud.get_files():
-        os.unlink(fp)
+    emit('receive', 'result', result.debilize())
+    #  repo.add_dud removes the files
 
 
 DELEGATE = {
