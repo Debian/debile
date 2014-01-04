@@ -276,7 +276,7 @@ def accept_dud(session, dud, builder):
     job.close(session)
     session.commit()  # Neato.
 
-    emit('receive', 'result', source.debilize())
+    emit('receive', 'result', result.debilize())
 
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [dud.get_filename()] + dud.get_files():
