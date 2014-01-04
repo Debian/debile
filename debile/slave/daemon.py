@@ -201,7 +201,6 @@ def iterate():
 
             if changes:
                 upload(changes, job, package)
-
             upload(dudf, job, package)
 
 
