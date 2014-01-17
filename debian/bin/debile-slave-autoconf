@@ -1,0 +1,12 @@
+#!/bin/sh
+# Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2013, under the
+# terms and conditions of the Expat license, as noted in the Debile project
+# LICENSE file.
+set -e
+
+AUTOCONF_SCRIPT_ROOT="/usr/lib/debile/autoconf"
+
+# Right, let's invoke the config steps in order.
+${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-openpgp
+${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-yaml
+
