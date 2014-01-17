@@ -4,7 +4,7 @@ set -e
 set -u
 
 if [ "$1" = "configure" ]; then
-    adduser --system --quiet --group --home /dev/null --no-create-home \
+    adduser --system --quiet --group --home /var/lib/debile/debile \
         --disabled-login --gecos "Debile server" --force-badname Debian-debile
 fi
 
