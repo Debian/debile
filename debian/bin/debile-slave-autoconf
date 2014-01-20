@@ -7,13 +7,7 @@
 set -e
 
 AUTOCONF_SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEBILE_UNPRIV="Debian-debile-unpriv"
-
-function debile-run {
-    su -s /bin/sh \
-       -c $@ \
-       ${DEBILE_UNPRIV}
-}
+. ${AUTOCONF_SCRIPT_ROOT}/debile-slave-common
 
 echo "  == auto-set up debile =="
 echo ""
