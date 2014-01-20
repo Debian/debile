@@ -1,12 +1,18 @@
-#!/bin/sh
+#!/bin/bash
+# Such bash. Very non-POSIX. Much needed.
+#
 # Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2013, under the
 # terms and conditions of the Expat license, as noted in the Debile project
 # LICENSE file.
 set -e
 
-AUTOCONF_SCRIPT_ROOT="/usr/lib/debile/autoconf"
+AUTOCONF_SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEBILE_UNPRIV="Debian-debile-unpriv"
 
-# Right, let's invoke the config steps in order.
-${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-openpgp
-${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-yaml
+function debile-run {
+    su -s /bin/sh \
+       -c $@ \
+       ${DEBILE_UNPRIV}
+}
 
+debile-run "${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-openpgp"
