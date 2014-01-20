@@ -42,4 +42,8 @@ fi
 
 GPG_FINGERPRINT=`get-fingerprint`
 
-echo "OK. You've been issued ${GPG_FINGERPRINT} by the OpenPGP gods."
+echo ""
+echo ""
+echo "You've been issued a key by the OpenPGP gods."
+echo ""
+echo "Fingerprint: ${GPG_FINGERPRINT}"

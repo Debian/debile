@@ -16,3 +16,4 @@ function debile-run {
 }
 
 debile-run "${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-openpgp"
+# ${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-yaml
