@@ -11,7 +11,7 @@ GPG_USER="$(whoami)@$(hostname)"
 GPG_NAME="Debile Autobuilder"
 
 function get-fingerprint {
-    GPG_FINGERPRINT=$(${GPG_COMMAND} --fingerprint ${GPG_USER} \
+    GPG_FINGERPRINT=$(${GPG_COMMAND} --fingerprint ${GPG_USER} 2>/dev/null \
         | grep "Key fingerprint = " \
         | sed 's/Key fingerprint =//g' \
         | tr -d " " \
@@ -20,16 +20,9 @@ function get-fingerprint {
 }
 
 if [ "x`get-fingerprint`" = "x" ]; then
-    echo "There doesn't appear to be a Debile slave key."
-    echo ""
-    echo "         I'm going to create a key for us now."
-    echo "                 The UID will be:"
-    echo "  \"${GPG_NAME} <${GPG_USER}> (Debile Slave Key)\""
-    echo ""
-    echo "    BTW; for real, this will take a hot minute to generate."
-    echo "    Don't C-c me unless it's been more than like 10 minutes."
-
-    ${GPG_COMMAND} --gen-key --batch <<EOF
+    # Ugh. Let's make a key.
+    #
+    ${GPG_COMMAND} -q --gen-key --batch 2>/dev/null <<EOF
         Key-Type: RSA
         Key-Length: 2048
         Name-Real: ${GPG_NAME}
@@ -41,9 +34,4 @@ EOF
 fi
 
 GPG_FINGERPRINT=`get-fingerprint`
-
-echo ""
-echo ""
-echo "You've been issued a key by the OpenPGP gods."
-echo ""
-echo "Fingerprint: ${GPG_FINGERPRINT}"
+echo ${GPG_FINGERPRINT}

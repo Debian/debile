@@ -15,5 +15,24 @@ function debile-run {
        ${DEBILE_UNPRIV}
 }
 
-debile-run "${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-openpgp"
-# ${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-yaml
+echo "  == auto-set up debile =="
+echo ""
+echo "Getting (or generating) the OpenPGP command."
+echo ""
+echo "    If this is the first run, this can take"
+echo "    up to like 5 minutes. Don't C-c it if you"
+echo "    can help it."
+echo ""
+
+FINGERPRINT=$(debile-run \
+    "${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-openpgp")
+
+echo ""
+echo " Got our key, it's ${FINGERPRINT}."
+echo ""
+
+${AUTOCONF_SCRIPT_ROOT}/debile-slave-autoconf-yaml ${FINGERPRINT}
+
+echo ""
+echo " OK, I set up the YAML file too."
+echo ""
