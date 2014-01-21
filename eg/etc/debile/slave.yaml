@@ -2,13 +2,13 @@
 xmlrpc:
     user: "%leliel.pault.ag"
     password: s3kr37
-    host: localhost
+    host: debile-master
     port: 22017
 
-gpg: A998491ADCCB93C7A73A27403D3FDC7A47036CF7
+gpg: GPGFINGERPRINTGOESHEREATSOMEPOINTSOONISH
 
 dput:
-    host: lucy
+    host: debile-master
 
 checks:
     - lintian
