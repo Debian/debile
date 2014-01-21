@@ -12,4 +12,4 @@ slave.yaml:
 
 image: slave.yaml
 	@echo "Creating the image"
-	@docker.io build -rm=true -t debile-slave .
+	@docker.io build -rm=true -no-cache=true -t debile-slave .
