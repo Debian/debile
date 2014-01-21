@@ -1,1 +1,2 @@
 ./eg/etc/debile/slave.yaml        etc/debile
+debian/bin/*                      usr/share/debile-slave/
