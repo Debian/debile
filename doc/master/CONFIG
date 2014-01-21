@@ -1,0 +1,98 @@
+
+ - Welcome :)
+
+ - do install
+     deb http://debile.anized.org/archive/ rc-buggy main
+     curl http://debile.anized.org/key.asc | sudo apt-key add -
+     apt-get update
+     apt-get install debile-master
+
+  - do configure
+     mkdir -p /srv/debile/
+     chown -R debile:debile /srv/debile/
+     su to debile
+
+:: process.sh ::
+#!/bin/bash
+cd /srv/debile/incoming/UploadQueue/
+debile-incoming .
+
+     chmod +x process.sh
+     crontab -e
+
+*/02 * * * * /srv/debile/process.sh
+
+     mkdir files incoming pool
+     cd incoming
+     mkdir UploadQueue
+     chmod ugo+rwx UploadQueue
+     cd pool
+     mkdir -p default/conf
+     cd default
+     mkdir logs
+     cd conf
+     Create:
+
+:: distributions ::
+Origin: Paul Tagliamonte
+Label: Debile
+Suite: unstable
+Codename: unstable
+Version: 1.0
+Architectures: i386 amd64 armhf source
+Components: main
+Description: Debile
+SignWith: 0x2BF6C8EE
+Contents: . .gz .bz2
+Log: archive.log
+
+:: incoming ::
+Name: default
+IncomingDir: incoming
+TempDir: tmp
+Allow: unstable
+Cleanup: on_deny on_error
+
+:: uploaders ::
+allow * by unsigned
+
+     exit shell
+
+     edit /etc/debile/master.yaml
+       - base: /srv/debile/pool
+       - url: http://irill6.inria.fr/pool/
+       - files: /srv/debile/files
+
+     debile-master-init
+     get a debile.yaml
+     debile-import debile.yaml
+     restart debile-master
+
+  - do anonftp
+     apt-get install vsftpd
+     edit /etc/vsftpd.conf
+
+listen=YES
+anonymous_enable=YES
+anon_root=/srv/debile/incoming/
+anon_umask=027
+write_enable=YES
+anon_upload_enable=YES
+chown_uploads=YES
+chown_username=debile
+chroot_local_user=NO
+
+xferlog_enable=YES
+xferlog_file=/var/log/ftp/vsftpd-debile.log
+vsftpd_log_file=/var/log/ftp/ftp-upload.log
+
+ftpd_banner=Debile incoming queue
+secure_chroot_dir=/var/run/vsftpd/empty
+pam_service_name=vsftpd
+setproctitle_enable=YES
+dirmessage_enable=NO
+ls_recurse_enable=NO
+connect_from_port_20=NO
+max_clients=100
+
+     restart vsftpd
