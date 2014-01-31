@@ -363,6 +363,7 @@ class Job(Base):
 
     name = Column(String(255))
     score = Column(Integer)
+    failed = Column(Boolean, nullable=True)
 
     builder_id = Column(Integer, ForeignKey('builders.id'), nullable=True)
     builder = relationship("Builder")
@@ -384,10 +385,13 @@ class Job(Base):
 
     results = relationship("Result")
 
-    def close(self, session):
+    def close(self, session, failed):
+        self.faled = failed
         self.finished_at = dt.datetime.utcnow()
-        for job in self.blocking:
-            session.delete(job)
+
+        if not failed:
+            for jd in self.blocking:
+                session.delete(jd)
 
 
 class JobDependencies(Base):
