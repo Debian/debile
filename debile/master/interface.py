@@ -80,7 +80,9 @@ class DebileMasterInterface(object):
     def close_job(self, job_id, failed):
         job = NAMESPACE.session.query(Job).get(job_id)
         job.finished_at = dt.datetime.utcnow()
-        job.close(NAMESPACE.session, failed)
+        # We don't actually close the job here because we wait until
+        # we accept the DUD (so that we have the artifacts to actually
+        # give the job out to new nodes), so avoid job.close()
 
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()

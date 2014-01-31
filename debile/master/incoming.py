@@ -167,6 +167,8 @@ def accept_source_changes(session, changes, user):
 def accept_binary_changes(session, changes, builder):
     # OK. We'll relate this back to a build job.
     job = changes.get('X-Debile-Job', None)
+    failed = True if changes.get('X-Debile-Failed', None) == "Yes" else False
+
     if job is None:
         return reject_changes(session, changes, "no-job")
     job = session.query(Job).get(job)
@@ -193,7 +195,7 @@ def accept_binary_changes(session, changes, builder):
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
 
-    job.close(session)
+    job.close(session, failed)
     session.add(binary)
     session.commit()
 
@@ -258,7 +260,7 @@ def reject_dud(session, dud, tag):
 
 def accept_dud(session, dud, builder):
     fire = dud.get_firehose()
-    failed = True if dud['X-Debile-Failed'] == "Yes" else False
+    failed = True if dud.get('X-Debile-Failed', None) == "Yes" else False
 
     job = session.query(Job).get(dud['X-Debile-Job'])
 
@@ -274,7 +276,7 @@ def accept_dud(session, dud, builder):
     session.merge(result)  # Needed because a *lot* of the Firehose is 
     # going to need unique ${WORLD}.
 
-    job.close(session)
+    job.close(session, failed)
     session.commit()  # Neato.
 
     repo = result.get_repo()
