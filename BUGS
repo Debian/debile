@@ -1,3 +1,14 @@
+Urgent:
+[ ] SSL encrypt XML-RPC connections.
+[ ] debug builder. ensure no funny stuff. hard. allow new build compilers
+    to be added trivially (clang, gcc-4.9)
+[ ] add inotify change processing. add to daemon.
+[ ] let users create slaves via xml-rpc over the line. need to send openpgp
+    keys too. POST it?
+[ ] create 'cluster' user-type that can create and destroy slaves it owns.
+
+
+Long-term:
 [x] - Add init script for the server
 [x] - Have the client crash in less sucky ways
 [x]   - Server being down 
