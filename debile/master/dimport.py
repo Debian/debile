@@ -33,13 +33,13 @@ def import_from_yaml(whence):
 
 
 def import_dict(obj):
-    maintainer = obj.pop("Maintainer")
-    users = obj.pop("Users")
-    builders = obj.pop("Builders")
-    suites = obj.pop("Suites")
-    groups = obj.pop("Groups")
-    checks = obj.pop("Checks")
-    arches = obj.pop("Arches")
+    maintainer = obj.pop("Maintainer", None)
+    users = obj.pop("Users", [])
+    builders = obj.pop("Builders", [])
+    suites = obj.pop("Suites", [])
+    groups = obj.pop("Groups", [])
+    checks = obj.pop("Checks", [])
+    arches = obj.pop("Arches", [])
 
     if obj != {}:
         for key in obj:
