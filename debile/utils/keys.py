@@ -18,25 +18,27 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import sys
-import shlex
-import subprocess
+from . import run_command
 
-def run_command(command, input=None):
-    kwargs = {}
 
-    if input is not None:
-        kwargs['stdin'] = subprocess.PIPE
+def import_key(keydata):
+    """
+    keydata should be the key data to be sent to gpg via stdin.
+    """
+    out, err, ret = run_command([
+        "gpg", "--status-fd", "1", "--import"
+    ], input=keydata)
 
-    if not isinstance(command, list):
-        command = shlex.split(command)
-    try:
-        pipe = subprocess.Popen(command,
-                                shell=False,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                **kwargs)
-    except OSError:
-        return (None, None, -1)
-    (output, stderr) = pipe.communicate(input=input)
-    return (output, stderr, pipe.returncode)
+    key = None
+    for line in out.split("\n"):
+        data = line.split()
+        if data[0] != "[GNUPG:]":
+            continue
+
+        if data[1] == "IMPORT_OK":
+            key = data[3]
+            break
+    else:
+        raise ValueError(
+            "And nothing of value was lost (gpg failed to import)")
+    return key

@@ -22,6 +22,7 @@ from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import Job, Arch, Check, Source, Binary, JobDependencies
 from debile.master.core import config
 from debile.master.messaging import emit
+from debile.utils.keys import import_key
 
 from sqlalchemy import exists
 import datetime as dt
@@ -123,3 +124,13 @@ class DebileMasterInterface(object):
         Work out the job count.
         """
         return NAMESPACE.session.query(Job).count()
+
+    @user_method
+    def create_builder(self, slave_name, slave_password, key):
+        keyid = import_key(key)
+        b = Builder(maintainer=NAMESPACE.user, name=slave_name, key=keyid,
+                    password=slave_password, last_ping=dt.datetime.utcnow())
+        emit('create', 'slave', b.debilize())
+        NAMESPACE.session.add(job)
+        NAMESPACE.session.commit()
+        return b.debilize()
