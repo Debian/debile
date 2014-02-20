@@ -1,5 +1,4 @@
 # Copyright (c) 2012-2013 Paul Tagliamonte <paultag@debian.org>
-# Copyright (c) 2013 Leo Cavaille <leo@cavaille.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -19,36 +18,20 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.slave.utils import tdir, cd, dget, run_command
-from debile.utils.proxy import get_proxy
-
-from contextlib import contextmanager
-import os
+from debile.slave.core import config
+import xmlrpclib
 
 
+def get_proxy():
+    xml = config.get("xmlrpc", None)
+    if xml is None:
+        raise Exception("No xmlrpc found in slave yaml")
 
-@contextmanager
-def checkout(package):
-    proxy = get_proxy()
-    _type = package['type']
-    if _type not in ['binary', 'source']:
-        raise ValueError("type sucks")
-
-    def source():
-        url = proxy.get_dsc_url(package['source_id'])
-        dsc = os.path.basename(url)
-        dget(url)
-        yield dsc
-
-    def binary():
-        url = proxy.get_deb_url(package['binary_id'])
-        deb = os.path.basename(url)
-        out, err, ret = run_command(['wget', url])
-        if ret != 0:
-            raise Exception("zomgwtf")
-        yield deb
-
-    with tdir() as where:
-        with cd(where):
-            for x in {"source": source, "binary": binary}[_type]():
-                yield x
+    proxy = xmlrpclib.ServerProxy(
+        "http://{user}:{password}@{host}:{port}/".format(
+            user=xml['user'],
+            password=xml['password'],
+            host=xml['host'],
+            port=xml['port'],
+        ), allow_none=True)
+    return proxy
