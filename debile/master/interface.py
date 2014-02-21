@@ -19,12 +19,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.master.server import user_method, builder_method, NAMESPACE
-from debile.master.orm import Job, Arch, Check, Source, Binary, JobDependencies
+from debile.master.orm import (Job, Arch, Check, Builder, Source, Binary,
+                               JobDependencies)
 from debile.master.core import config
 from debile.master.messaging import emit
 from debile.utils.keys import import_key
 
 from sqlalchemy import exists
+from sqlalchemy.orm.exc import NoResultFound
 import datetime as dt
 
 
@@ -128,9 +130,18 @@ class DebileMasterInterface(object):
     @user_method
     def create_builder(self, slave_name, slave_password, key):
         keyid = import_key(key)
+        try:
+            obid = NAMESPACE.session.query(Builder).filter_by(
+                name=slave_name).one()
+        except NoResultFound:
+            obid = None
+
+        if obid:
+            raise ValueError("Slave already exists.")
+
         b = Builder(maintainer=NAMESPACE.user, name=slave_name, key=keyid,
                     password=slave_password, last_ping=dt.datetime.utcnow())
         emit('create', 'slave', b.debilize())
-        NAMESPACE.session.add(job)
+        NAMESPACE.session.add(b)
         NAMESPACE.session.commit()
         return b.debilize()
