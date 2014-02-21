@@ -33,3 +33,7 @@ def load_master_config():
 
 def load_slave_config():
     return import_from_yaml("{root}/slave.yaml".format(root=ROOT))
+
+
+def load_user_config():
+    return import_from_yaml("{root}/user.yaml".format(root=ROOT))

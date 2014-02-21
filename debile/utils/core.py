@@ -18,20 +18,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils.core import config
-import xmlrpclib
+from debile.utils.config import load_user_config
 
-
-def get_proxy():
-    xml = config.get("xmlrpc", None)
-    if xml is None:
-        raise Exception("No xmlrpc found in user yaml")
-
-    proxy = xmlrpclib.ServerProxy(
-        "http://{user}:{password}@{host}:{port}/".format(
-            user=xml['user'],
-            password=xml['password'],
-            host=xml['host'],
-            port=xml['port'],
-        ), allow_none=True)
-    return proxy
+config = load_user_config()

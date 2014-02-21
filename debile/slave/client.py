@@ -20,11 +20,26 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.utils import tdir, cd, dget, run_command
-from debile.utils.proxy import get_proxy
+from debile.slave.core import config
 
 from contextlib import contextmanager
+import xmlrpclib
 import os
 
+
+def get_proxy():
+    xml = config.get("xmlrpc", None)
+    if xml is None:
+        raise Exception("No xmlrpc found in slave yaml")
+
+    proxy = xmlrpclib.ServerProxy(
+        "http://{user}:{password}@{host}:{port}/".format(
+            user=xml['user'],
+            password=xml['password'],
+            host=xml['host'],
+            port=xml['port'],
+        ), allow_none=True)
+    return proxy
 
 
 @contextmanager

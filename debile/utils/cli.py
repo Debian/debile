@@ -18,20 +18,42 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils.core import config
-import xmlrpclib
+from debile.utils.proxy import get_proxy
+import sys
 
 
-def get_proxy():
-    xml = config.get("xmlrpc", None)
-    if xml is None:
-        raise Exception("No xmlrpc found in user yaml")
+def _create_slave(name, password, key):
+    "Create a slave - debile-remote create-slave name password key"
 
-    proxy = xmlrpclib.ServerProxy(
-        "http://{user}:{password}@{host}:{port}/".format(
-            user=xml['user'],
-            password=xml['password'],
-            host=xml['host'],
-            port=xml['port'],
-        ), allow_none=True)
-    return proxy
+    proxy = get_proxy()
+
+    try:
+        key = open(key, 'r').read()
+    except IOError as e:
+        print("Error whilst opening OpenPGP public key.")
+        print("   %s when trying to open %s" % (str(e), key))
+        return -1
+
+    print proxy.create_builder(name, password, key)
+
+
+def _help():
+    print("Commands:")
+    for command in COMMANDS:
+        print("  %s - %s" % (command, COMMANDS[command].__doc__))
+
+
+COMMANDS = {
+    "create-slave": _create_slave,
+}
+
+
+def main():
+    args = list(sys.argv[1:])
+    command = args.pop(0)
+    try:
+        run = COMMANDS[command]
+    except KeyError:
+        return _help()
+
+    return run(*args)

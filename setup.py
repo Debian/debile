@@ -21,6 +21,7 @@ flavors = {
         'console_scripts': [
             'aget = debile.utils.aget:main',
             'bget = debile.utils.bget:main',
+            'debile-remote = debile.utils.cli:main',
         ],
     }),  # Default config
     "setup.slave.py": ("debile.slave", [
