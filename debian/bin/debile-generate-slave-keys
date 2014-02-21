@@ -17,9 +17,9 @@ GPG_NAME="Debile Autobuilder"
 
 GPG_COMMAND=gpg
 GPG_FLAGS=""
-GPG_FLAGS="${GPG_CREATE_FLAGS} --no-default-keyring"
-GPG_FLAGS="${GPG_CREATE_FLAGS} --keyring=.keyring"
-GPG_FLAGS="${GPG_CREATE_FLAGS} --secret-keyring=.secret-keyring"
+GPG_FLAGS="${GPG_FLAGS} --no-default-keyring"
+GPG_FLAGS="${GPG_FLAGS} --keyring=$(pwd)/keyring"
+GPG_FLAGS="${GPG_FLAGS} --secret-keyring=$(pwd)/secret-keyring"
 
 
 function get-fingerprint {
