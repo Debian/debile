@@ -26,7 +26,6 @@ from debile.master.messaging import emit
 from debile.utils.keys import import_key
 
 from sqlalchemy import exists
-from sqlalchemy.orm.exc import NoResultFound
 import datetime as dt
 
 
@@ -130,13 +129,11 @@ class DebileMasterInterface(object):
     @user_method
     def create_builder(self, slave_name, slave_password, key):
         keyid = import_key(key)
-        try:
-            obid = NAMESPACE.session.query(Builder).filter_by(
-                name=slave_name).one()
-        except NoResultFound:
-            obid = None
 
-        if obid:
+        obid = NAMESPACE.session.query(Builder).filter_by(
+            name=slave_name).count()
+
+        if obid != 0:
             raise ValueError("Slave already exists.")
 
         b = Builder(maintainer=NAMESPACE.user, name=slave_name, key=keyid,
