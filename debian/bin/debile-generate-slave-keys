@@ -42,7 +42,7 @@ if [ "x`get-fingerprint`" = "x" ]; then
     echo ""
     echo "  This may take a minute, please let me run."
     echo ""
-    ${GPG_COMMAND} ${GPG_CREATE_FLAGS} \
+    ${GPG_COMMAND} ${GPG_FLAGS} \
         -q --gen-key --batch 2>/dev/null <<EOF
             Key-Type: RSA
             Key-Length: 2048
