@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+#
+# Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2014 under the
+# terms and conditions of the Debile project, MIT/Expat. You should have
+# recieved a copy of the license with this script.
+#
+# If we're running as !(root), exit 1.
+#
+# Ohkay, a few jobs. We need to digest the .tar.gz and write the values
+# we care about too /etc/debile/slave.yaml
+#
+# After that's all sorted, we'll su over to Debian-debile-unpriv and import
+# our OpenPGP keys
