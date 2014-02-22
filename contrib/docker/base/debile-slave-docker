@@ -1,8 +1,8 @@
 #!/bin/bash
-#
 # Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2014 under the
 # terms and conditions of the Debile project, MIT/Expat. You should have
 # recieved a copy of the license with this script.
+set -e
 
 # OK. Let's do a few things.
 #

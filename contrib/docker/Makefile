@@ -1,4 +1,4 @@
-IMAGES := ursae.inria.fr
+IMAGES := ursae
 
 $(IMAGES): base
 	make -C $@ build
