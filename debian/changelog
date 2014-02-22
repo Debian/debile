@@ -1,3 +1,9 @@
+debile (1.1.1) experimental; urgency=medium
+
+  * Dockerfile voodoo.
+
+ -- Paul Tagliamonte <paultag@debian.org>  Sat, 22 Feb 2014 16:44:23 -0500
+
 debile (1.1) experimental; urgency=medium
 
   * Misc. Fixes. Prerelease.
