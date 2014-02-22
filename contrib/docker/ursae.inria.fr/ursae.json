@@ -1,0 +1,10 @@
+{
+    "-hooks": [
+        "gpg"
+    ],
+    "fqdn": "ursae.inria.fr",
+    "incoming": "/UploadQueue/",
+    "login": "anonymous",
+    "meta": "boring",
+    "method": "ftp"
+}
