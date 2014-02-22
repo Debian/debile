@@ -1,0 +1,21 @@
+---
+xmlrpc:
+    user: "null"
+    password: null
+    host: ursae.inria.fr
+    port: 22017
+
+gpg: GPGFINGERPRINTGOESHEREATSOMEPOINTSOONISH
+
+dput:
+    host: ursae
+
+checks:
+    - lintian
+
+arches:
+    - amd64
+    - all
+
+suites:
+    - unstable
