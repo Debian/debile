@@ -18,4 +18,4 @@ if [ ! -e ${DEBILE_CONFIG_TARBALL} ]; then
 fi
 
 /usr/share/debile-slave/debile-slave-import ${DEBILE_CONFIG_TARBALL}
-exec su Debian-debile-unpriv -s /bin/sh -c /usr/bin/debile-slave
+exec /usr/bin/debile-slave
