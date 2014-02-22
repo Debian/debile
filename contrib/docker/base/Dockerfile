@@ -19,5 +19,10 @@ RUN apt-get update
 # and install debile-slave
 RUN apt-get install -y debile-slave
 
+RUN chown -R Debian-debile-unpriv:Debian-debile-unpriv /etc/debile/*
+# Hack for our entrypoint later.
+
+ADD debile-slave-docker /usr/bin/
+
 USER Debian-debile-unpriv
-CMD ["/usr/share/debile-slave/debile-slave-docker"]
+CMD ["/usr/bin/debile-slave-docker"]

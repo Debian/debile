@@ -35,12 +35,11 @@ def editconf(where=None):
             yaml.dump(info, fd)
 
 
-
-if os.geteuid() != 0:
-    print("Error: I'm not root.")
-    print("   I require `su` and write to /etc")
-    print("   please re-run with sudo or whatever.")
-    exit(1)
+# if os.geteuid() != 0:
+#     print("Error: I'm not root.")
+#     print("   I require `su` and write to /etc")
+#     print("   please re-run with sudo or whatever.")
+#     exit(1)
 
 
 def cg(tarfile):
