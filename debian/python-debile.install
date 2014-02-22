@@ -1,1 +1,1 @@
-debian/bin/debile-debile-generate-slave-keys    usr/share/python-debile/
+debian/bin/debile-generate-slave-keys    usr/share/python-debile/
