@@ -1,7 +1,7 @@
 # Create a Debile slave.
 #
 # VERSION   0.1
-FROM        debian:sid
+FROM        debian:experimental
 MAINTAINER  Paul R. Tagliamonte <paultag@debian.org>
 # OK. Enough about that. Let's take our pristine Debian image and
 # add our key.
@@ -12,8 +12,7 @@ RUN curl http://debile.anized.org/key.asc | apt-key add -
 # Right, now that we have our key,
 
 RUN echo "deb http://debile.anized.org/archive/ rc-buggy main" > /etc/apt/sources.list.d/debile.list
-RUN echo "deb http://http.debian.net/debian experimental main" >> /etc/apt/sources.list
-# and our loving repos,
+# and our loving repo,
 
 # Let's update
 RUN apt-get update
@@ -21,4 +20,4 @@ RUN apt-get update
 RUN apt-get install -y debile-slave
 
 ADD slave.yaml /etc/debile/slave.yaml
-ENTRYPOINT /usr/share/debile-slave/debile-slave-docker
+CMD ["/usr/share/debile-slave/debile-slave-docker"]
