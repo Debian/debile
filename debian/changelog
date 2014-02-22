@@ -1,3 +1,9 @@
+debile (1.1.4) UNRELEASED; urgency=medium
+
+  * Slave fixes.
+
+ -- Paul Tagliamonte <paultag@debian.org>  Sat, 22 Feb 2014 18:27:08 -0500
+
 debile (1.1.2) experimental; urgency=medium
 
   * Slave file fixes.
