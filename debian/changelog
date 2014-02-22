@@ -1,8 +1,8 @@
-debile (1.1) UNRELEASED; urgency=medium
+debile (1.1) experimental; urgency=medium
 
   * Misc. Fixes. Prerelease.
 
- -- Paul Tagliamonte <paultag@debian.org>  Fri, 21 Feb 2014 23:05:10 -0500
+ -- Paul Tagliamonte <paultag@debian.org>  Fri, 21 Feb 2014 23:05:55 -0500
 
 debile (1.0) experimental; urgency=low
 
