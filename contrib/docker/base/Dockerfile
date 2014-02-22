@@ -19,7 +19,5 @@ RUN apt-get update
 # and install debile-slave
 RUN apt-get install -y debile-slave
 
-ADD slave.yaml /etc/debile/slave.yaml
-
 USER Debian-debile-unpriv
 CMD ["/usr/share/debile-slave/debile-slave-docker"]
