@@ -66,8 +66,6 @@ echo ""
 
 WORKDIR=$(mktemp -d)
 pushd ${WORKDIR} >/dev/null
-mkdir ${SLAVE_NAME}
-cd ${SLAVE_NAME}
 
 echo "${SLAVE_NAME}" > name
 echo "${SLAVE_PASSWORD}" > password
@@ -89,8 +87,7 @@ if [ ${RET} -ne 0 ]; then
 fi
 echo " ... created."
 
-cd ..
-tar -zcf ${SLAVE_NAME}.tar.gz ${SLAVE_NAME}
+tar -zcf ${SLAVE_NAME}.tar.gz *
 
 popd >/dev/null
 mv ${WORKDIR}/${SLAVE_NAME}.tar.gz .
