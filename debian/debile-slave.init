@@ -54,8 +54,7 @@ case "$1" in
 			--exec "$DEBILE" \
 			--pidfile "$DEBILE_PIDFILE" \
             --chuid $DEBILE_USER \
-			-- -d -p "$DEBILE_PIDFILE" \
-			$DEBILE_OPTS
+			-- $DEBILE_OPTS
 		log_end_msg $?
 		;;
 
