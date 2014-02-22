@@ -60,16 +60,3 @@ with tarfile.open(sys.argv[1], "r:gz") as tf:
         r = config['xmlrpc']
         r['password'] = password
         r['user'] = kname
-
-    # OK. We've written back most of it. Now, let's load in the GPG keys
-    # as the Debile user.
-
-    out, err, ret = run_command([
-        "su", "-s", "/bin/sh", "-c",
-        "gpg --import --status-fd 1"
-    ], input=get("key.pub"))
-
-    out, err, ret = run_command([
-        "su", "-s", "/bin/sh", "-c",
-        "gpg --import --status-fd 1"
-    ], input=get("key.priv"))

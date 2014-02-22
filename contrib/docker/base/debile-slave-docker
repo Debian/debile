@@ -17,5 +17,10 @@ if [ ! -e ${DEBILE_CONFIG_TARBALL} ]; then
     exit 1
 fi
 
-/usr/share/debile-slave/debile-slave-import ${DEBILE_CONFIG_TARBALL}
+export HOME="/var/lib/debile/debile-unpriv"
+echo ${HOME}
+
+/usr/share/debile-slave/debile-slave-import-conf ${DEBILE_CONFIG_TARBALL}
+/usr/share/debile-slave/debile-slave-import-gpg ${DEBILE_CONFIG_TARBALL}
+
 exec /usr/bin/debile-slave

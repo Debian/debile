@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2014 under the
+# terms and conditions of the Debile project, MIT/Expat. You should have
+# recieved a copy of the license with this script.
+
+TARFILE=$1
+
+if [ "x${TARFILE}" = "x" ]; then
+    echo "Error."
+    echo " $0 /path/to/tarfile"
+    exit 1
+fi
+
+function do-import {
+    tar -zxf ${TARFILE} $1 -O | gpg --import --status-fd 1
+}
+
+do-import key.pub
+do-import key.priv
