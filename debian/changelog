@@ -1,28 +1,4 @@
-debile (1.1.4) experimental; urgency=medium
-
-  * Slave fixes.
-
- -- Paul Tagliamonte <paultag@debian.org>  Sat, 22 Feb 2014 18:27:08 -0500
-
-debile (1.1.2) experimental; urgency=medium
-
-  * Slave file fixes.
-
- -- Paul Tagliamonte <paultag@debian.org>  Sat, 22 Feb 2014 17:54:42 -0500
-
-debile (1.1.1) experimental; urgency=medium
-
-  * Dockerfile voodoo.
-
- -- Paul Tagliamonte <paultag@debian.org>  Sat, 22 Feb 2014 16:44:23 -0500
-
-debile (1.1) experimental; urgency=medium
-
-  * Misc. Fixes. Prerelease.
-
- -- Paul Tagliamonte <paultag@debian.org>  Fri, 21 Feb 2014 23:05:55 -0500
-
-debile (1.0) experimental; urgency=low
+debile (1.1.6) experimental; urgency=medium
 
   * Initial release.
   * Haters gonna' hate.
