@@ -39,15 +39,22 @@ def run(dsc, package, job, firehose):
     # 'python-schroot_0.3-1_amd64.changes',
     # 'python-schroot_0.3-1_amd64-20131009-2159.build']
 
+    version = package['version']
+    if ":" in version:
+        _, version = version.split(":", 1)
+        # epoch. boggle.
+
     changes = "{source}_{version}*.changes".format(
         source=package['name'],
-        version=package['version'],
+        version=version,
     )
 
     changes = list(glob.glob(changes))
 
     if changes == [] and not ftbfs:
         print(out)
+        print(changes)
+        print(list(glob.glob("*")))
         raise Exception("Um. No changes but no FTBFS.")
 
     if not ftbfs:
