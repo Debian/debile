@@ -20,5 +20,6 @@ VOLUMES="${VOLUMES} -v /srv/debile/tarballs/chroot.d/:/etc/schroot/chroot.d/"
 VOLUMES="${VOLUMES} -v ${DEBILE_CONFIG}:/tmp/config.tar.gz"
 
 docker.io run -t -i \
+    --privileged \
     ${VOLUMES} \
     debile-slave-${DEBILE_FLAVOR}

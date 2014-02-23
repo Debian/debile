@@ -20,6 +20,8 @@ fi
 export HOME="/var/lib/debile/debile-unpriv"
 echo ${HOME}
 
+sbuild-update --keygen
+
 /usr/share/debile-slave/debile-slave-import-conf ${DEBILE_CONFIG_TARBALL}
 /usr/share/debile-slave/debile-slave-import-gpg ${DEBILE_CONFIG_TARBALL}
 
