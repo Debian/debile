@@ -1,15 +1,17 @@
-CURRENT_ID = $(shell docker.io images -q debile-slave-ursae)
+NAMESPACE=paultag
+IMAGE_ID=$(NAMESPACE)/debile-slave-ursae
+CURRENT_ID = $(shell docker.io images -q $(IMAGE_ID))
 IMAGE_BUILD = docker.io build \
 		          --no-cache=true \
 		          --rm=true \
-		          -t debile-slave-ursae \
+		          -t $(IMAGE_ID) \
 		          .
 
 build:
 ifeq ($(CURRENT_ID),)
 	$(IMAGE_BUILD)
 else
-	@echo "debile-slave-ursae is tag $(CURRENT_ID)"
+	@echo "$(IMAGE_ID) is tag $(CURRENT_ID)"
 endif
 
 rebuild:

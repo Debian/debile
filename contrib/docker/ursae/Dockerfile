@@ -1,7 +1,7 @@
 # Create a local-use Debile slave.
 #
 # VERSION   0.1
-FROM        debile-slave-base
+FROM        paultag/debile-slave-base
 MAINTAINER  Paul R. Tagliamonte <paultag@debian.org>
 
 ADD ursae.json /usr/share/dput-ng/profiles/
