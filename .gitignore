@@ -1,3 +1,4 @@
+ENV/
 *pyc
 *swp
 debile.db

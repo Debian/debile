@@ -162,12 +162,12 @@ class BuildJobUpdater:
                     #if self.scheduleBuilds:
                     #    self._jenkins.schedule_build_if_not_failed(pkg.pkgname, pkg.version, arch)
 
-        bcheck = BuildCheck()
-        for arch in self._supportedArchs:
-            yaml_data = bcheck.get_package_states_yaml(dist, component, arch)
-            yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, dist, component, arch), "w")
-            yaml_file.write(yaml_data)
-            yaml_file.close()
+        #bcheck = BuildCheck()
+        #for arch in self._supportedArchs:
+        #    yaml_data = bcheck.get_package_states_yaml(dist, component, arch)
+        #    yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, dist, component, arch), "w")
+        #    yaml_file.write(yaml_data)
+        #    yaml_file.close()
 
 def main():
     # init Apt, we need it later
