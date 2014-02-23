@@ -1,0 +1,51 @@
+---
+Maintainer: # Who to send server-wide problems to
+    Name: Matthias Klumpp
+    Email: mak@debian.org
+
+Users:  # Users of Debile
+    - name: Matthias Klumpp
+      username: mak
+      key: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
+      email: mak@debian.org
+      password: s3kr37
+
+Builders:  # Machines that can build
+    - name: platinum.buildd.tanglu.org
+      key: 21CAF89F520676541CD7088849E9153AF7901FAE
+      maintainer: mak
+      password: s3kr37
+
+Checks:
+    - name: lintian
+      group: default
+      source: true
+      binary: true
+      arched: false
+      build: false
+
+    - name: build
+      group: default
+      source: true
+      binary: false
+      arched: true
+      build: true
+
+Arches:
+    - name: amd64
+    - name: i386
+    - name: all
+
+Suites:
+    - name: aequorea-updates
+    - name: bartholomea
+
+Groups:
+    - name: default
+      maintainer: mak
+      arches:
+          - amd64
+          - i386
+          - all
+      suites:
+          - bartholomea
