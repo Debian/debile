@@ -26,7 +26,6 @@ from ConfigParser import SafeConfigParser
 
 from rapidumolib.utils import *
 from rapidumolib.pkginfo import *
-from pkginfo import *
 
 class BuildCheck:
     def __init__(self, suite):
