@@ -62,10 +62,18 @@ class BuildJobUpdater:
         self._suite = suite
         self._session = sessionmaker(bind=debile.master.core.engine)()
 
-    def create_debile_job(self, pkg, arches):
+    def create_debile_job(self, pkg, pkg_arches):
         gid = "default"
         sid = pkg.suite
-        print("Create debile job for: " + pkg + " # arch: " + arches)
+
+        arches = list()
+        for arch in pkg_arches:
+            if not self.debile_job_exists(pkg, arch):
+                arches.append(arch)
+        if len(arches) == 0:
+            return
+
+        print("Create debile job for: " + str(pkg) + " # arch: " + str(arches)
 
         MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
@@ -94,7 +102,7 @@ class BuildJobUpdater:
 
         emit('accept', 'source', source.debilize())
 
-    def debile_job_exists(self, pkg, arches):
+    def debile_job_exists(self, pkg, arch):
         group = self._session.query(Group).filter_by(name="default").one()
         suite = self._session.query(Suite).filter_by(name=pkg.suite).one()
         try:
@@ -102,19 +110,21 @@ class BuildJobUpdater:
         except NoResultFound:
             return False
 
-        for arch in arches:
-           ga = GroupArch(group="default", arch=arch)
-           try:
-               self._session.query(Job).filter_by(source=source, group=ga)
-           except NoResultFound:
-               return False
+        ga = GroupArch(group="default", arch=arch)
+        try:
+            self._session.query(Job).filter_by(source=source, group=ga)
+        except NoResultFound:
+            return False
         return True
 
     def _filter_unsupported_archs(self, pkg_archs):
         sup_archs = list()
-        for arch in pkg_archs:
-            if arch in self._supported_archs:
-                sup_archs.append(arch)
+        for arch in self._supported_archs:
+            if ('any' in pkg_archs) or ('linux-any' in pkg_archs) or (arch in pkg_archs) or (("any-"+arch) in pkg_archs):
+                    sup_archs.append(arch)
+            if ("all" in pkg_archs):
+                    sup_archs.append("all")
+
         # return and remove duplicates
         return list(set(sup_archs))
 
@@ -125,32 +135,22 @@ class BuildJobUpdater:
         for pkg in pkg_dict.values():
             archs = self._filter_unsupported_archs(pkg.archs)
 
+            # Hacks! ;-)
+            if pkg.suite == "aequorea":
+                pkg.suite = "bartholomea"
+
             # check if this is an arch:all package
             if archs == ["all"]:
                  if not 'all' in pkg.installed_archs:
                      needsbuild_list.write("%s_%s [%s]\n" % (pkg.pkgname, pkg.getVersionNoEpoch(), "all"))
-                     if not self.debile_job_exists(pkg, ["all"]):
-                         self.create_debile_job(pkg, ["all"])
+                     self.create_debile_job(pkg, ["all"])
                  continue
 
-            pkgArchs = []
-            for arch in self._supported_archs:
-                if ('any' in archs) or ('linux-any' in archs) or (("any-"+arch) in archs) or (arch in archs):
-                    pkgArchs.append(arch)
-            if ("all" in archs):
-                    pkgArchs.append("all")
-
-            if len(pkgArchs) <= 0:
+            if len(archs) <= 0:
                 print("Skipping job %s %s on %s, no architectures found!" % (pkg.pkgname, pkg.version, pkg.suite))
                 continue
 
-            # packages for arch:all are built on amd64, we don't need an extra build slot for them if it is present
-            # we need to eliminate possible duplicate arch enties first, so we don't add duplicate archs (or amd64 and all together in one package)
-            buildArchs = list(set(pkgArchs))
-            if ("amd64" in buildArchs) and ("all" in buildArchs):
-                buildArchs.remove("all")
-
-            for arch in buildArchs:
+            for arch in archs:
                 if not arch in pkg.installed_archs:
                     # safety check, to not build stuff twice
                     if (arch == "amd64") and ("all" in pkg.installed_archs):
@@ -158,9 +158,8 @@ class BuildJobUpdater:
                     if self.debugMode:
                         print("Package %s not built for %s!" % (pkg.pkgname, arch))
                     needsbuild_list.write("%s_%s [%s]\n" % (pkg.pkgname, pkg.getVersionNoEpoch(), arch))
-                    if not self.debile_job_exists(pkg, buildArchs):
-                        # do it!
-                        self.create_debile_job(pkg, buildArchs)
+                    # do it!
+                    self.create_debile_job(pkg, [arch])
 
         #bcheck = BuildCheck()
         #for arch in self._supported_archs:
