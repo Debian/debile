@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Matthias Klzmpp <mak@debian.org>
+# Copyright (c) 2014 Matthias Klumpp <mak@debian.org>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,7 +31,7 @@ from debile.utils.dud import Dud, DudFileException
 from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
                                Maintainer, Job, Binary, Arch, Result,
-                               create_jobs)
+                               GroupArch, create_jobs)
 from sqlalchemy.orm import Session, sessionmaker
 import debile.master.core
 from debile.utils.changes import parse_changes_file, ChangesFileException
@@ -73,15 +73,16 @@ class BuildJobUpdater:
         if len(arches) == 0:
             return
 
-        print("Create debile job for: " + str(pkg) + " # arch: " + str(arches)
+        print("Create debile job for: " + str(pkg) + " # arch: " + str(arches))
 
         MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
         group = self._session.query(Group).filter_by(name=gid).one()
         suite = self._session.query(Suite).filter_by(name=sid).one()
+        fake_uploader = self._session.query(Person).filter_by(username="dak").one()
 
         source = Source(
-            uploader="unknown", # FIXME we can't extract the uploader efficiently (yet)
+            uploader=fake_uploader, # FIXME we can't extract the uploader efficiently (yet)
             name=pkg.pkgname,
             version=pkg.version,
             group=group,
@@ -110,9 +111,10 @@ class BuildJobUpdater:
         except NoResultFound:
             return False
 
-        ga = GroupArch(group="default", arch=arch)
+        arch_obj = self._session.query(Arch).filter_by(name=arch).one()
+        ga = GroupArch(group=group, arch=arch_obj)
         try:
-            self._session.query(Job).filter_by(source=source, group=ga)
+            self._session.query(Job).filter_by(source=source, arch=arch_obj)
         except NoResultFound:
             return False
         return True
