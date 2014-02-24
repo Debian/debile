@@ -1,4 +1,4 @@
 pyyaml
-sqlalchemy
+sqlalchemy>=0.8.4
 chardet
 -e git://git.upsilon.cc/firewoes.git#egg=firewoes
