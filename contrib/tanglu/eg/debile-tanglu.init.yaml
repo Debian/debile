@@ -10,6 +10,12 @@ Users:  # Users of Debile
       email: mak@debian.org
       password: s3kr37
 
+    - name: Debian Archive Kit
+      username: dak
+      key: 0000000000000000DADADA000000000000000000
+      email: dak@ftp-master.tanglu.org
+      password: s3kr37
+
 Builders:  # Machines that can build
     - name: platinum.buildd.tanglu.org
       key: 21CAF89F520676541CD7088849E9153AF7901FAE
