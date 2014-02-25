@@ -38,6 +38,7 @@ from debile.utils.changes import parse_changes_file, ChangesFileException
 
 from rapidumolib.pkginfo import *
 from rapidumolib.utils import *
+from rapidumolib.config import *
 from package_buildcheck import *
 from process_dud import *
 
@@ -45,16 +46,16 @@ NEEDSBUILD_EXPORT_DIR = "/srv/dak/export/needsbuild"
 
 class BuildJobUpdater:
     def __init__(self, suite):
-        parser = get_archive_config_parser()
+        conf = RapidumoConfig()
         self.scheduleBuilds = False
         self.debugMode = False
 
-        distro = parser.get('General', 'distro_name')
-        archive_path = parser.get('Archive', 'path')
-        devel_suite = parser.get('Archive', 'devel_suite')
-        staging_suite = parser.get('Archive', 'staging_suite')
-        self._archive_components = parser.get('Archive', 'components').split(" ")
-        self._supported_archs = parser.get('Archive', 'archs').split (" ")
+        distro = conf.distro_name
+        archive_path = conf.archive_config['path']
+        devel_suite = conf.archive_config['devel_suite']
+        staging_suite = conf.archive_config['staging_suite']
+        self._archive_components = conf.get_supported_components(devel_suite).split(" ")
+        self._supported_archs = conf.get_supported_archs(devel_suite).split (" ")
 
         self._pkginfo = PackageBuildInfoRetriever()
         if suite == devel_suite:
@@ -123,6 +124,8 @@ class BuildJobUpdater:
         sup_archs = list()
         for arch in self._supported_archs:
             if ('any' in pkg_archs) or ('linux-any' in pkg_archs) or (arch in pkg_archs) or (("any-"+arch) in pkg_archs):
+                # source arch:any doesn't mean we can build on arch:all
+                if arch != "all":
                     sup_archs.append(arch)
             if ("all" in pkg_archs):
                     sup_archs.append("all")
@@ -137,10 +140,6 @@ class BuildJobUpdater:
         for pkg in pkg_dict.values():
             archs = self._filter_unsupported_archs(pkg.archs)
 
-            # Hacks! ;-)
-            if pkg.suite == "aequorea":
-                pkg.suite = "bartholomea"
-
             # check if this is an arch:all package
             if archs == ["all"]:
                  if not 'all' in pkg.installed_archs:
@@ -154,9 +153,6 @@ class BuildJobUpdater:
 
             for arch in archs:
                 if not arch in pkg.installed_archs:
-                    # safety check, to not build stuff twice
-                    if (arch == "amd64") and ("all" in pkg.installed_archs):
-                        continue
                     if self.debugMode:
                         print("Package %s not built for %s!" % (pkg.pkgname, arch))
                     needsbuild_list.write("%s_%s [%s]\n" % (pkg.pkgname, pkg.getVersionNoEpoch(), arch))
@@ -194,7 +190,7 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.update:
-        sync = BuildJobUpdater("aequorea")
+        sync = BuildJobUpdater("bartholomea")
         #sync.scheduleBuilds = options.build
         sync.sync_packages_all()
     else:

@@ -43,6 +43,7 @@ Arches:
     - name: all
 
 Suites:
+    - name: staging
     - name: aequorea-updates
     - name: bartholomea
 
