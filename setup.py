@@ -27,6 +27,8 @@ flavors = {
     "setup.slave.py": ("debile.slave", [
         'debile.slave',
         'debile.slave.commands',
+        'debile.slave.runners',
+        'debile.slave.wrappers',
     ], {
         'console_scripts': [
             'debile-slave = debile.slave.cli:daemon',

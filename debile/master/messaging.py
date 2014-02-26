@@ -23,25 +23,17 @@ try:
 except ImportError:
     fedmsg = None
 
+import debile.master.core
+
+
 if fedmsg:
+    fcfg = debile.master.core.config.get("fedmsg", {})
+
     fedmsg.init(
-        topic_prefix='org.anized',
-        environment='dev',
-        sign_messages=False,
-        endpoints={
-            "debile.leliel":  [
-                  "tcp://localhost:3000",
-                  "tcp://localhost:3001",
-                  "tcp://localhost:3002",
-                  "tcp://localhost:3003",
-            ],
-            "debile.irill6":  [
-                  "tcp://irill6.inria.fr:3000",
-                  "tcp://irill6.inria.fr:3001",
-                  "tcp://irill6.inria.fr:3002",
-                  "tcp://irill6.inria.fr:3003",
-            ],
-        },
+        topic_prefix=fcfg.get("prefix", "org.anized"),
+        environment=fcfg.get("environment", "dev"),
+        sign_messages=fcfg.get("sign", False),
+        endpoints=fcfg.get("endpoints", {}),
     )
 
 def emit(topic, modname, message):

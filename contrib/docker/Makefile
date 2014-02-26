@@ -1,15 +1,12 @@
-# This Makefile will help in creating a Debile slave image for this
-# host.
-#
+IMAGES := ursae
 
-all: image
+$(IMAGES): base
+	make -C $@ build
 
-slave.yaml:
-	@echo "Copying /etc/debile/slave.yaml here."
-	@echo "If you need, please edit this config."
-	@cp /etc/debile/slave.yaml .
+base:
+	# We special-case build since we depend on it.
+	make -C base build
 
+all: $(IMAGES)
 
-image: slave.yaml
-	@echo "Creating the image"
-	@docker.io build -rm=true -no-cache=true -t debile-slave .
+.PHONY: $(IMAGES) base

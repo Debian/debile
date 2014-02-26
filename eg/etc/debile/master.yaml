@@ -1,5 +1,18 @@
+---
 database: sqlite:////home/tag/debile.db
+
 repo:
     base: /srv/debile/pool
     url: http://localhost/debile/pool
     files: /srv/debile/files
+
+fedmsg:
+    prefix: "org.anized"
+    sign: false
+    environment: "dev"
+    endpoints:
+        - "debile.leliel":
+            - "tcp://localhost:3000"
+            - "tcp://localhost:3001"
+            - "tcp://localhost:3002"
+            - "tcp://localhost:3003"

@@ -27,6 +27,7 @@ from debile.slave.utils import tdir, cd, upload
 from debile.utils.aget import aget
 from debile.utils.bget import bget
 from debile.utils.dud import Dud_
+from dput.exceptions import DputError, DcutError
 
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
@@ -228,7 +229,7 @@ def main():
         except IDidNothingError:
             logger.debug("Nothing to do for now, sleeping 30s")
             time.sleep(30)
-        except Exception as e:
+        except (DputError, DcutError, Exception) as e:
             logger.warning(
                 "Er, we got a fatal error: %s. Restarting in a minute" % (
                     str(e)

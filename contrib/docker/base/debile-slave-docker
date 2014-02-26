@@ -1,0 +1,28 @@
+#!/bin/bash
+# Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2014 under the
+# terms and conditions of the Debile project, MIT/Expat. You should have
+# recieved a copy of the license with this script.
+set -e
+
+# OK. Let's do a few things.
+#
+#  - First off, let's load in our config.
+#  - After that, let's exec into Debile-slave
+
+DEBILE_CONFIG_TARBALL=$1
+
+if [ ! -e ${DEBILE_CONFIG_TARBALL} ]; then
+    echo "No such file: ${DEBILE_CONFIG_TARBALL}."
+    echo "  quitting."
+    exit 1
+fi
+
+export HOME="/var/lib/debile/debile-unpriv"
+echo ${HOME}
+
+sbuild-update --keygen
+
+/usr/share/debile-slave/debile-slave-import-conf ${DEBILE_CONFIG_TARBALL}
+/usr/share/debile-slave/debile-slave-import-gpg ${DEBILE_CONFIG_TARBALL}
+
+exec /usr/bin/debile-slave

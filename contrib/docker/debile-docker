@@ -1,0 +1,25 @@
+#!/bin/bash
+# Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2014 under the
+# terms and conditions of the Debile project, MIT/Expat. You should have
+# recieved a copy of the license with this script.
+set -e
+
+DEBILE_FLAVOR=$1
+DEBILE_CONFIG=$2
+
+if [ "x${DEBILE_CONFIG}" = "x" ]; then
+    echo "Error in usage:"
+    echo ""
+    echo "  $0 flavor /path/to/config.tar.gz"
+    exit 1
+fi
+
+VOLUMES=""
+VOLUMES="${VOLUMES} -v /srv/debile/tarballs/tarballs/:/var/lib/debile/tarballs/"
+VOLUMES="${VOLUMES} -v /srv/debile/tarballs/chroot.d/:/etc/schroot/chroot.d/"
+VOLUMES="${VOLUMES} -v ${DEBILE_CONFIG}:/tmp/config.tar.gz"
+
+docker.io run -t -i \
+    --privileged \
+    ${VOLUMES} \
+    debile-slave-${DEBILE_FLAVOR}

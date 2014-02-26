@@ -5,6 +5,8 @@ debile-master.substvars
 debile-master/
 debile-slave.debhelper.log
 debile-slave.substvars
+python-debile.debhelper.log
+python-debile.substvars
 debile-slave/
 debile.debhelper.log
 debile.substvars

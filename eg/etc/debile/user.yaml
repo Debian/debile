@@ -1,0 +1,6 @@
+---
+xmlrpc:
+    user: "@paultag"
+    password: s3kr37
+    host: localhost
+    port: 22017
