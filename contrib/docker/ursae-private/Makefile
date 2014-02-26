@@ -1,3 +1,4 @@
+HOSTNAME=$(shell hostname --fqdn)
 IMAGE_ID=debile-slave-ursae-private
 CURRENT_ID = $(shell docker.io images -q $(IMAGE_ID))
 IMAGE_BUILD = docker.io build \
@@ -6,7 +7,15 @@ IMAGE_BUILD = docker.io build \
 		          -t $(IMAGE_ID) \
 		          .
 
-build:
+all: build
+
+
+config.tar.gz:
+	../../../debian/bin/debile-generate-slave-keys $(HOSTNAME)
+	mv $(HOSTNAME).tar.gz config.tar.gz
+
+
+build: config.tar.gz
 ifeq ($(CURRENT_ID),)
 	$(IMAGE_BUILD)
 else
