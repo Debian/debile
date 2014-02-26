@@ -58,8 +58,6 @@ class BuildJobUpdater:
         self._supported_archs = conf.get_supported_archs(devel_suite).split (" ")
 
         self._pkginfo = PackageBuildInfoRetriever()
-        if suite == devel_suite:
-            self._pkginfo.extra_suite = staging_suite
         self._suite = suite
         self._session = sessionmaker(bind=debile.master.core.engine)()
 
@@ -82,15 +80,17 @@ class BuildJobUpdater:
         suite = self._session.query(Suite).filter_by(name=sid).one()
         fake_uploader = self._session.query(Person).filter_by(username="dak").one()
 
-        source = Source(
-            uploader=fake_uploader, # FIXME we can't extract the uploader efficiently (yet)
-            name=pkg.pkgname,
-            version=pkg.version,
-            group=group,
-            suite=suite,
-            uploaded_at=dt.datetime.utcnow(),
-            updated_at=dt.datetime.utcnow()
-        )
+        source = self._session.query(Source).filter(Source.name==pkg.pkgname, Source.version==pkg.version, Source.group==group, Source.suite==suite).first()
+        if not source:
+            source = Source(
+                uploader=fake_uploader, # FIXME we can't extract the uploader efficiently (yet)
+                name=pkg.pkgname,
+                version=pkg.version,
+                group=group,
+                suite=suite,
+                uploaded_at=dt.datetime.utcnow(),
+                updated_at=dt.datetime.utcnow()
+            )
 
         #source.maintainers.append(Maintainer(
         #    comaintainer=False,
@@ -114,9 +114,7 @@ class BuildJobUpdater:
 
         arch_obj = self._session.query(Arch).filter_by(name=arch).one()
         ga = GroupArch(group=group, arch=arch_obj)
-        try:
-            self._session.query(Job).filter_by(source=source, arch=arch_obj)
-        except NoResultFound:
+        if not self._session.query(Job).filter(Job.source==source, Job.arch==arch_obj).first():
             return False
         return True
 
@@ -127,8 +125,8 @@ class BuildJobUpdater:
                 # source arch:any doesn't mean we can build on arch:all
                 if arch != "all":
                     sup_archs.append(arch)
-            if ("all" in pkg_archs):
-                    sup_archs.append("all")
+        if ("all" in pkg_archs):
+            sup_archs.append("all")
 
         # return and remove duplicates
         return list(set(sup_archs))
