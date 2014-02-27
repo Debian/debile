@@ -40,30 +40,3 @@ def get_proxy():
             port=xml['port'],
         ), allow_none=True)
     return proxy
-
-
-@contextmanager
-def checkout(package):
-    proxy = get_proxy()
-    _type = package['type']
-    if _type not in ['binary', 'source']:
-        raise ValueError("type sucks")
-
-    def source():
-        url = proxy.get_dsc_url(package['source_id'])
-        dsc = os.path.basename(url)
-        dget(url)
-        yield dsc
-
-    def binary():
-        url = proxy.get_deb_url(package['binary_id'])
-        deb = os.path.basename(url)
-        out, err, ret = run_command(['wget', url])
-        if ret != 0:
-            raise Exception("zomgwtf")
-        yield deb
-
-    with tdir() as where:
-        with cd(where):
-            for x in {"source": source, "binary": binary}[_type]():
-                yield x
