@@ -56,7 +56,10 @@ def process_changes(session, path):
     except ChangesFileException as e:
         return reject_changes(session, changes, "invalid-upload")
 
-    key = changes.validate_signature()
+    try:
+        key = changes.validate_signature()
+    except ChangesFileException:
+        return reject_changes(session, changes, "invalid-signature")
 
     #### Sourceful Uploads
     if changes.is_source_only_upload():
