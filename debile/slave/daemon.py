@@ -88,10 +88,8 @@ def create_firehose(package, version_getter):
 def checkout(job, package):
     with tdir() as path:
         with cd(path):
-            server_info = proxy.get_info()
             src = package['source']
-            archive = "{url}/{group}".format(url=server_info['repo']['base'],
-                                             group=src['group'],)
+            archive = proxy.get_archive_location(src['group'])
             if package['type'] == "source":
                 yield aget(archive, src['suite'], 'main',
                            src['name'], src['version'])
