@@ -20,7 +20,7 @@
 
 
 def init():
-    from debile.master.orm import init as init_db
+    from debile.master.orm import init_db
     return init_db()
 
 

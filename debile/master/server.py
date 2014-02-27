@@ -23,10 +23,8 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
-from sqlalchemy.orm import sessionmaker
-
-import debile.master.core
 from debile.master.core import config
+from debile.master.utils import make_session
 from debile.master.orm import Person, Builder
 
 from logging.handlers import SysLogHandler
@@ -71,17 +69,13 @@ def user_method(fn):
     return _
 
 
-def set_session():
-    NAMESPACE.session = sessionmaker(bind=debile.master.core.engine)()
-
-
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
 
         NAMESPACE.machine = None
         NAMESPACE.user = None
         if not hasattr(NAMESPACE, 'session'):
-            set_session()
+            NAMESPACE.session = make_session()
 
         cert = self.connection.getpeercert(True)
         fingerprint = hashlib.sha1(cert).hexdigest().upper()

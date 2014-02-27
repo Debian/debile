@@ -684,6 +684,6 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
                 j.depedencies.append(dep)
 
 
-def init():
-    from debile.master.core import engine
+def init_db():
+    from debile.master.utils import engine
     Base.metadata.create_all(engine)
