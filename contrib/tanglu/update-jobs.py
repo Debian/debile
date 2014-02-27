@@ -20,6 +20,7 @@
 
 import os
 import apt_pkg
+import yaml
 from optparse import OptionParser
 import fnmatch
 import datetime as dt
@@ -50,12 +51,13 @@ class BuildJobUpdater:
         self.scheduleBuilds = False
         self.debugMode = False
 
-        distro = conf.distro_name
+        self._distro = conf.distro_name
         archive_path = conf.archive_config['path']
         devel_suite = conf.archive_config['devel_suite']
         staging_suite = conf.archive_config['staging_suite']
         self._archive_components = conf.get_supported_components(devel_suite).split(" ")
         self._supported_archs = conf.get_supported_archs(devel_suite).split (" ")
+        self._supported_archs.append("all")
 
         self._pkginfo = PackageBuildInfoRetriever()
         self._suite = suite
@@ -131,9 +133,26 @@ class BuildJobUpdater:
         # return and remove duplicates
         return list(set(sup_archs))
 
+    def _get_package_depwait_report(self, pkg, arch):
+        for nbpkg in self.bcheck_data[arch]:
+            if (nbpkg['package'] == ('src%3a'+pkg.pkgname)) and (nbpkg['version'] == pkg.version):
+                if nbpkg['status'] == 'broken':
+                    return yaml.dump(nbpkg['reasons'])
+        return None
+
+
     def sync_packages(self, component, needsbuild_list):
         pkg_list = self._pkginfo.get_packages_for(self._suite, component)
         pkg_dict = self._pkginfo.package_list_to_dict(pkg_list)
+
+        self.bcheck_data = {}
+        bcheck = BuildCheck(self._suite)
+        for arch in self._supported_archs:
+            yaml_data = bcheck.get_package_states_yaml(component, arch)
+            self.bcheck_data[arch] = yaml.safe_load(yaml_data)['report']
+            yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, self._distro, component, arch), "w")
+            yaml_file.write(yaml_data)
+            yaml_file.close()
 
         for pkg in pkg_dict.values():
             archs = self._filter_unsupported_archs(pkg.archs)
@@ -142,7 +161,8 @@ class BuildJobUpdater:
             if archs == ["all"]:
                  if not 'all' in pkg.installed_archs:
                      needsbuild_list.write("%s_%s [%s]\n" % (pkg.pkgname, pkg.getVersionNoEpoch(), "all"))
-                     self.create_debile_job(pkg, ["all"])
+                     if not self._get_package_depwait_report(pkg, "all"):
+                         self.create_debile_job(pkg, ["all"])
                  continue
 
             if len(archs) <= 0:
@@ -154,15 +174,9 @@ class BuildJobUpdater:
                     if self.debugMode:
                         print("Package %s not built for %s!" % (pkg.pkgname, arch))
                     needsbuild_list.write("%s_%s [%s]\n" % (pkg.pkgname, pkg.getVersionNoEpoch(), arch))
-                    # do it!
-                    self.create_debile_job(pkg, [arch])
-
-        #bcheck = BuildCheck()
-        #for arch in self._supported_archs:
-        #    yaml_data = bcheck.get_package_states_yaml(dist, component, arch)
-        #    yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, dist, component, arch), "w")
-        #    yaml_file.write(yaml_data)
-        #    yaml_file.close()
+                    if not self._get_package_depwait_report(pkg, "all"):
+                        # do it!
+                        self.create_debile_job(pkg, [arch])
 
     def sync_packages_all(self):
         for comp in self._archive_components:
@@ -188,7 +202,7 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.update:
-        sync = BuildJobUpdater("bartholomea")
+        sync = BuildJobUpdater("staging")
         #sync.scheduleBuilds = options.build
         sync.sync_packages_all()
     else:

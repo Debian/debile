@@ -22,37 +22,40 @@ import sys
 import subprocess
 import yaml
 from optparse import OptionParser
-from ConfigParser import SafeConfigParser
 
-from rapidumolib.utils import *
+from rapidumolib.config import *
 from rapidumolib.pkginfo import *
 
 class BuildCheck:
     def __init__(self, suite):
-        parser = get_archive_config_parser()
-        path = parser.get('Archive', 'path')
+        conf = RapidumoConfig()
+        self._distro = conf.distro_name
+        self._staging_suite = conf.archive_config['staging_suite']
+
+        path = conf.archive_config['path']
         self._archive_path = path
         self._suite = suite
-        self._pkginfo = SourcePackageInfoRetriever(path, parser.get('General', 'distro_name'), suite)
-        if self._suite == "staging":
-            self._pkginfo.extra_suite = parser.get('Archive', 'devel_suite')
+        self._devel_suite = conf.archive_config['devel_suite']
+        self._pkginfo = SourcePackageInfoRetriever(path, self._distro, suite)
+        if self._suite == self._staging_suite:
+            self._pkginfo.extra_suite = self._devel_suite
 
-    def _get_binary_indices_list(self, comp, arch):
+    def _get_binary_indices_list(self, suite, comp, arch):
         archive_indices = []
-        archive_binary_index_path = self._archive_path + "/dists/%s/%s/binary-%s/Packages.gz" % (self._suite, comp, arch)
+        archive_binary_index_path = self._archive_path + "/%s/dists/%s/%s/binary-%s/Packages.gz" % (self._distro, suite, comp, arch)
         archive_indices.append(archive_binary_index_path)
         if arch == "all":
             # if arch is all, we feed the solver with a binary architecture as example, to solve dependencies on arch-specific stuff
-            archive_binary_index_path_arch = self._archive_path + "/dists/%s/%s/binary-amd64/Packages.gz" % (self._suite, comp)
+            archive_binary_index_path_arch = self._archive_path + "/%s/dists/%s/%s/binary-amd64/Packages.gz" % (self._distro, suite, comp)
             archive_indices.append(archive_binary_index_path_arch)
         else:
             # any architecture canb also depend on arch:all stuff, so we add it to the loop
-            archive_binary_index_path_all = self._archive_path + "/dists/%s/%s/binary-all/Packages.gz" % (self._suite, comp)
+            archive_binary_index_path_all = self._archive_path + "/%s/dists/%s/%s/binary-all/Packages.gz" % (self._distro, suite, comp)
             archive_indices.append(archive_binary_index_path_all)
 
-        if self._suite == "staging":
+        if suite == "staging":
             # staging needs the aequorea data (it is no complete suite)
-            archive_indices.extend(self._get_binary_indices_list("aequorea", comp, arch))
+            archive_indices.extend(self._get_binary_indices_list(self._devel_suite, comp, arch))
 
         return archive_indices
 
@@ -69,7 +72,7 @@ class BuildCheck:
                 archive_indices.extend(comp_indices)
 
         # append the corresponding sources information
-        archive_source_index_path = self._archive_path + "/dists/%s/%s/source/Sources.gz" % (self._suite, comp)
+        archive_source_index_path = self._archive_path + "/%s/dists/%s/%s/source/Sources.gz" % (self._distro, self._suite, comp)
         archive_indices.append(archive_source_index_path)
 
         dose_cmd = ["dose-builddebcheck", "--quiet", "-e", "-f", "--summary", "--deb-native-arch=%s" % (arch)]
@@ -80,7 +83,7 @@ class BuildCheck:
         stdout, stderr = proc.communicate()
         output = stdout
         if (proc.returncode != 0):
-            return False, output
+            return False, stderr
         return True, output
 
     def check_build(self, component, package_name, arch, force_buildcheck=False):
@@ -117,7 +120,9 @@ class BuildCheck:
         return 1
 
     def get_package_states_yaml(self, component, arch):
-        ret, info = self._run_dose_builddebcheck(self._suite, component, arch)
+        ret, info = self._run_dose_builddebcheck(component, arch)
+        if not ret:
+            raise Exception(info)
 
         return info
 
