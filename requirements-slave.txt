@@ -1,2 +1,5 @@
+pyyaml
 requests
+chardet
+python-debian
 schroot
