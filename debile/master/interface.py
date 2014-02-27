@@ -113,6 +113,12 @@ class DebileMasterInterface(object):
     def get_binary(self, binary_id):
         return NAMESPACE.session.query(Binary).get(binary_id).debilize()
 
+    def get_archive_location(self, group_name):
+        archive_path_tmpl = config['repo']['archive_location']
+        path = archive_path_tmpl.format(url=config['repo']['url'],
+                                             group=group_name,)
+        return path
+
     def get_info(self):
         return {
             "repo": {
