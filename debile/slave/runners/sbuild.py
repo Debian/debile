@@ -73,9 +73,24 @@ def parse_sbuild_log(log, sut):
     return obj
 
 
+def ensure_chroot_sanity(chroot_name):
+    out, ret, err = run_command(['schroot', '-l'])
+    for chroot in out.splitlines():
+        chroot = chroot.strip()
+        chroots = [
+            chroot,
+            "chroot:%s" % (chroot)
+        ]
+        if chroot in chroots:
+            return True
+    raise ValueError("No such schroot (%s) found." % (chroot_name))
+
+
 def sbuild(package, suite, arch, analysis):
     #chroot_name = "%s-%s" % (suite, arch)
     chroot_name = suite
+
+    ensure_chroot_sanity(chroot_name)
 
     dsc = os.path.basename(package)
     if not dsc.endswith('.dsc'):

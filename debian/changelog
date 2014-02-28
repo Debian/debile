@@ -1,6 +1,5 @@
-debile (1.1.10) experimental; urgency=medium
+debile (1.2.0) experimental; urgency=medium
 
   * Initial release.
-  * Haters gonna' hate.
 
  -- Paul Tagliamonte <paultag@debian.org>  Wed, 14 Aug 2013 01:10:13 -0400
