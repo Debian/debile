@@ -23,26 +23,23 @@ import apt_pkg
 import yaml
 from optparse import OptionParser
 import fnmatch
-import datetime as dt
 
-from firewoes.lib.hash import idify, uniquify
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-
-from debile.utils.dud import Dud, DudFileException
+from debile.utils.aget import find_dsc
 from debile.master.messaging import emit
 from debile.master.filerepo import FilesAlreadyRegistered
-from debile.master.orm import (Person, Builder, Source, Group, Suite,
-                               Maintainer, Job, Binary, Arch, Result,
-                               GroupArch, create_jobs)
+from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
+                               Group, GroupSuite, Source, Maintainer, Binary,
+                               Job, JobDependencies, Result,
+                               create_source, create_jobs)
+
+from debian.deb822 import Dsc
 from sqlalchemy.orm import Session, sessionmaker
 import debile.master.core
-from debile.utils.changes import parse_changes_file, ChangesFileException
 
 from rapidumolib.pkginfo import *
 from rapidumolib.utils import *
 from rapidumolib.config import *
 from package_buildcheck import *
-from process_dud import *
 
 NEEDSBUILD_EXPORT_DIR = "/srv/dak/export/needsbuild"
 
@@ -63,64 +60,51 @@ class ArchiveDebileBridge:
 
         self._pkginfo = PackageBuildInfoRetriever()
         self._suite = suite
-        self._session = sessionmaker(bind=debile.master.core.engine)()
+        Session = sessionmaker(bind=debile.master.core.engine)
+        self._session = Session()
 
-    def create_debile_job(self, pkg, pkg_arches):
-        gid = "default"
-        sid = pkg.suite
+    def create_debile_job(self, pkg, pkg_component, pkg_arches):
+        uploader = "dak"
+        group = "default"
+        suite = pkg.suite
 
-        arches = list()
-        for arch in pkg_arches:
-            if not self.debile_job_exists(pkg, arch):
-                arches.append(arch)
-        if len(arches) == 0:
-            return
+        group_suite = self._session.query(GroupSuite).filter(
+            Group.name==group,
+            Suite.name==suite,
+        ).one()
 
-        print("Create debile job for: " + str(pkg) + " # arch: " + str(arches))
+        source = self._session.query(Source).filter(
+            Source.name==pkg.pkgname,
+            Source.version==pkg.version,
+            GroupSuite.group==group_suite.group,
+        ).first()
 
-        MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
-
-        group = self._session.query(Group).filter_by(name=gid).one()
-        suite = self._session.query(Suite).filter_by(name=sid).one()
-        fake_uploader = self._session.query(Person).filter_by(username="dak").one()
-
-        source = self._session.query(Source).filter(Source.name==pkg.pkgname, Source.version==pkg.version, Source.group==group, Source.suite==suite).first()
         if not source:
-            source = Source(
-                uploader=fake_uploader, # FIXME we can't extract the uploader efficiently (yet)
-                name=pkg.pkgname,
-                version=pkg.version,
-                group=group,
-                suite=suite,
-                uploaded_at=dt.datetime.utcnow(),
-                updated_at=dt.datetime.utcnow()
-            )
-
-        #source.maintainers.append(Maintainer(
-        #    comaintainer=False,
-        #    **MAINTAINER.match(changes['Maintainer']).groupdict()
-        #))
-
-        create_jobs(source, self._session, arches)
+            dsc_fname = find_dsc(group_suite.group.repo_path, suite,
+                                 pkg_component, pkg.pkgname, pkg.version)
+            component = self._session.query(Component).filter_by(name=pkg_component).one()
+            user = self._session.query(Person).filter_by(username=uploader).one()
+            dsc = Dsc(open(dsc_fname))
+            source = create_source(dsc, group_suite, component, user)
+            create_jobs(source, self._session, pkg_arches)
+        else:
+            arches = list()
+            for arch in pkg_arches:
+                job = self._session.query(Job).filter(
+                    Job.source==source,
+                    Job.arch.name==arch
+                ).first()
+                if job is None:
+                    arches.append(arch)
+            if len(arches) == 0:
+                return
+            create_jobs(source, self._session, arches)
+            print("Created job for %s (archs: %s)" % (pkg.pgname, str(arches)))
 
         self._session.add(source)  # OK. Populated entry. Let's insert.
         self._session.commit()  # Neato.
 
         emit('accept', 'source', source.debilize())
-
-    def debile_job_exists(self, pkg, arch):
-        group = self._session.query(Group).filter_by(name="default").one()
-        suite = self._session.query(Suite).filter_by(name=pkg.suite).one()
-        try:
-            source = self._session.query(Source).filter_by(name=pkg.pkgname, version=pkg.version, group=group, suite=suite).one()
-        except NoResultFound:
-            return False
-
-        arch_obj = self._session.query(Arch).filter_by(name=arch).one()
-        ga = GroupArch(group=group, arch=arch_obj)
-        if not self._session.query(Job).filter(Job.source==source, Job.arch==arch_obj).first():
-            return False
-        return True
 
     def _filter_unsupported_archs(self, pkg_archs):
         sup_archs = list()
@@ -158,13 +142,7 @@ class ArchiveDebileBridge:
 
         for pkg in pkg_dict.values():
             archs = self._filter_unsupported_archs(pkg.archs)
-
-            # check if this is an arch:all package
-            if archs == ["all"]:
-                 if not 'all' in pkg.installed_archs:
-                     if not self._get_package_depwait_report(pkg, "all"):
-                         self.create_debile_job(pkg, ["all"])
-                 continue
+            pkg_build_arches = list()
 
             if len(archs) <= 0:
                 print("Skipping job %s %s on %s, no architectures found!" % (pkg.pkgname, pkg.version, pkg.suite))
@@ -174,100 +152,14 @@ class ArchiveDebileBridge:
                 if not arch in pkg.installed_archs:
                     if self.debugMode:
                         print("Package %s not built for %s!" % (pkg.pkgname, arch))
-                    if not self._get_package_depwait_report(pkg, "all"):
-                        # do it!
-                        self.create_debile_job(pkg, [arch])
+                    if not self._get_package_depwait_report(pkg, arch):
+                        pkg_build_arches.append(arch)
+
+            self.create_debile_job(pkg, component, pkg_build_arches)
 
     def sync_packages_all(self):
         for comp in self._archive_components:
             self.sync_packages(comp)
-
-    def _reject_dud(self, dud, tag):
-        print "REJECT: {source} because {tag}".format(
-            tag=tag, source=dud['Source'])
-
-        e = None
-        try:
-            dud.validate()
-        except DudFileException as e:
-            print e
-
-        emit('reject', 'result', {
-            "tag": tag,
-            "source": dud['Source'],
-        })
-
-        for fp in [dud.get_filename()] + dud.get_files():
-            os.unlink(fp)
-        # Note this in the log.
-
-    def _accept_dud(self, dud, builder):
-        fire = dud.get_firehose()
-        failed = True if dud.get('X-Debile-Failed', None) == "Yes" else False
-
-        job = self._session.query(Job).get(dud['X-Debile-Job'])
-
-        fire, _ = idify(fire)
-        fire = uniquify(self._session, fire)
-
-        result = Result()
-        result.job = job
-        result.source = job.source
-        result.check = job.check
-        result.firehose = fire
-        result.binary = job.binary  # It's nullable. That's cool.
-        self._session.merge(result)  # Needed because a *lot* of the Firehose is
-        # going to need unique ${WORLD}.
-
-        job.close(self._session, failed)
-        self._session.commit()  # Neato.
-
-        repo = result.get_repo()
-        try:
-            repo.add_dud(dud)
-        except FilesAlreadyRegistered:
-            return reject_dud(self._session, dud, "dud-files-already-registered")
-
-        emit('receive', 'result', result.debilize())
-        #  repo.add_dud removes the files
-
-    def process_dud(self, path):
-        dud = Dud(filename=path)
-        jid = dud.get("X-Debile-Job", None)
-        if jid is None:
-            return self._reject_dud(dud, "missing-dud-job")
-
-        try:
-            dud.validate()
-        except DudFileException as e:
-            return self._reject_dud(dud, "invalid-dud-upload")
-
-        key = dud.validate_signature()
-
-        try:
-            builder = self._session.query(Builder).filter_by(key=key).one()
-        except NoResultFound:
-            return self._reject_dud(dud, "invalid-dud-builder")
-
-        try:
-            job = self._session.query(Job).get(jid)
-        except NoResultFound:
-            return self._reject_dud(dud, "invalid-dud-job")
-
-        if dud.get("X-Debile-Failed", None) is None:
-            return self._reject_dud(dud, "no-failure-notice")
-
-        if job.builder != builder:
-            return self._reject_dud(dud, "invalid-dud-uploader")
-
-        self._accept_dud(dud, builder)
-
-    def process_incoming(self):
-        os.chdir(self._incoming_path)
-        for fname in os.listdir(self._incoming_path):
-            if fname.endswith(".dud"):
-                self.process_dud("%s/%s" % (self._incoming_path, fname))
-        os.chdir("/tmp/")
 
 def main():
     # init Apt, we need it later
@@ -277,9 +169,6 @@ def main():
     parser.add_option("-u", "--update-jobs",
                   action="store_true", dest="update", default=False,
                   help="syncronize Debile with archive contents")
-    parser.add_option("-p", "--process-incoming",
-                  action="store_true", dest="process_incoming", default=False,
-                  help="import DUD files from incoming")
 
     (options, args) = parser.parse_args()
 
@@ -287,9 +176,6 @@ def main():
         sync = ArchiveDebileBridge("staging")
         #sync.scheduleBuilds = options.build
         sync.sync_packages_all()
-    elif options.process_incoming:
-        adb = ArchiveDebileBridge("staging")
-        adb.process_incoming()
     else:
         print("Run with -h for a list of available command-line options!")
 

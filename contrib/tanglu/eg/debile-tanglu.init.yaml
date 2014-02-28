@@ -1,8 +1,4 @@
 ---
-Maintainer: # Who to send server-wide problems to
-    Name: Matthias Klumpp
-    Email: mak@debian.org
-
 Users:  # Users of Debile
     - name: Matthias Klumpp
       username: mak
@@ -22,37 +18,53 @@ Builders:  # Machines that can build
       maintainer: mak
       password: s3kr37
 
+Suites:
+    - name: aequorea-updates
+    - name: bartholomea
+    - name: staging
+
+Components:
+    - name: main
+    - name: contrib
+    - name: non-free
+
+Arches:
+    - name: all
+    - name: amd64
+    - name: i386
+
 Checks:
     - name: lintian
-      group: default
       source: true
       binary: true
-      arched: false
       build: false
 
     - name: build
-      group: default
-      source: true
+      source: false
       binary: false
-      arched: true
       build: true
-
-Arches:
-    - name: amd64
-    - name: i386
-    - name: all
-
-Suites:
-    - name: staging
-    - name: aequorea-updates
-    - name: bartholomea
 
 Groups:
     - name: default
       maintainer: mak
-      arches:
-          - amd64
-          - i386
-          - all
+
+      debile_should_process_changes: False
+      repo_path: /srv/archive.tanglu.org/tanglu
+      repo_url: http://archive.tanglu.org/tanglu
+
+      files_path: /srv/debile
+      files_url: http://buildd.tanglu.org/debile
+
       suites:
-          - bartholomea
+          - suite: staging
+            components:
+                - main
+                - contrib
+                - non-free
+            arches:
+                - all
+                - amd64
+                - i386
+            checks:
+                - build
+                - lintian
