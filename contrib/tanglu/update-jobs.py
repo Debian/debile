@@ -45,13 +45,14 @@ from process_dud import *
 
 NEEDSBUILD_EXPORT_DIR = "/srv/dak/export/needsbuild"
 
-class BuildJobUpdater:
+class ArchiveDebileBridge:
     def __init__(self, suite):
         conf = RapidumoConfig()
         self.scheduleBuilds = False
         self.debugMode = False
 
         self._distro = conf.distro_name
+        self._incoming_path = conf.archive_config['incoming']
         archive_path = conf.archive_config['path']
         devel_suite = conf.archive_config['devel_suite']
         staging_suite = conf.archive_config['staging_suite']
@@ -180,21 +181,114 @@ class BuildJobUpdater:
         for comp in self._archive_components:
             self.sync_packages(comp)
 
+    def _reject_dud(self, dud, tag):
+        print "REJECT: {source} because {tag}".format(
+            tag=tag, source=dud['Source'])
+
+        e = None
+        try:
+            dud.validate()
+        except DudFileException as e:
+            print e
+
+        emit('reject', 'result', {
+            "tag": tag,
+            "source": dud['Source'],
+        })
+
+        for fp in [dud.get_filename()] + dud.get_files():
+            os.unlink(fp)
+        # Note this in the log.
+
+    def _accept_dud(self, dud, builder):
+        fire = dud.get_firehose()
+        failed = True if dud.get('X-Debile-Failed', None) == "Yes" else False
+
+        job = self._session.query(Job).get(dud['X-Debile-Job'])
+
+        fire, _ = idify(fire)
+        fire = uniquify(self._session, fire)
+
+        result = Result()
+        result.job = job
+        result.source = job.source
+        result.check = job.check
+        result.firehose = fire
+        result.binary = job.binary  # It's nullable. That's cool.
+        self._session.merge(result)  # Needed because a *lot* of the Firehose is
+        # going to need unique ${WORLD}.
+
+        job.close(self._session, failed)
+        self._session.commit()  # Neato.
+
+        repo = result.get_repo()
+        try:
+            repo.add_dud(dud)
+        except FilesAlreadyRegistered:
+            return reject_dud(self._session, dud, "dud-files-already-registered")
+
+        emit('receive', 'result', result.debilize())
+        #  repo.add_dud removes the files
+
+    def process_dud(self, path):
+        dud = Dud(filename=path)
+        jid = dud.get("X-Debile-Job", None)
+        if jid is None:
+            return self._reject_dud(dud, "missing-dud-job")
+
+        try:
+            dud.validate()
+        except DudFileException as e:
+            return self._reject_dud(dud, "invalid-dud-upload")
+
+        key = dud.validate_signature()
+
+        try:
+            builder = self._session.query(Builder).filter_by(key=key).one()
+        except NoResultFound:
+            return self._reject_dud(dud, "invalid-dud-builder")
+
+        try:
+            job = self._session.query(Job).get(jid)
+        except NoResultFound:
+            return self._reject_dud(dud, "invalid-dud-job")
+
+        if dud.get("X-Debile-Failed", None) is None:
+            return self._reject_dud(dud, "no-failure-notice")
+
+        if job.builder != builder:
+            return self._reject_dud(dud, "invalid-dud-uploader")
+
+        self._accept_dud(dud, builder)
+
+    def process_incoming(self):
+        os.chdir(self._incoming_path)
+        for fname in os.listdir(self._incoming_path):
+            if fname.endswith(".dud"):
+                self.process_dud("%s/%s" % (self._incoming_path, fname))
+        os.chdir("/tmp/")
+
 def main():
     # init Apt, we need it later
     apt_pkg.init()
 
     parser = OptionParser()
-    parser.add_option("-u", "--update",
+    parser.add_option("-u", "--update-jobs",
                   action="store_true", dest="update", default=False,
                   help="syncronize Debile with archive contents")
+    parser.add_option("-p", "--process-incoming",
+                  action="store_true", dest="process_incoming", default=False,
+                  help="import DUD files from incoming")
 
     (options, args) = parser.parse_args()
 
     if options.update:
-        sync = BuildJobUpdater("staging")
+        sync = ArchiveDebileBridge("staging")
         #sync.scheduleBuilds = options.build
         sync.sync_packages_all()
+    elif options.process_incoming:
+        adb = ArchiveDebileBridge("staging")
+        adb.process_incoming()
     else:
         print("Run with -h for a list of available command-line options!")
 
