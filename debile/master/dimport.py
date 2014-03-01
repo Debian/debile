@@ -19,13 +19,13 @@
 # DEALINGS IN THE SOFTWARE.
 
 import yaml
-import datetime as dt
+from datetime import datetime
 
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.utils import session
-from debile.master.orm import (Person, Builder, Group, Suite,
-                               GroupArch, GroupSuite, Check, Arch)
-from sqlalchemy.orm.exc import NoResultFound
+from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
+                               Group, GroupSuite, Source, Maintainer, Binary)
 
 
 def import_from_yaml(whence):
@@ -33,13 +33,13 @@ def import_from_yaml(whence):
 
 
 def import_dict(obj):
-    maintainer = obj.pop("Maintainer", None)
     users = obj.pop("Users", [])
     builders = obj.pop("Builders", [])
     suites = obj.pop("Suites", [])
-    groups = obj.pop("Groups", [])
-    checks = obj.pop("Checks", [])
+    components = obj.pop("Components", [])
     arches = obj.pop("Arches", [])
+    checks = obj.pop("Checks", [])
+    groups = obj.pop("Groups", [])
 
     if obj != {}:
         for key in obj:
@@ -67,17 +67,22 @@ def import_dict(obj):
             username = builder.pop('maintainer')
             who = s.query(Person).filter_by(username=username).one()
             builder['maintainer'] = who
-            builder['last_ping'] = dt.datetime.utcnow()
+            builder['last_ping'] = datetime.utcnow()
             s.add(Builder(**builder))
 
         for suite in suites:
             s.add(Suite(**suite))
 
+        for component in components:
+            s.add(Component(**component))
+
         for arch in arches:
             s.add(Arch(name=arch['name']))
 
+        for check in checks:
+            s.add(Check(**check))
+
         for group in groups:
-            arches = group.pop('arches')
             suites = group.pop('suites')
 
             who = s.query(Person).filter_by(username=group['maintainer']).one()
@@ -85,17 +90,20 @@ def import_dict(obj):
             group = Group(**group)
             s.add(group)
 
-            for arch in arches:
-                arch = s.query(Arch).filter_by(name=arch).one()
-                ga = GroupArch(group=group, arch=arch)
-                s.add(ga)
-
             for suite in suites:
-                suite = s.query(Suite).filter_by(name=suite).one()
-                ga = GroupSuite(group=group, suite=suite)
-                s.add(ga)
+                gs = GroupSuite(
+                    group=group,
+                    suite=s.query(Suite).filter_by(name=suite['suite']).one()
+                )
 
-        for check in checks:
-            group = s.query(Group).filter_by(name=check['group']).one()
-            check['group'] = group
-            s.add(Check(**check))
+                for component in suite.pop('components'):
+                    component = s.query(Component).filter_by(name=component).one()
+                    gs.components.append(component)
+                for arch in suite.pop('arches'):
+                    arch = s.query(Arch).filter_by(name=arch).one()
+                    gs.arches.append(arch)
+                for check in suite.pop('checks'):
+                    check = s.query(Check).filter_by(name=check).one()
+                    gs.checks.append(check)
+
+                s.add(gs)
