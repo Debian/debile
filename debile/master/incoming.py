@@ -64,30 +64,10 @@ def process_changes(session, path):
     #### Sourceful Uploads
     if changes.is_source_only_upload():
         try:
-            who = session.query(Person).filter_by(key=key).one()
+            user = session.query(Person).filter_by(key=key).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-user")
-
-        gid = changes.get('X-Lucy-Group', "default")
-        group = session.query(Group).filter_by(name=gid).one()
-
-        sid = changes['Distribution']
-        suite = session.query(Suite).filter_by(name=sid).one()
-
-        try:
-            source = session.query(Source).filter_by(
-                name=changes['Source'],
-                version=changes['Version'],
-                group=group,
-                suite=suite,
-            ).one()
-            return reject_changes(session, changes, "source-already-in-group")
-        except MultipleResultsFound:
-            return reject_changes(session, changes, "internal-error")
-        except NoResultFound:
-            pass
-
-        return accept_source_changes(session, changes, who)
+        return accept_source_changes(session, changes, user)
 
     #### Binary Uploads
     if changes.is_binary_only_upload():
@@ -120,10 +100,27 @@ def accept_source_changes(session, changes, user):
     gid = changes.get('X-Lucy-Group', "default")
     sid = changes['Distribution']
 
-    MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
+    try:
+        group = session.query(Group).filter_by(name=gid).one()
+        suite = session.query(Suite).filter_by(name=sid).one()
+    except MultipleResultsFound:
+        return reject_changes(session, changes, "internal-error")
+    except NoResultFound:
+        return reject_changes(session, changes, "invalid-group-or-suite")
 
-    group = session.query(Group).filter_by(name=gid).one()
-    suite = session.query(Suite).filter_by(name=sid).one()
+    try:
+        source = session.query(Source).filter_by(
+            name=changes['Source'],
+            version=changes['Version'],
+            group=group,
+        ).one()
+        return reject_changes(session, changes, "source-already-in-group")
+    except MultipleResultsFound:
+        return reject_changes(session, changes, "internal-error")
+    except NoResultFound:
+        pass
+
+    MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
     source = Source(
         uploader=user,
