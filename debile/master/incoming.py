@@ -170,8 +170,6 @@ def accept_source_changes(session, changes, user):
 def accept_binary_changes(session, changes, builder):
     # OK. We'll relate this back to a build job.
     job = changes.get('X-Debile-Job', None)
-    failed = True if changes.get('X-Debile-Failed', None) == "Yes" else False
-
     if job is None:
         return reject_changes(session, changes, "no-job")
     job = session.query(Job).get(job)
@@ -184,12 +182,13 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(
             session, changes, "binary-source-version-mismatch")
 
-    arch = changes['Architecture']
-    if " " in arch:
-        return reject_changes(session, changes, "multi-arch-upload")
+    if changes.get("Architecture") != job.arch.name:
+        return reject_changes(session, changes, "wrong-architecture")
 
-    arch = session.query(Arch).filter_by(name=arch).one()
-    binary = Binary.from_source(source, builder=builder, arch=arch)
+    if builder != job.builder:
+        return reject_changes(session, changes, "wrong-builder")
+
+    binary = Binary.from_job(job)
 
     ## OK. Let's make sure we can add this.
     repo = binary.group.get_repo()
@@ -198,7 +197,7 @@ def accept_binary_changes(session, changes, builder):
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
 
-    job.close(session, failed)
+    job.changes_uploaded(session, binary)
     session.add(binary)
     session.commit()
 
@@ -270,16 +269,13 @@ def accept_dud(session, dud, builder):
     fire, _ = idify(fire)
     fire = uniquify(session, fire)
 
-    result = Result()
-    result.job = job
-    result.source = job.source
-    result.check = job.check
+    result = Result.from_job(job)
+    result.failed = failed
     result.firehose = fire
-    result.binary = job.binary  # It's nullable. That's cool.
     session.merge(result)  # Needed because a *lot* of the Firehose is 
     # going to need unique ${WORLD}.
 
-    job.close(session, failed)
+    job.dud_uploaded(session, result)
     session.commit()  # Neato.
 
     repo = result.get_repo()

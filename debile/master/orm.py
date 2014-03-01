@@ -307,10 +307,11 @@ class Binary(Base):
     updated_at = Column(DateTime, nullable=False)
 
     @classmethod
-    def from_source(cls, source, arch, builder):
-        return Binary(arch=arch, source=source, builder=builder,
-                      suite=source.suite, group=source.group, name=source.name,
-                      version=source.version, uploaded_at=dt.datetime.utcnow(),
+    def from_job(job):
+        return Binary(source=job.source, name=job.source.name,
+                      version=job.source.version, builder=job.builder,
+                      suite=job.suite, group=job.group, arch=job.arch,
+                      uploaded_at=dt.datetime.utcnow(),
                       updated_at=dt.datetime.utcnow())
 
 
@@ -385,11 +386,30 @@ class Job(Base):
 
     results = relationship("Result")
 
-    def close(self, session, failed):
-        self.faled = failed
-        self.finished_at = dt.datetime.utcnow()
+    # Called when the .changes for a build job is processed
+    def changes_uploaded(self, session, binary):
+        for jd in self.blocking:
+            if (jd.blocked_job.check.binary and
+                    jd.blocked_job.source == self.source and
+                    jd.blocked_job.arch == self.arch):
+                jd.blocked_job.binary = binary
+            # Only delete the dependency if the .dud from the successfull build
+            # has already been processed.
+            # Using "== False" to exclude both None and True
+            if self.failed == False:
+                session.delete(jd)
 
-        if not failed:
+    # Called when a .dud for any job is processed
+    def dud_uploaded(self, session, result):
+        self.failed = result.failed
+        # Only delete the dependency if the job was sucessfull and (if this is
+        # a build job) the .changes has already been processed.
+        if not result.failed and \
+                (not self.check.build or
+                 session.query(Binary).filter(
+                     Binary.source==result.source,
+                     Binary.arch==result.job.arch
+                 ).first() is not None):
             for jd in self.blocking:
                 session.delete(jd)
 
@@ -451,6 +471,11 @@ class Result(Base):
         name = self.source.group.name or "default"
         base = os.path.join(root, name)
         return FileRepo(base)
+
+    @classmethod
+    def from_job(job):
+        return Result(source=job.source, binary=job.binary,
+                      job=job, check=job.check)
 
 
 def create_jobs(source, session, arches):
