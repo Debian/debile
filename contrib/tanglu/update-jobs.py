@@ -30,6 +30,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.utils.dud import Dud, DudFileException
 from debile.master.messaging import emit
+from debile.master.filerepo import FilesAlreadyRegistered
 from debile.master.orm import (Person, Builder, Source, Group, Suite,
                                Maintainer, Job, Binary, Arch, Result,
                                GroupArch, create_jobs)
