@@ -19,14 +19,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.master.server import user_method, builder_method, NAMESPACE
-from debile.master.orm import (Job, Arch, Check, Builder, Source, Binary,
-                               JobDependencies)
-from debile.master.core import config
+from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
+                               Group, GroupSuite, Source, Maintainer, Binary,
+                               Job, JobDependencies, Result)
 from debile.master.messaging import emit
 from debile.utils.keys import import_key
 
 from sqlalchemy import exists
-import datetime as dt
+from datetime import datetime
 
 
 class DebileMasterInterface(object):
@@ -54,22 +54,22 @@ class DebileMasterInterface(object):
     # The following trio of methods handle the job control.
 
     @builder_method
-    def get_next_job(self, suites, arches, capabilities):
-        job = NAMESPACE.session.query(Job).filter_by(
-            assigned_at=None,
-            finished_at=None,
+    def get_next_job(self, suites, components, arches, capabilities):
+        job = NAMESPACE.session.query(Job).filter(
+            Job.assigned_at==None,
+            Job.finished_at==None,
+            Suite.name.in_(suites),
+            Component.name.in_(components),
+            Arch.name.in_(arches),
+            Check.name.in_(capabilities),
         ).outerjoin(Job.depedencies).filter(
             JobDependencies.id==None
-        ).filter(
-            Arch.name.in_(arches)
-        ).filter(
-            Check.name.in_(capabilities)
         ).first()
 
         if job is None:
             return None
 
-        job.assigned_at = dt.datetime.utcnow()
+        job.assigned_at = datetime.utcnow()
         job.builder = NAMESPACE.machine
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
@@ -81,10 +81,7 @@ class DebileMasterInterface(object):
     @builder_method
     def close_job(self, job_id, failed):
         job = NAMESPACE.session.query(Job).get(job_id)
-        job.finished_at = dt.datetime.utcnow()
-        # We don't actually close the job here because we wait until
-        # we accept the DUD (so that we have the artifacts to actually
-        # give the job out to new nodes), so avoid job.close()
+        job.finished_at = datetime.utcnow()
 
         NAMESPACE.session.add(job)
         NAMESPACE.session.commit()
@@ -107,30 +104,17 @@ class DebileMasterInterface(object):
 
     # Useful methods below.
 
+    def get_group(self, group_id):
+        return NAMESPACE.session.query(Group).get(group_id).debilize()
+
     def get_source(self, source_id):
         return NAMESPACE.session.query(Source).get(source_id).debilize()
 
     def get_binary(self, binary_id):
         return NAMESPACE.session.query(Binary).get(binary_id).debilize()
 
-    def get_archive_location(self, group_name):
-        archive_path_tmpl = config['repo']['archive_location']
-        path = archive_path_tmpl.format(url=config['repo']['url'],
-                                             group=group_name,)
-        return path
-
-    def get_info(self):
-        return {
-            "repo": {
-                "base": config['repo']['url']
-            },
-        }
-
-    def job_count(self):
-        """
-        Work out the job count.
-        """
-        return NAMESPACE.session.query(Job).count()
+    def get_job(self, job_id):
+        return NAMESPACE.session.query(Job).get(job_id).debilize()
 
     @user_method
     def create_builder(self, slave_name, slave_password, key):

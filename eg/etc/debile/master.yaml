@@ -1,12 +1,6 @@
 ---
 database: sqlite:////home/tag/debile.db
 
-repo:
-    base: /srv/debile/pool
-    url: http://localhost/debile/pool
-    files: /srv/debile/files
-    archive_location: "{url}/{group}"
-
 fedmsg:
     prefix: "org.anized"
     sign: false
