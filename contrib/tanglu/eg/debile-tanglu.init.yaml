@@ -17,8 +17,8 @@ Users:  # Users of Debile
       password: s3kr37
 
 Builders:  # Machines that can build
-    - name: platinum.buildd.tanglu.org
-      key: 21CAF89F520676541CD7088849E9153AF7901FAE
+    - name: helium.buildd.tanglu.org
+      key: 367D333376945BAE75CB466779A21745EC78A01D
       maintainer: mak
       password: s3kr37
 
