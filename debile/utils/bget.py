@@ -18,56 +18,64 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils import run_command
-import deb822
-import StringIO
+from debian.deb822 import Packages
+from debile.utils.dsc2 import Dsc2
+from debile.utils.aget import dget, find_dsc
+from StringIO import StringIO
+from gzip import GzipFile
 import requests
-import gzip
 import os
 
-PACKAGES = "dists/{suite}/{section}/binary-{arch}/Packages.gz"
+def find_debs(archive, suite, component, arch, source, version):
+    url = find_dsc(archive, suite, component, source, version)
+    if url[:7] == "http://":
+        dsc = Dsc2(StringIO(requests.get(url).content))
+    else:
+        dsc = Dsc2(filename=url)
 
+    components = [component]
+    for line in dsc['Package-List']:
+        if "/" in line['section']:
+            component, _ = line['section'].split("/")
+            if component not in components:
+                components.append(component)
 
-def dget(path):
-    out, err, ret = run_command(["dget", "-u", path])
-    if ret != 0:
-        print ret, err
-        raise Exception("DAMNIT; dget fucked us")
-
-
-def bget(archive, suite, section, arch, source, version):
-    # http://debian.lcs.mit.edu/debian/dists/unstable/main/binary-amd64/Packages.gz
-
-    url = "{archive}/{path}".format(
-        archive=archive,
-        path=PACKAGES.format(
+    filenames = []
+    for component in components:
+        url = "{archive}/dists/{suite}/{component}/binary-{arch}/Packages.gz".format(
+            archive=archive,
             suite=suite,
-            section=section,
+            component=component,
             arch=arch,
         )
-    )
+        if url[:7] == "http://":
+            packages = GzipFile(fileobj=StringIO(requests.get(url).content))
+        else:
+            packages = GzipFile(filename=url)
 
-    packages = []
-    for entry in deb822.Deb822.iter_paragraphs(gzip.GzipFile(
-            fileobj=StringIO.StringIO(requests.get(url).content))):
-        pkg_source = entry.get("Source", entry['Package'])
-        if pkg_source == source:
-            packages.append(entry)
+        for entry in Packages.iter_paragraphs(packages):
+            name = entry['Source'] if 'Source' in entry else entry['Package']
+            if (name == source and entry['Version'] == version) or (name == "%s (%s)" % (source, version)):
+                filenames.append(entry['Filename'])
 
-    if packages == []:
+    if filenames == []:
         raise Exception("Damnit, no such packages?")
 
     ret = []
-    for package in packages:
-        path = "{archive}/{pool}".format(
+    for filename in filenames:
+        url = "{archive}/{filename}".format(
             archive=archive,
-            pool=package['Filename']
+            filename=filename
         )
-        ret.append(os.path.basename(path))
-        dget(path)
+        ret.append(url)
 
     return ret
 
+def bget(archive, suite, component, arch, source, version):
+    debs = find_debs(archive, suite, component, arch, source, version)
+    for deb in debs:
+        dget(deb)
+    return [os.path.basename(url) for url in debs]
 
 def main():
     import sys

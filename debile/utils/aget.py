@@ -18,54 +18,49 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debian.deb822 import Sources
 from debile.utils import run_command
-import deb822
-import StringIO
+from StringIO import StringIO
+from gzip import GzipFile
 import requests
-import gzip
 import os
-
-SOURCE = "dists/{suite}/{section}/source/Sources.gz"
-
 
 def dget(path):
     out, err, ret = run_command(["dget", "-u", path])
     if ret != 0:
         print ret, err
-        raise Exception("DAMNIT; dget fucked us")
+        raise Exception("dget failed to download package")
 
-
-def aget(archive, suite, section, source, version):
-    url = "{archive}/{path}".format(
+def find_dsc(archive, suite, component, source, version):
+    url = "{archive}/dists/{suite}/{component}/source/Sources.gz".format(
         archive=archive,
-        path=SOURCE.format(suite=suite, section=section
-    ))
-
-    for entry in deb822.Deb822.iter_paragraphs(gzip.GzipFile(
-            fileobj=StringIO.StringIO(requests.get(url).content))):
-
-        path = entry['Directory']
-
-        dsc = None
-        for fp in entry['Files'].splitlines():
-            if fp.strip() == "":
-                continue
-
-            hash_, size, fid = fp.split()
-            if fid.endswith(".dsc"):
-                dsc = fid
-
-        if entry['Package'] == source and entry['Version'] == version:
-            dget("{archive}/{pool}/{dsc}".format(
-                archive=archive,
-                pool=path,
-                dsc=dsc,
-            ))
-            # break
-            return os.path.basename(dsc)
+        suite=suite,
+        component=component
+    )
+    if url[:7] == "http://":
+        sources = GzipFile(fileobj=StringIO(requests.get(url).content))
     else:
-        print "BALLS."
-        raise Exception
+        sources = GzipFile(filename=url)
+
+    for entry in Sources.iter_paragraphs(sources):
+        if entry['Package'] == source and entry['Version'] == version:
+            dsc = None
+            for line in entry['Files']:
+                if line['name'].endswith(".dsc"):
+                    dsc = line['name']
+            return "{archive}/{path}/{dsc}".format(
+                archive=archive,
+                path=entry['Directory'],
+                dsc=dsc,
+            )
+
+    raise Exception("Package not found in Sources.gz")
+
+
+def aget(archive, suite, component, source, version):
+    url = find_dsc(archive, suite, component, source, version)
+    dget(url)
+    return os.path.basename(url)
 
 
 def main():
