@@ -151,7 +151,7 @@ def iterate():
         }
 
         with checkout(job, package) as check:
-            run, version = load_module(job['name'])
+            run, version = load_module(job['check'])
             firehose = create_firehose(package, version)
 
             type_ = package['type']
