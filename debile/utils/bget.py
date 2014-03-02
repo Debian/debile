@@ -21,14 +21,17 @@
 from debian.deb822 import Packages
 from debile.utils.dsc2 import Dsc2
 from debile.utils.aget import dget, find_dsc
-import StringIO
+from StringIO import StringIO
+from gzip import GzipFile
 import requests
-import gzip
 import os
 
 def find_debs(archive, suite, component, arch, source, version):
     url = find_dsc(archive, suite, component, source, version)
-    dsc = Dsc2(StringIO.StringIO(requests.get(url).content))
+    if url[:7] == "http://":
+        dsc = Dsc2(StringIO(requests.get(url).content))
+    else:
+        dsc = Dsc2(filename=url)
 
     components = [component]
     for line in dsc['Package-List']:
@@ -45,9 +48,12 @@ def find_debs(archive, suite, component, arch, source, version):
             component=component,
             arch=arch,
         )
+        if url[:7] == "http://":
+            packages = GzipFile(fileobj=StringIO(requests.get(url).content))
+        else:
+            packages = GzipFile(filename=url)
 
-        for entry in Packages.iter_paragraphs(gzip.GzipFile(
-                fileobj=StringIO.StringIO(requests.get(url).content))):
+        for entry in Packages.iter_paragraphs(packages):
             name = entry['Source'] if 'Source' in entry else entry['Package']
             if (name == source and entry['Version'] == version) or (name == "%s (%s)" % (source, version)):
                 filenames.append(entry['Filename'])

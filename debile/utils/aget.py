@@ -20,9 +20,9 @@
 
 from debian.deb822 import Sources
 from debile.utils import run_command
-import StringIO
+from StringIO import StringIO
+from gzip import GzipFile
 import requests
-import gzip
 import os
 
 def dget(path):
@@ -37,9 +37,12 @@ def find_dsc(archive, suite, component, source, version):
         suite=suite,
         component=component
     )
+    if url[:7] == "http://":
+        sources = GzipFile(fileobj=StringIO(requests.get(url).content))
+    else:
+        sources = GzipFile(filename=url)
 
-    for entry in Sources.iter_paragraphs(gzip.GzipFile(
-            fileobj=StringIO.StringIO(requests.get(url).content))):
+    for entry in Sources.iter_paragraphs(sources):
         if entry['Package'] == source and entry['Version'] == version:
             dsc = None
             for line in entry['Files']:
