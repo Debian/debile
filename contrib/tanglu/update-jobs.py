@@ -87,6 +87,7 @@ class ArchiveDebileBridge:
             dsc = Dsc(open(dsc_fname))
             source = create_source(dsc, group_suite, component, user)
             create_jobs(source, self._session, pkg_arches)
+            print("Created job for %s (archs: %s)" % (pkg.pkgname, str(pkg_arches)))
         else:
             arches = list()
             for arch in pkg_arches:
