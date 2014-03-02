@@ -230,21 +230,13 @@ class GroupSuite(Base):
     checks = relationship("Check", secondary=group_suite_check_association)
 
     def get_source_checks(self):
-        return self.checks.filter_by(
-            source=True,
-            build=False,
-        ).all()
+        return [x for x in self.checks if x.source==True and x.build==False]
 
     def get_binary_checks(self):
-        return self.checks.filter_by(
-            binary=True,
-            build=False,
-        ).all()
+        return [x for x in self.checks if x.binary==True and x.build==False]
 
     def get_build_check(self):
-        return self.checks.filter_by(
-            build=True,
-        ).one()
+        return ([x for x in self.checks if x.build==True] or [None])[0]
 
 
 class Source(Base):
