@@ -18,6 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import subprocess
 import os.path
 import re
 from datetime import datetime
@@ -239,6 +240,20 @@ class GroupSuite(Base):
         return [x for x in self.checks if x.build==True]
 
 
+# Many-to-Many relationship
+source_arch_association = \
+    Table('source_arch_association', Base.metadata,
+        Column('source_id', Integer, ForeignKey('sources.id')),
+        Column('arch_id', Integer, ForeignKey('arches.id'))
+    )
+
+# Many-to-Many relationship
+source_build_arch_indep_association = \
+    Table('source_build_arch_indep_association', Base.metadata,
+        Column('source_id', Integer, ForeignKey('sources.id')),
+        Column('arch_id', Integer, ForeignKey('arches.id'))
+    )
+
 class Source(Base):
     __tablename__ = 'sources'
     _debile_objs = {
@@ -262,6 +277,9 @@ class Source(Base):
 
     component_id = Column(Integer, ForeignKey('components.id'))
     component = relationship("Component", foreign_keys=[component_id])
+
+    arches = relationship("Arch", secondary=source_arch_association)
+    build_arch_indep = relationship("Arch", secondary=source_build_arch_indep_association)
 
     uploader_id = Column(Integer, ForeignKey('people.id'))
     uploader = relationship("Person", foreign_keys=[uploader_id])
@@ -448,6 +466,14 @@ class Result(Base):
         return Result(job=job, uploaded_at=datetime.utcnow())
 
 
+def arch_matches(arch, alias):
+    if arch == alias or alias == "any":
+        return True
+    if not "-" in arch and not "-" in alias:
+        return False
+    return 0 == subprocess.call(["/usr/bin/dpkg-architecture",
+                                 "-a%s" % (arch), "-i%s" % (alias)])
+
 def create_source(dsc, group_suite, component, uploader):
     source = Source(
         name=dsc['Source'],
@@ -457,6 +483,25 @@ def create_source(dsc, group_suite, component, uploader):
         uploader=uploader,
         uploaded_at=datetime.utcnow()
     )
+
+    build_arch_indep = ""
+    if 'Build-Architecture-Indep' in dsc:
+        build_arch_indep = dsc['Build-Architecture-Indep']
+    elif 'X-Build-Architecture-Indep' in dsc:
+        build_arch_indep = dsc['X-Build-Architecture-Indep']
+    elif 'X-Arch-Indep-Build-Arch' in dsc:
+        build_arch_indep = dsc['X-Arch-Indep-Build-Arch']
+
+    for arch in group_suite.arches:
+        for x in dsc['Architecture'].split():
+            if arch_matches(arch.name, x):
+                source.arches.append(arch)
+                break
+    for arch in group_suite.arches:
+        for x in build_arch_indep.split():
+            if arch_matches(arch.name, x):
+                source.build_arch_indep.append(arch)
+                break
 
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
@@ -481,31 +526,28 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, session, arches):
+def create_jobs(source, arches=None):
     """
-    Create jobs for Source `source', in Session `session`, for each arch in
-    `arches', which should be pulled from the dsc. We'll use the Group
-    limiting internally.
+    Create jobs for Source `source', for each arch in `arches'.
+    `arches' sould be a subset of `source.arches' or `None', in which case
+    `source.arches' will be used instead.
     """
-    # o Create a job for each `source' check that's not a build.
-    # o Create a build job for each arch. Keep them hot.
-    # o For each arched job, create a Job that depends on the arch:all and
-    #   arch'd job.
 
-    aall = session.query(Arch).filter_by(name='all').one()  # All
+    arches = arches or source.arches
+    build_arch_indep = source.build_arch_indep or \
+                       [x for x in source.arches if x != aall]
 
-    arch_list = []
-    for arch in arches:
-        if arch in ['any', 'linux-any']:
-            arch_list += [x for x in source.group_suite.arches if x.name != 'all']
-            # The reason we filter all out is because all packages
-            # with any packages are marked `any all' not just `any'
-        else:
-            arch_list += [x for x in source.group_suite.arches if x.name == arch]
+    aall = ([x for x in source.group_suite.arches if x.name == "all"] or [None])[0]
+
+    affinity = None
+    if [x for x in source.group_suite.arches if x != aall and x not in build_arch_indep]:
+        # There are arches that can't build this package, so pick one that can
+        affinity = ([x for x in build_arch_indep if x in arches] or
+                    build_arch_indep or [None])[0]
 
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
-                check=check, arch=aall, affinity=None,
+                check=check, arch=aall, affinity=affinity,
                 source=source, binary=None,
                 builder=None, assigned_at=None,
                 finished_at=None, failed=None)
@@ -514,9 +556,11 @@ def create_jobs(source, session, arches):
     builds = {}
 
     for check in source.group_suite.get_build_checks():
-        for arch in arch_list:
+        for arch in arches:
+            jobaffinity = affinity if arch == aall else None
+
             j = Job(name="%s [%s]" % (check.name, arch.name),
-                    check=check, arch=arch, affinity=None,
+                    check=check, arch=arch, affinity=jobaffinity,
                     source=source, binary=None,
                     builder=None, assigned_at=None,
                     finished_at=None, failed=None)
@@ -524,14 +568,16 @@ def create_jobs(source, session, arches):
             source.jobs.append(j)
 
     for check in source.group_suite.get_binary_checks():
-        for arch in builds:
+        for arch in arches:
+            jobaffinity = affinity if arch == aall else None
+
             deps = []
             deps.append(builds[arch])
             if aall in builds and aall != arch:
                 deps.append(builds[aall])
 
             j = Job(name="%s [%s]" % (check.name, arch.name),
-                    check=check, arch=arch, affinity=None,
+                    check=check, arch=arch, affinity=jobaffinity,
                     source=source, binary=None,
                     builder=None, assigned_at=None,
                     finished_at=None, failed=None)
