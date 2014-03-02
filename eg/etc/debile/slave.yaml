@@ -10,12 +10,15 @@ gpg: GPGFINGERPRINTGOESHEREATSOMEPOINTSOONISH
 dput:
     host: debile-master
 
-checks:
-    - lintian
+suites:
+    - unstable
+
+components:
+    - main
 
 arches:
     - amd64
     - all
 
-suites:
-    - unstable
+checks:
+    - lintian

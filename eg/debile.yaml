@@ -1,8 +1,4 @@
 ---
-Maintainer: # Who to send server-wide problems to
-    Name: Paul Tagliamonte
-    Email: paultag@debian.org
-
 Users:  # Users of Debile
     - name: Paul Tagliamonte
       username: paultag
@@ -27,34 +23,52 @@ Builders:  # Machines that can build
       maintainer: paultag
       password: s3kr375
 
+Suites:
+    - name: unstable
+    - name: testing
+    - name: stable
+
+Components:
+    - name: main
+    - name: contrib
+    - name: non-free
+
+Arches:
+    - name: all
+    - name: amd64
+    - name: i386
+
 Checks:
     - name: lintian
-      group: default
       source: true
       binary: true
-      arched: false
       build: false
 
     - name: build
-      group: default
-      source: true
+      source: false
       binary: false
-      arched: true
       build: true
-
-Arches:
-    - name: amd64
-    - name: all
-
-Suites:
-    - name: unstable
-    - name: stable
 
 Groups:
     - name: default
       maintainer: paultag
-      arches:
-          - amd64
-          - all
+
+      debile_should_process_changes: True
+      repo_path: /srv/debile/pool/default
+      repo_url: http://localhost/debile/pool/default
+
+      files_path: /srv/debile/files/default
+      files_url: http://localhost/debile/files/default
+
       suites:
-          - unstable
+          - suite: unstable
+            components:
+                - main
+                - contrib
+            arches:
+                - all
+                - amd64
+                - i386
+            checks:
+                - build
+                - lintian

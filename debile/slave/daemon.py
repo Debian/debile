@@ -89,24 +89,24 @@ def checkout(job, package):
     with tdir() as path:
         with cd(path):
             src = package['source']
-            archive = proxy.get_archive_location(src['group'])
+            archive = package['group']['repo_url']
             if package['type'] == "source":
-                yield aget(archive, src['suite'], 'main',
+                yield aget(archive, src['suite'], src['component'],
                            src['name'], src['version'])
             elif package['type'] == "binary":
                 arch = job['arch']
                 if arch == 'all':
                     arch = 'amd64'  # XXX: THIS IS A HACK. FIX THIS.
-                yield bget(archive, src['suite'], 'main',
+                yield bget(archive, src['suite'], src['component'],
                            arch, src['name'], src['version'])
             else:
                 raise Exception
 
 
 @contextmanager
-def workon(suites, arches, capabilities):
+def workon(suites, components, arches, capabilities):
     logger = logging.getLogger('debile')
-    job = proxy.get_next_job(suites, arches, capabilities)
+    job = proxy.get_next_job(suites, components, arches, capabilities)
     if job is None:
         yield
     else:
@@ -126,34 +126,29 @@ def workon(suites, arches, capabilities):
 def iterate():
     arches = config['arches']
     suites = config['suites']
+    components = config['components']
     checks = config.get('checks', list(PLUGINS.keys()))
 
     # job is a serialized dictionary from debile-master ORM
-    with workon(suites, arches, checks) as job:
+    with workon(suites, components, arches, checks) as job:
         if job is None:
             raise IDidNothingError("No more jobs")
 
+        group = proxy.get_group(job['group_id'])
         source = proxy.get_source(job['source_id'])
+        binary = proxy.get_binary(job['binary_id']) if job['binary_id'] else None
 
         package = {
             "name": source['name'],
             "version": source['version'],
-            "type": "source",
-            "arch": "all",
+            "type": "source" if binary is None else "binary",
+            "arch": "all" if binary is None else binary['arch'],
+            "suite": source['suite'],
+            "component": source['component'],
+            "group": group,
             "source": source,
-            "binary": None,
+            "binary": binary,
         }
-
-        if job['binary_id']:
-            binary = proxy.get_binary(job['binary_id'])
-            package = {
-                "name": binary['name'],
-                "version": binary['version'],
-                "type": "binary",
-                "arch": binary['arch'],
-                "source": source,
-                "binary": binary,
-            }
 
         with checkout(job, package) as check:
             run, version = load_module(job['name'])

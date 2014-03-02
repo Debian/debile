@@ -15,7 +15,13 @@ X-Python-Version: >= 2.7
 
 Package: python-debile
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, adduser
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ python-debian,
+ python-requests,
+ python-yaml,
+ adduser,
 Description: set of core débile builder routines
  This package contains the core utils and libraries used by both the
  client and server modules. This contains routines for handling `dud` files,
@@ -25,9 +31,11 @@ Description: set of core débile builder routines
 
 Package: debile-slave
 Architecture: all
-Depends: python-debile, python-firehose, ${misc:Depends}, ${python:Depends}
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ python-debile (= ${binary:Version}),
 Recommends:
- python-requests,
  dpkg-dev,
 # For dpkg-source
  libperl-critic-perl,
@@ -59,11 +67,10 @@ Architecture: all
 Depends:
  ${misc:Depends},
  ${python:Depends},
- python-debile,
+ python-debile (= ${binary:Version}),
  python-firewoes,
  python-firehose,
- python-sqlalchemy,
- python-yaml,
+ python-sqlalchemy (>= 0.8.4),
  adduser,
 Description: master for the débile package builder system
  The débile client/server software is designed to help moderate to
