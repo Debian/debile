@@ -92,7 +92,7 @@ class ArchiveDebileBridge:
             for arch in pkg_arches:
                 job = self._session.query(Job).filter(
                     Job.source==source,
-                    Job.arch.name==arch
+                    Arch.name==arch
                 ).first()
                 if job is None:
                     arches.append(arch)
