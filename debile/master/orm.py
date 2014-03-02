@@ -235,8 +235,8 @@ class GroupSuite(Base):
     def get_binary_checks(self):
         return [x for x in self.checks if x.binary==True and x.build==False]
 
-    def get_build_check(self):
-        return ([x for x in self.checks if x.build==True] or [None])[0]
+    def get_build_checks(self):
+        return [x for x in self.checks if x.build==True]
 
 
 class Source(Base):
@@ -509,7 +509,7 @@ def create_jobs(source, session, arches):
 
     builds = {}
 
-    with source.group_suite.get_build_check() as check:
+    for check in source.group_suite.get_build_checks():
         for arch in arch_list:
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch,
