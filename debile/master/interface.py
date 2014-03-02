@@ -55,15 +55,21 @@ class DebileMasterInterface(object):
 
     @builder_method
     def get_next_job(self, suites, arches, capabilities):
-        job = NAMESPACE.session.query(Job).filter_by(
-            assigned_at=None,
-            finished_at=None,
+        arches = [
+            x.id for x in session.query(Arch).filter(
+                Arch.name.in_(arches)
+            ).all()
+        ]
+        # This horseshit nonsense is due to SQLAlchemy not doing
+        # the sane thing with Job.affinity.name.in_. Nonsense. Horseshit.
+
+        job = NAMESPACE.session.query(Job).filter(
+            Job.assigned_at==None,
+            Job.finished_at==None,
+            Job.arch_id.in_(arches),
+            Job.affinity.in_(arches) | Job.affinity_id==None,
         ).outerjoin(Job.depedencies).filter(
             JobDependencies.id==None
-        ).filter(
-            Arch.name.in_(arches)
-        ).filter(
-            Check.name.in_(capabilities)
         ).first()
 
         if job is None:

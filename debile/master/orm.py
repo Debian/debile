@@ -353,6 +353,7 @@ class Job(Base):
         "binary_id": "binary_id",
         "check": "check.name",
         "arch": "arch.name",
+        "affinity": "affinity.name",
         "suite": "suite.name",
     }
     debilize = _debilize
@@ -379,7 +380,10 @@ class Job(Base):
     check = relationship("Check")
 
     arch_id = Column(Integer, ForeignKey('arches.id'))
-    arch = relationship("Arch")
+    arch = relationship("Arch", foreign_keys=[arch_id])
+
+    affinity_id = Column(Integer, ForeignKey('arches.id'), nullable=True)
+    affinity = relationship("Arch", foreign_keys=[affinity_id])
 
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite")
@@ -511,7 +515,7 @@ def create_jobs(source, session, arches):
                 j = Job(assigned_at=None, finished_at=None,
                         name=check.name, score=100, builder=None,
                         source=source, binary=None, check=check,
-                        suite=source.suite, arch=arch)
+                        affinity=None, suite=source.suite, arch=arch)
                 source.jobs.append(j)
 
         if check.arched is False:
@@ -519,7 +523,7 @@ def create_jobs(source, session, arches):
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=100, builder=None,
                     source=source, binary=None, check=check,
-                    suite=source.suite, arch=aall)
+                    affinity=None, suite=source.suite, arch=aall)
             source.jobs.append(j)
 
     builds = {}
@@ -529,7 +533,7 @@ def create_jobs(source, session, arches):
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=200, builder=None,
                     source=source, binary=None, check=check,
-                    suite=source.suite, arch=arch)
+                    affinity=None, suite=source.suite, arch=arch)
             builds[arch] = j
             source.jobs.append(j)
 
@@ -545,7 +549,7 @@ def create_jobs(source, session, arches):
             j = Job(assigned_at=None, finished_at=None,
                     name=check.name, score=100, builder=None,
                     source=source, binary=None, check=check,
-                    suite=source.suite, arch=arch)
+                    affinity=None, suite=source.suite, arch=arch)
 
             jds = [JobDependencies(blocked_job=j, blocking_job=x)
                    for x in deps]
