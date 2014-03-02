@@ -467,7 +467,7 @@ def create_source(dsc, group_suite, component, uploader):
             **MAINTAINER.match(dsc.get('XSBC-Original-Maintainer')).groupdict()
         ))
 
-    whos = (x.strip() for x in dsc.get("Uploaders", "").split(",") if x != "")
+    whos = (x.strip() for x in dsc.get("Uploaders", "").split(",") if x.strip() != "")
     for who in whos:
         source.maintainers.append(Maintainer(
             comaintainer=True,
