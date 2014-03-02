@@ -155,8 +155,8 @@ class ArchiveDebileBridge:
                         print("Package %s not built for %s!" % (pkg.pkgname, arch))
                     if not self._get_package_depwait_report(pkg, arch):
                         pkg_build_arches.append(arch)
-
-            self.create_debile_job(pkg, component, pkg_build_arches)
+            if pkg_build_arches:
+                self.create_debile_job(pkg, component, pkg_build_arches)
 
     def sync_packages_all(self):
         for comp in self._archive_components:
