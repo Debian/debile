@@ -321,7 +321,7 @@ class Binary(Base):
 
     uploaded_at = Column(DateTime)
 
-    @classmethod
+    @staticmethod
     def from_job(job):
         return Binary(build_job=job, source=job.source,
                       uploaded_at=datetime.utcnow())
@@ -439,7 +439,7 @@ class Result(Base):
     failed = Column(Boolean)
     uploaded_at = Column(DateTime, nullable=True)
 
-    @classmethod
+    @staticmethod
     def from_job(job):
         return Result(job=job, uploaded_at=datetime.utcnow())
 
