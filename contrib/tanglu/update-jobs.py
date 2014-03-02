@@ -25,6 +25,7 @@ from optparse import OptionParser
 import fnmatch
 
 from debile.utils.aget import find_dsc
+from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.filerepo import FilesAlreadyRegistered
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
@@ -33,7 +34,6 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                create_source, create_jobs)
 
 from debian.deb822 import Dsc
-from sqlalchemy.orm import Session, sessionmaker
 import debile.master.core
 
 from rapidumolib.pkginfo import *
@@ -60,20 +60,18 @@ class ArchiveDebileBridge:
 
         self._pkginfo = PackageBuildInfoRetriever()
         self._suite = suite
-        Session = sessionmaker(bind=debile.master.core.engine)
-        self._session = Session()
 
-    def create_debile_job(self, pkg, pkg_component, pkg_arches):
+    def create_debile_job(self, session, pkg, pkg_component, pkg_arches):
         uploader = "dak"
         group = "default"
         suite = pkg.suite
 
-        group_suite = self._session.query(GroupSuite).filter(
+        group_suite = session.query(GroupSuite).filter(
             Group.name==group,
             Suite.name==suite,
         ).one()
 
-        source = self._session.query(Source).filter(
+        source = session.query(Source).filter(
             Source.name==pkg.pkgname,
             Source.version==pkg.version,
             GroupSuite.group==group_suite.group,
@@ -82,16 +80,16 @@ class ArchiveDebileBridge:
         if not source:
             dsc_fname = find_dsc(group_suite.group.repo_path, suite,
                                  pkg_component, pkg.pkgname, pkg.version)
-            component = self._session.query(Component).filter_by(name=pkg_component).one()
-            user = self._session.query(Person).filter_by(username=uploader).one()
+            component = session.query(Component).filter_by(name=pkg_component).one()
+            user = session.query(Person).filter_by(username=uploader).one()
             dsc = Dsc(open(dsc_fname))
             source = create_source(dsc, group_suite, component, user)
-            create_jobs(source, self._session, pkg_arches)
+            create_jobs(source, session, pkg_arches)
             print("Created job for %s (archs: %s)" % (pkg.pkgname, str(pkg_arches)))
         else:
             arches = list()
             for arch in pkg_arches:
-                job = self._session.query(Job).filter(
+                job = session.query(Job).filter(
                     Job.source==source,
                     Arch.name==arch
                 ).first()
@@ -99,11 +97,11 @@ class ArchiveDebileBridge:
                     arches.append(arch)
             if len(arches) == 0:
                 return
-            create_jobs(source, self._session, arches)
+            create_jobs(source, session, arches)
             print("Created job for %s (archs: %s)" % (pkg.pgname, str(arches)))
 
-        self._session.add(source)  # OK. Populated entry. Let's insert.
-        self._session.commit()  # Neato.
+        session.add(source)  # OK. Populated entry. Let's insert.
+        session.commit()  # Neato.
 
         emit('accept', 'source', source.debilize())
 
@@ -155,8 +153,13 @@ class ArchiveDebileBridge:
                         print("Package %s not built for %s!" % (pkg.pkgname, arch))
                     if not self._get_package_depwait_report(pkg, arch):
                         pkg_build_arches.append(arch)
+
             if pkg_build_arches:
-                self.create_debile_job(pkg, component, pkg_build_arches)
+                try:
+                    with session() as s:
+                        self.create_debile_job(s, pkg, component, pkg_build_arches)
+                except Exception as ex:
+                    print("Skipping %s %s due to error: " % (pkg.pkgname, pkg.version, ex))
 
     def sync_packages_all(self):
         for comp in self._archive_components:
