@@ -381,9 +381,6 @@ class Job(Base):
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch")
 
-    affinity_id = Column(Integer, ForeignKey('arches.id'), nullable=True)
-    affinity = relationship("Arch")
-
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite")
 
