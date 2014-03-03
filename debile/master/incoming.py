@@ -19,22 +19,21 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
-import re
 import fnmatch
-import datetime as dt
 from debian import deb822
 
 from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
-from debile.master.reprepro import RepoSourceAlreadyRegistered
-from debile.master.filerepo import FilesAlreadyRegistered
+from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
+from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
 from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.messaging import emit
-from debile.master.orm import (Person, Builder, Source, Group, Suite,
-                               Maintainer, Job, Binary, Arch, Result,
-                               create_jobs)
+from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
+                               Group, GroupSuite, Source, Maintainer, Binary,
+                               Job, JobDependencies, Result,
+                               create_source, create_jobs)
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -55,6 +54,18 @@ def process_changes(session, path):
         changes.validate()
     except ChangesFileException as e:
         return reject_changes(session, changes, "invalid-upload")
+
+    group = changes.get('X-Lucy-Group', "default")
+    try:
+        group = session.query(Group).filter_by(name=group).one()
+    except MultipleResultsFound:
+        return reject_changes(session, changes, "internal-error")
+    except NoResultFound:
+        return reject_changes(session, changes, "invalid-group")
+
+    if not group.debile_should_process_changes:
+        # This file isn't for us, just leave it.
+        return
 
     try:
         key = changes.validate_signature()
@@ -96,23 +107,30 @@ def reject_changes(session, changes, tag):
 
 
 def accept_source_changes(session, changes, user):
-
-    gid = changes.get('X-Lucy-Group', "default")
-    sid = changes['Distribution']
+    group = changes.get('X-Lucy-Group', "default")
+    suite = changes['Distribution']
 
     try:
-        group = session.query(Group).filter_by(name=gid).one()
-        suite = session.query(Suite).filter_by(name=sid).one()
+        group_suite = session.query(GroupSuite).filter(
+            Group.name==group,
+            Suite.name==suite,
+        ).one()
     except MultipleResultsFound:
         return reject_changes(session, changes, "internal-error")
     except NoResultFound:
-        return reject_changes(session, changes, "invalid-group-or-suite")
+        return reject_changes(session, changes, "invalid-suite-for-group")
+
+    dsc = changes.get_dsc_obj()
+    if dsc['Source'] != changes['Source']:
+        return reject_changes(session, changes, "dsc-does-not-march-changes")
+    if dsc['Version'] != changes['Version']:
+        return reject_changes(session, changes, "dsc-does-not-march-changes")
 
     try:
-        source = session.query(Source).filter_by(
-            name=changes['Source'],
-            version=changes['Version'],
-            group=group,
+        source = session.query(Source).filter(
+            Source.name==dsc['Source'],
+            Source.version==dsc['Version'],
+            GroupSuite.group==group_suite.group,
         ).one()
         return reject_changes(session, changes, "source-already-in-group")
     except MultipleResultsFound:
@@ -120,41 +138,17 @@ def accept_source_changes(session, changes, user):
     except NoResultFound:
         pass
 
-    MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
-
-    source = Source(
-        uploader=user,
-        name=changes['Source'],
-        version=changes['Version'],
-        group=group,
-        suite=suite,
-        uploaded_at=dt.datetime.utcnow(),
-        updated_at=dt.datetime.utcnow()
-    )
-
-    source.maintainers.append(Maintainer(
-        comaintainer=False,
-        **MAINTAINER.match(changes['Maintainer']).groupdict()
-    ))
-
-    dsc = changes.get_dsc_obj()
-
-    whos = (x.strip() for x in dsc.get("Uploaders", "").split(",") if x != "")
-
-    for who in whos:
-        source.maintainers.append(Maintainer(
-            comaintainer=True,
-            **MAINTAINER.match(who).groupdict()
-        ))
-
+    component = session.query(Component).filter_by(name="main").one()
     arches = dsc['Architecture'].split()
+
+    source = create_source(dsc, group_suite, component, user)
     create_jobs(source, session, arches)
 
     session.add(source)  # OK. Populated entry. Let's insert.
     session.commit()  # Neato.
 
     # OK. We have a changes in order. Let's roll.
-    repo = group.get_repo()
+    repo = Repo(group_suite.group.repo_path)
     repo.add_changes(changes)
 
     emit('accept', 'source', source.debilize())
@@ -176,8 +170,13 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(session, changes, "binary-source-name-mismatch")
 
     if changes.get("Version") != source.version:
-        return reject_changes(
-            session, changes, "binary-source-version-mismatch")
+        return reject_changes(session, changes, "binary-source-version-mismatch")
+
+    if changes.get('X-Lucy-Group', "default") != source.group_suite.group.name:
+        return reject_changes(session, changes, "binary-source-group-mismatch")
+
+    if changes.get('Distribution') != source.group_suite.suite.name:
+        return reject_changes(session, changes, "binary-source-suite-mismatch")
 
     if changes.get("Architecture") != job.arch.name:
         return reject_changes(session, changes, "wrong-architecture")
@@ -188,8 +187,8 @@ def accept_binary_changes(session, changes, builder):
     binary = Binary.from_job(job)
 
     ## OK. Let's make sure we can add this.
-    repo = binary.group.get_repo()
     try:
+        repo = Repo(job.source.group_suite.group.repo_path)
         repo.add_changes(changes)
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
@@ -275,8 +274,8 @@ def accept_dud(session, dud, builder):
     job.dud_uploaded(session, result)
     session.commit()  # Neato.
 
-    repo = result.get_repo()
     try:
+        repo = FileRepo(job.source.group_suite.group.files_path)
         repo.add_dud(dud)
     except FilesAlreadyRegistered:
         return reject_dud(session, dud, "dud-files-already-registered")
