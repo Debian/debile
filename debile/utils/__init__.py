@@ -17,26 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-
-import shlex
-import subprocess
-
-
-def run_command(command, input=None):
-    kwargs = {}
-
-    if input is not None:
-        kwargs['stdin'] = subprocess.PIPE
-
-    if not isinstance(command, list):
-        command = shlex.split(command)
-    try:
-        pipe = subprocess.Popen(command,
-                                shell=False,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                **kwargs)
-    except OSError:
-        return (None, None, -1)
-    (output, stderr) = pipe.communicate(input=input)
-    return (output, stderr, pipe.returncode)

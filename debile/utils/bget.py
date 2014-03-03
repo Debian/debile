@@ -20,7 +20,8 @@
 
 from debian.deb822 import Packages
 from debile.utils.deb822 import Dsc
-from debile.utils.aget import dget, find_dsc
+from debile.utils.aget import find_dsc
+from debile.utils.commands import safe_run
 from StringIO import StringIO
 from gzip import GzipFile
 import requests
@@ -78,8 +79,8 @@ def find_debs(archive, suite, component, arch, source, version):
 
 def bget(archive, suite, component, arch, source, version):
     debs = find_debs(archive, suite, component, arch, source, version)
-    for deb in debs:
-        dget(deb)
+    for url in debs:
+        safe_run(["dget", "-u", "-d", url])
     return [os.path.basename(url) for url in debs]
 
 

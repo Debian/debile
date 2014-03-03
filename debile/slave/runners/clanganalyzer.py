@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.slave.utils import run_command
+from debile.utils.commands import run_command
 from schroot import schroot
 
 import os

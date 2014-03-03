@@ -18,7 +18,7 @@ import yaml
 import tarfile
 from contextlib import contextmanager
 
-from debile.utils import run_command
+from debile.utils.commands import run_command
 
 DEBILE_USER = "Debian-debile-unpriv"
 

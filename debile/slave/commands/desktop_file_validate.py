@@ -21,7 +21,8 @@
 
 from debile.slave.runners.desktop_file_validate import (desktop_file_validate,
                                                         version)
-from debile.slave.utils import run_command, cd
+from debile.slave.utils import cd
+from debile.utils.commands import run_command
 
 
 def run(dsc, source, job, firehose):

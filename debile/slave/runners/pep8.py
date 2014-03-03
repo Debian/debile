@@ -20,7 +20,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.wrappers.pep8 import parse_pep8
-from debile.slave.utils import run_command, cd
+from debile.slave.utils import cd
+from debile.utils.commands import run_command
 
 
 def pep8(dsc, analysis):

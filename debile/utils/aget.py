@@ -18,19 +18,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debile.utils.commands import safe_run
 from debian.deb822 import Sources
-from debile.utils import run_command
 from StringIO import StringIO
 from gzip import GzipFile
 import requests
 import os
-
-
-def dget(path):
-    out, err, ret = run_command(["dget", "-u", path])
-    if ret != 0:
-        print ret, err
-        raise Exception("dget failed to download package")
 
 
 def find_dsc(archive, suite, component, source, version):
@@ -61,7 +54,7 @@ def find_dsc(archive, suite, component, source, version):
 
 def aget(archive, suite, component, source, version):
     url = find_dsc(archive, suite, component, source, version)
-    dget(url)
+    safe_run(["dget", "-u", "-d", url])
     return os.path.basename(url)
 
 

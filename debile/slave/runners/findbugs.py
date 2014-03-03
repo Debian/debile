@@ -21,7 +21,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.wrappers.findbugs import parse_findbugs
-from debile.slave.utils import run_command, cd
+from debile.slave.utils import cd
+from debile.utils.commands import run_command
 
 
 def findbugs(deb, analysis):

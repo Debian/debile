@@ -33,7 +33,7 @@
 # -*- coding: utf-8 -*-
 
 from debile.master.core import config
-from debile.utils import run_command
+from debile.utils.commands import run_command
 from debile.utils import deb822
 import firehose.model
 import hashlib

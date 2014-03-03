@@ -41,7 +41,7 @@ __copyright__ = 'Copyright © 2008 Jonny Lamb, Copyright © 2010 Jan Dittberner'
 __license__ = 'MIT'
 
 from debile.master.core import config
-from debile.utils import run_command
+from debile.utils.commands import run_command
 from debile.utils import deb822
 import hashlib
 import os.path

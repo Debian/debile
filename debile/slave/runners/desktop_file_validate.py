@@ -22,7 +22,7 @@
 from debile.slave.wrappers.desktop_file_validate import (
     parse_desktop_file_validate
 )
-from debile.slave.utils import run_command
+from debile.utils.commands import run_command
 import os
 
 

@@ -18,7 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils import run_command
+from debile.utils.commands import run_command
 
 
 def arch_matches(arch, alias):

@@ -20,8 +20,9 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.wrappers.coccinelle import parse_coccinelle
-from debile.slave.utils import run_command, cd
 from debile.slave.core import config
+from debile.slave.utils import cd
+from debile.utils.commands import run_command
 import os.path
 import glob
 
