@@ -134,7 +134,10 @@ class ArchiveDebileBridge:
         bcheck = BuildCheck(self._suite)
         for arch in self._supported_archs:
             yaml_data = bcheck.get_package_states_yaml(component, arch)
-            self.bcheck_data[arch] = yaml.safe_load(yaml_data)['report']
+            report_data = yaml.safe_load(yaml_data)['report']
+            if not report_data:
+                report_data = list()
+            self.bcheck_data[arch] = report_data
             yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, self._suite, component, arch), "w")
             yaml_file.write(yaml_data)
             yaml_file.close()
