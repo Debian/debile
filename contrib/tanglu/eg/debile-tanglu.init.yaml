@@ -52,7 +52,7 @@ Groups:
       repo_path: /srv/archive.tanglu.org/tanglu
       repo_url: http://archive.tanglu.org/tanglu
 
-      files_path: /srv/debile
+      files_path: /srv/debile/data
       files_url: http://buildd.tanglu.org/debile
 
       suites:
