@@ -3,6 +3,5 @@
 # infrastructure. If you're not from Tanglu, just ignore it.
 source /var/archive-kit/debile/ENV/bin/activate
 cd /pub/ftp/incoming
-[ "$(ls -A /pub/ftp/incoming)" ] && chmod 660 /pub/ftp/incoming/*
-debile-import .
+debile-incoming .
 cd /tmp
