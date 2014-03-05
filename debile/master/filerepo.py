@@ -53,5 +53,6 @@ class FileRepo(object):
         os.makedirs(path)
 
         for fp in [dud.get_filename()] + dud.get_files():
-            shutil.move(fp, path)
+            shutil.copy2(fp, path)
+            os.remove(fp)
             os.chmod("%s/%s" % (path, os.path.basename(fp)), self._chmod_mode)
