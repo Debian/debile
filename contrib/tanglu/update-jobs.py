@@ -98,7 +98,7 @@ class ArchiveDebileBridge:
                 return
 
         create_jobs(source, arches)
-        print("Created job for %s (archs: %s)" % (pkg.pgname, str([x.name for x in arches])))
+        print("Created job for %s (archs: %s)" % (pkg.pkgname, str([x.name for x in arches])))
 
         session.add(source)  # OK. Populated entry. Let's insert.
         session.commit()  # Neato.
