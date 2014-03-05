@@ -534,10 +534,9 @@ def create_jobs(source, arches=None):
     """
 
     arches = arches or source.arches
+    aall = ([x for x in source.group_suite.arches if x.name == "all"] or [None])[0]
     build_arch_indep = source.build_arch_indep or \
                        [x for x in source.arches if x != aall]
-
-    aall = ([x for x in source.group_suite.arches if x.name == "all"] or [None])[0]
 
     affinity = None
     if [x for x in source.group_suite.arches if x != aall and x not in build_arch_indep]:
