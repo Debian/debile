@@ -84,21 +84,21 @@ class ArchiveDebileBridge:
             user = session.query(Person).filter_by(username=uploader).one()
             dsc = Dsc(open(dsc_fname))
             source = create_source(dsc, group_suite, component, user)
-            create_jobs(source, session, pkg_arches)
-            print("Created job for %s (archs: %s)" % (pkg.pkgname, str(pkg_arches)))
+            arches = [x for x in source.arches if x.name in pkg_arches]
         else:
             arches = list()
-            for arch in pkg_arches:
+            for arch in [x for x in source.arches if x.name in pkg_arches]:
                 job = session.query(Job).filter(
                     Job.source==source,
-                    Arch.name==arch
+                    Job.arch==arch
                 ).first()
                 if job is None:
                     arches.append(arch)
             if len(arches) == 0:
                 return
-            create_jobs(source, session, arches)
-            print("Created job for %s (archs: %s)" % (pkg.pgname, str(arches)))
+
+        create_jobs(source, arches)
+        print("Created job for %s (archs: %s)" % (pkg.pgname, str([x.name for x in arches])))
 
         session.add(source)  # OK. Populated entry. Let's insert.
         session.commit()  # Neato.
