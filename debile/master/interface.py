@@ -56,7 +56,7 @@ class DebileMasterInterface(object):
     @builder_method
     def get_next_job(self, suites, components, arches, capabilities):
         arches = [
-            x.id for x in session.query(Arch).filter(
+            x.id for x in NAMESPACE.session.query(Arch).filter(
                 Arch.name.in_(arches)
             ).all()
         ]
