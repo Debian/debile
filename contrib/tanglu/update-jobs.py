@@ -162,7 +162,7 @@ class ArchiveDebileBridge:
                     with session() as s:
                         self.create_debile_job(s, pkg, component, pkg_build_arches)
                 except Exception as ex:
-                    print("Skipping %s %s due to error: " % (pkg.pkgname, pkg.version, ex))
+                    print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
 
     def sync_packages_all(self):
         for comp in self._archive_components:
