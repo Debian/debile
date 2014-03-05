@@ -1,5 +1,6 @@
 ---
 database: sqlite:////home/tag/debile.db
+chmod_dud_data: 644
 
 fedmsg:
     prefix: "org.anized"
