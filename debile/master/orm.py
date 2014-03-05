@@ -19,7 +19,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import subprocess
-import os.path
+import os
 import re
 from datetime import datetime
 
@@ -471,8 +471,10 @@ def arch_matches(arch, alias):
         return True
     if not "-" in arch and not "-" in alias:
         return False
-    return 0 == subprocess.call(["/usr/bin/dpkg-architecture",
-                                 "-a%s" % (arch), "-i%s" % (alias)])
+    with open(os.devnull, 'wb') as devnull:
+        return 0 == subprocess.call(["/usr/bin/dpkg-architecture",
+                                     "-a%s" % (arch), "-i%s" % (alias)],
+                                    stdout=devnull, stderr=devnull)
 
 def create_source(dsc, group_suite, component, uploader):
     source = Source(
