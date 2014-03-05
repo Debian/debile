@@ -142,7 +142,7 @@ def accept_source_changes(session, changes, user):
     arches = dsc['Architecture'].split()
 
     source = create_source(dsc, group_suite, component, user)
-    create_jobs(source, session, arches)
+    create_jobs(source)
 
     session.add(source)  # OK. Populated entry. Let's insert.
     session.commit()  # Neato.
