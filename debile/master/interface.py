@@ -69,7 +69,7 @@ class DebileMasterInterface(object):
             Suite.name.in_(suites),
             Component.name.in_(components),
             Job.arch_id.in_(arches),
-            Job.affinity.in_(arches) | Job.affinity_id==None,
+            Job.affinity_id.in_(arches) | Job.affinity_id==None,
             Check.name.in_(capabilities),
         ).outerjoin(Job.depedencies).filter(
             JobDependencies.id==None
