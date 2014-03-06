@@ -19,6 +19,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.utils import run_command
+from debile.utils.config import load_master_config
 import os
 import shutil
 
@@ -34,6 +35,8 @@ class FileRepo(object):
 
     def __init__(self, root):
         self.root = root
+        config = load_master_config()
+        self._chmod_mode = config['filerepo_chmod_mode']
 
     def add_dud(self, dud):
         source, version, jid = (dud[x] for x in [
@@ -54,3 +57,4 @@ class FileRepo(object):
             # to own the file.
             shutil.copy2(fp, path)
             os.remove(fp)
+            os.chmod("%s/%s" % (path, os.path.basename(fp)), self._chmod_mode)
