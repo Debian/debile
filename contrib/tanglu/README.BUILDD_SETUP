@@ -12,7 +12,15 @@ http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.48tangl
 http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
 (install local packages using dpkg)
 
-=== 2. Create base environments ===
+=== 2. Set up buildd user ===
+Create new buildd user:
+ adduser --home=/srv/buildd --ingroup sbuild buildd
+Give it sudo permission by creating /etc/sudoers.d/buildd with content:
+ buildd ALL=NOPASSWD: /usr/sbin/cowbuilder, /usr/sbin/chroot
+
+NOTE: The user name and HOME path are currently hardcoded in some scripts, so please don't change them.
+
+=== 3. Create base environments ===
 Create sbuild base environments (for the bartholomea curent development branch) using one of the following commands:
  :: i386 builder:
    sbuild-createchroot --arch=i386 --make-sbuild-tarball=/var/lib/sbuild/staging-i386.tar.gz bartholomea `mktemp -d` http://archive.tanglu.org/tanglu
@@ -33,18 +41,9 @@ then open /etc/apt/sources.list and add the following lines:
  deb http://archive.tanglu.org/tanglu staging main contrib non-free
  #deb-src http://archive.tanglu.org/tanglu staging main contrib non-free
 Then exit the environment.
-
-Next, create the build user:
- adduser --quiet --system --home /var/cache/buildd --no-create-home buildd
-That's it, the build-environment is set up.
-
-=== 3. Set up buildd user ===
-Create new buildd user:
- adduser --home=/srv/buildd buildd
-Give it sudo permission by creating /etc/sudoers.d/buildd with content:
- buildd ALL=NOPASSWD: /usr/sbin/cowbuilder, /usr/sbin/chroot
-
-NOTE: The user name and HOME path are currently hardcoded in some scripts, so please don't change them.
+Change to the buildd user and execute:
+ sbuild-update --keygen
+Sbuild should now be set up.
 
 === 4. Generate builder key ===
 Login as buildd (su buildd)
