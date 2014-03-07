@@ -24,10 +24,8 @@ import glob
 
 
 def run(dsc, package, job, firehose):
-    suite = job['suite']
-    arch = job['arch']
-
-    firehose, out, ftbfs, changes, = sbuild(dsc, suite, arch, firehose)
+    firehose, out, ftbfs, changes, = \
+        sbuild(dsc, job['suite'], job['arch'], job['affinity'], firehose)
 
     # ['python-schroot_0.3-1.debian.tar.gz',
     # 'python3-schroot_0.3-1_all.deb',

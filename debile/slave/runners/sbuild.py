@@ -86,9 +86,8 @@ def ensure_chroot_sanity(chroot_name):
     raise ValueError("No such schroot (%s) found." % (chroot_name))
 
 
-def sbuild(package, suite, arch, analysis):
-    #chroot_name = "%s-%s" % (suite, arch)
-    chroot_name = suite
+def sbuild(package, suite, arch, affinity, analysis):
+    chroot_name = "{suite}-{affinity}".format(suite=suite, affinity=affinity)
 
     ensure_chroot_sanity(chroot_name)
 
@@ -104,10 +103,11 @@ def sbuild(package, suite, arch, analysis):
 
     out, err, ret = run_command([
         "sbuild",
+        "--dist={suite}".format(suite=suite),
+        "--arch={affinity}".format(affinity=affinity),
+        "--chroot={chroot_name}".format(chroot_name=chroot_name),
         ("--arch-all" if arch == 'all' else '--no-arch-all'),
-        "-c", chroot_name,
         "-v",
-        "-d", suite,
         "-j", "8",
         package,
     ])
