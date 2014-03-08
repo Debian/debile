@@ -558,9 +558,9 @@ def create_jobs(source, valid_affinities):
         raise ValueError("Can't find arch:all in the suite arches.")
 
     affinity = get_preferred_affinity(
-        source.group_suite.arches,
+        debile.master.core.affinity_preference,
         valid_affinities.split(),
-        debile.master.core.affinity_preference
+        source.group_suite.arches
     )
 
     for check in source.group_suite.get_source_checks():
