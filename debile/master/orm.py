@@ -193,10 +193,15 @@ class Group(Base):
         if custom_resolver:
             module, func = custom_resolver.rsplit(".", 1)
             m = importlib.import_module(module)
-            return getattr(m, func)(self)
+            return getattr(m, func)(self, conf)
 
         entires = ["repo_path", "repo_url", "files_path", "files_url",]
-        return {x: conf.get(x).format(
+
+        for entry in entires:
+            if conf.get(entry) is None:
+                raise ValueError("No configured repo info. Set in master.yaml")
+
+        return {x: conf[x].format(
             name=self.name,
             id=self.id,
         ) for x in entires}
@@ -560,8 +565,6 @@ def create_jobs(source):
         affinity = get_affine_arch(source.group_suite.arches)
     else:
         affinity = get_affine_arch(source.arches)
-
-    raise Exception
 
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),

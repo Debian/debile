@@ -22,7 +22,7 @@ def test_repo_info():
     debile.master.core.config['repo'] = c
 
 
-def fnord(group):
+def fnord(group, conf):
     return {"foo": "bar"}
 
 
