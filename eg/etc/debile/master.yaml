@@ -2,6 +2,8 @@
 database: sqlite:////home/tag/debile.db
 filerepo_chmod_mode: 660
 
+affinity: ['amd64']
+
 fedmsg:
     prefix: "org.anized"
     sign: false

@@ -18,8 +18,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import subprocess
-import os
 import re
 from datetime import datetime
 
@@ -30,6 +28,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
+
+from debile.master.arches import (arch_matches, get_concrete_arches)
+
 
 Base = declarative_base(metadata=metadata)
 
@@ -168,8 +169,6 @@ class Group(Base):
         "name": "name",
         "maintainer_id": "maintainer.username",
         "maintainer": "maintainer.name",
-        "repo_url": "repo_url",
-        "files_url": "files_url",
     }
     debilize = _debilize
 
@@ -178,13 +177,6 @@ class Group(Base):
 
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
-
-    debile_should_process_changes = Column(Boolean)
-    repo_path = Column(String(255))
-    repo_url = Column(String(255))
-
-    files_path = Column(String(255))
-    files_url = Column(String(255))
 
 
 # Many-to-Many relationship
@@ -247,12 +239,6 @@ source_arch_association = \
         Column('arch_id', Integer, ForeignKey('arches.id'))
     )
 
-# Many-to-Many relationship
-source_build_arch_indep_association = \
-    Table('source_build_arch_indep_association', Base.metadata,
-        Column('source_id', Integer, ForeignKey('sources.id')),
-        Column('arch_id', Integer, ForeignKey('arches.id'))
-    )
 
 class Source(Base):
     __tablename__ = 'sources'
@@ -279,7 +265,6 @@ class Source(Base):
     component = relationship("Component", foreign_keys=[component_id])
 
     arches = relationship("Arch", secondary=source_arch_association)
-    build_arch_indep = relationship("Arch", secondary=source_build_arch_indep_association)
 
     uploader_id = Column(Integer, ForeignKey('people.id'))
     uploader = relationship("Person", foreign_keys=[uploader_id])
@@ -294,6 +279,7 @@ class Maintainer(Base):
         "name": "name",
         "email": "email",
         "comaintainer": "comaintainer",
+        "original_maintainer": "original_maintainer",
         "source_id": "source_id",
     }
     debilize = _debilize
@@ -303,6 +289,7 @@ class Maintainer(Base):
     name = Column(String(255))
     email = Column(String(255))
     comaintainer = Column(Boolean)
+    original_maintainer = Column(Boolean)
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source", backref='maintainers',
@@ -466,16 +453,6 @@ class Result(Base):
         return Result(job=job, uploaded_at=datetime.utcnow())
 
 
-def arch_matches(arch, alias):
-    if arch == alias or alias == "any":
-        return True
-    if not "-" in arch and not "-" in alias:
-        return False
-    with open(os.devnull, 'wb') as devnull:
-        return 0 == subprocess.call(["/usr/bin/dpkg-architecture",
-                                     "-a%s" % (arch), "-i%s" % (alias)],
-                                    stdout=devnull, stderr=devnull)
-
 def create_source(dsc, group_suite, component, uploader):
     source = Source(
         name=dsc['Source'],
@@ -486,35 +463,24 @@ def create_source(dsc, group_suite, component, uploader):
         uploaded_at=datetime.utcnow()
     )
 
-    build_arch_indep = ""
-    if 'Build-Architecture-Indep' in dsc:
-        build_arch_indep = dsc['Build-Architecture-Indep']
-    elif 'X-Build-Architecture-Indep' in dsc:
-        build_arch_indep = dsc['X-Build-Architecture-Indep']
-    elif 'X-Arch-Indep-Build-Arch' in dsc:
-        build_arch_indep = dsc['X-Arch-Indep-Build-Arch']
-
     for arch in group_suite.arches:
         for x in dsc['Architecture'].split():
             if arch_matches(arch.name, x):
                 source.arches.append(arch)
-                break
-    for arch in group_suite.arches:
-        for x in build_arch_indep.split():
-            if arch_matches(arch.name, x):
-                source.build_arch_indep.append(arch)
                 break
 
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
     source.maintainers.append(Maintainer(
         comaintainer=False,
+        original_maintainer=False,
         **MAINTAINER.match(dsc.get('Maintainer')).groupdict()
     ))
 
     if dsc.get('XSBC-Original-Maintainer', None):
         source.maintainers.append(Maintainer(
             comaintainer=False,
+            original_maintainer=True,
             **MAINTAINER.match(dsc.get('XSBC-Original-Maintainer')).groupdict()
         ))
 
@@ -522,18 +488,20 @@ def create_source(dsc, group_suite, component, uploader):
     for who in [x.strip() for x in whos if x.strip() != ""]:
         source.maintainers.append(Maintainer(
             comaintainer=True,
+            original_maintainer=False,
             **MAINTAINER.match(who).groupdict()
         ))
 
     return source
 
 
-def create_jobs(source, arches=None):
+def create_jobs(source):
     """
     Create jobs for Source `source', for each arch in `arches'.
     `arches' sould be a subset of `source.arches' or `None', in which case
     `source.arches' will be used instead.
     """
+    raise NotImplementedError('Pending implementation.')
 
     arches = arches or source.arches
     aall = ([x for x in source.group_suite.arches if x.name == "all"] or [None])[0]
