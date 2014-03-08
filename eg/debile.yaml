@@ -53,13 +53,6 @@ Groups:
     - name: default
       maintainer: paultag
 
-      debile_should_process_changes: True
-      repo_path: /srv/debile/pool/default
-      repo_url: http://localhost/debile/pool/default
-
-      files_path: /srv/debile/files/default
-      files_url: http://localhost/debile/files/default
-
       suites:
           - suite: unstable
             components:

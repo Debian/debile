@@ -20,20 +20,15 @@
 
 import os
 import fnmatch
-from debian import deb822
 
-from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
-from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
-from debile.utils.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.messaging import emit
-from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Maintainer, Binary,
-                               Job, JobDependencies, Result,
-                               create_source, create_jobs)
+from debile.master.orm import (Person, Builder, Suite, Component, Group,
+                               GroupSuite, Source, Binary, Job, create_source,
+                               create_jobs)
 from debile.utils.changes import parse_changes_file, ChangesFileException
 
 
@@ -62,10 +57,6 @@ def process_changes(session, path):
         return reject_changes(session, changes, "internal-error")
     except NoResultFound:
         return reject_changes(session, changes, "invalid-group")
-
-    if not group.debile_should_process_changes:
-        # This file isn't for us, just leave it.
-        return
 
     try:
         key = changes.validate_signature()
@@ -139,10 +130,18 @@ def accept_source_changes(session, changes, user):
         pass
 
     component = session.query(Component).filter_by(name="main").one()
-    arches = dsc['Architecture'].split()
+
+    if 'Build-Architecture-Indep' in dsc:
+        valid_affinities = dsc['Build-Architecture-Indep']
+    elif 'X-Build-Architecture-Indep' in dsc:
+        valid_affinities = dsc['X-Build-Architecture-Indep']
+    elif 'X-Arch-Indep-Build-Arch' in dsc:
+        valid_affinities = dsc['X-Arch-Indep-Build-Arch']
+    else:
+        valid_affinities = "any"
 
     source = create_source(dsc, group_suite, component, user)
-    create_jobs(source)
+    create_jobs(source, valid_affinities)
 
     session.add(source)  # OK. Populated entry. Let's insert.
     session.commit()  # Neato.
@@ -204,87 +203,7 @@ def accept_binary_changes(session, changes, builder):
         os.unlink(fp)
 
 
-def process_dud(session, path):
-    dud = Dud(filename=path)
-    jid = dud.get("X-Debile-Job", None)
-    if jid is None:
-        return reject_dud(session, dud, "missing-dud-job")
-
-    try:
-        dud.validate()
-    except DudFileException as e:
-        return reject_dud(session, dud, "invalid-dud-upload")
-
-    key = dud.validate_signature()
-
-    try:
-        builder = session.query(Builder).filter_by(key=key).one()
-    except NoResultFound:
-        return reject_dud(session, dud, "invalid-dud-builder")
-
-    try:
-        job = session.query(Job).get(jid)
-    except NoResultFound:
-        return reject_dud(session, dud, "invalid-dud-job")
-
-    if dud.get("X-Debile-Failed", None) is None:
-        return reject_dud(session, dud, "no-failure-notice")
-
-    if job.builder != builder:
-        return reject_dud(session, dud, "invalid-dud-uploader")
-
-    accept_dud(session, dud, builder)
-
-
-def reject_dud(session, dud, tag):
-    print "REJECT: {source} because {tag}".format(
-        tag=tag, source=dud['Source'])
-
-    e = None
-    try:
-        dud.validate()
-    except DudFileException as e:
-        print e
-
-    emit('reject', 'result', {
-        "tag": tag,
-        "source": dud['Source'],
-    })
-
-    for fp in [dud.get_filename()] + dud.get_files():
-        os.unlink(fp)
-    # Note this in the log.
-
-
-def accept_dud(session, dud, builder):
-    fire = dud.get_firehose()
-    failed = True if dud.get('X-Debile-Failed', None) == "Yes" else False
-
-    job = session.query(Job).get(dud['X-Debile-Job'])
-
-    fire, _ = idify(fire)
-    fire = uniquify(session, fire)
-
-    result = Result.from_job(job)
-    result.failed = failed
-    result.firehose = fire
-    session.merge(result)  # Needed because a *lot* of the Firehose is 
-    # going to need unique ${WORLD}.
-
-    job.dud_uploaded(session, result)
-    session.commit()  # Neato.
-
-    try:
-        repo = FileRepo(job.source.group_suite.group.files_path)
-        repo.add_dud(dud)
-    except FilesAlreadyRegistered:
-        return reject_dud(session, dud, "dud-files-already-registered")
-
-    emit('receive', 'result', result.debilize())
-    #  repo.add_dud removes the files
-
 
 DELEGATE = {
     "*.changes": process_changes,
-    "*.dud": process_dud,
 }

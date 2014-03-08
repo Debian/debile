@@ -48,13 +48,6 @@ Groups:
     - name: default
       maintainer: mak
 
-      debile_should_process_changes: False
-      repo_path: /srv/archive.tanglu.org/tanglu
-      repo_url: http://archive.tanglu.org/tanglu
-
-      files_path: /srv/debile/data
-      files_url: http://buildd.tanglu.org/debile
-
       suites:
           - suite: staging
             components:

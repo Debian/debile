@@ -18,9 +18,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import subprocess
-import os
 import re
+import importlib
 from datetime import datetime
 
 from firewoes.lib.orm import metadata
@@ -30,6 +29,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
+
+from debile.master.arches import (get_preferred_affinity, get_source_arches)
+import debile.master.core
+
 
 Base = declarative_base(metadata=metadata)
 
@@ -140,6 +143,9 @@ class Arch(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
+    def __repr__(self):
+        return "<Arch: %s (%s)>" % (self.name, self.id)
+
 
 class Check(Base):
     __tablename__ = 'checks'
@@ -168,7 +174,9 @@ class Group(Base):
         "name": "name",
         "maintainer_id": "maintainer.username",
         "maintainer": "maintainer.name",
+        "repo_path": "repo_path",
         "repo_url": "repo_url",
+        "files_path": "files_path",
         "files_url": "files_url",
     }
     debilize = _debilize
@@ -179,12 +187,40 @@ class Group(Base):
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
-    debile_should_process_changes = Column(Boolean)
-    repo_path = Column(String(255))
-    repo_url = Column(String(255))
+    def get_repo_info(self):
+        conf = debile.master.core.config.get("repo", None)
+        custom_resolver = conf.get("custom_resolver", None)
+        if custom_resolver:
+            module, func = custom_resolver.rsplit(".", 1)
+            m = importlib.import_module(module)
+            return getattr(m, func)(self, conf)
 
-    files_path = Column(String(255))
-    files_url = Column(String(255))
+        entires = ["repo_path", "repo_url", "files_path", "files_url",]
+
+        for entry in entires:
+            if conf.get(entry) is None:
+                raise ValueError("No configured repo info. Set in master.yaml")
+
+        return {x: conf[x].format(
+            name=self.name,
+            id=self.id,
+        ) for x in entires}
+
+    @property
+    def repo_path(self):
+        return self.get_repo_info()['repo_path']
+
+    @property
+    def repo_url(self):
+        return self.get_repo_info()['repo_url']
+
+    @property
+    def files_path(self):
+        return self.get_repo_info()['files_path']
+
+    @property
+    def files_url(self):
+        return self.get_repo_info()['files_url']
 
 
 # Many-to-Many relationship
@@ -226,6 +262,8 @@ class GroupSuite(Base):
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite", foreign_keys=[suite_id])
 
+    affinity_preference = Column(String(255))
+
     components = relationship("Component", secondary=group_suite_component_association)
     arches = relationship("Arch", secondary=group_suite_arch_association)
     checks = relationship("Check", secondary=group_suite_check_association)
@@ -247,12 +285,6 @@ source_arch_association = \
         Column('arch_id', Integer, ForeignKey('arches.id'))
     )
 
-# Many-to-Many relationship
-source_build_arch_indep_association = \
-    Table('source_build_arch_indep_association', Base.metadata,
-        Column('source_id', Integer, ForeignKey('sources.id')),
-        Column('arch_id', Integer, ForeignKey('arches.id'))
-    )
 
 class Source(Base):
     __tablename__ = 'sources'
@@ -279,7 +311,6 @@ class Source(Base):
     component = relationship("Component", foreign_keys=[component_id])
 
     arches = relationship("Arch", secondary=source_arch_association)
-    build_arch_indep = relationship("Arch", secondary=source_build_arch_indep_association)
 
     uploader_id = Column(Integer, ForeignKey('people.id'))
     uploader = relationship("Person", foreign_keys=[uploader_id])
@@ -294,6 +325,7 @@ class Maintainer(Base):
         "name": "name",
         "email": "email",
         "comaintainer": "comaintainer",
+        "original_maintainer": "original_maintainer",
         "source_id": "source_id",
     }
     debilize = _debilize
@@ -303,6 +335,7 @@ class Maintainer(Base):
     name = Column(String(255))
     email = Column(String(255))
     comaintainer = Column(Boolean)
+    original_maintainer = Column(Boolean)
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source", backref='maintainers',
@@ -367,6 +400,11 @@ class Job(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
+
+    externally_blocked = Column(Boolean, default=False)
+    # This is a temporary hack for tanglu until we get better support for
+    # pending job support, however that will exist. It's not exposed over the
+    # API since no one should be using this.
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check", foreign_keys=[check_id])
@@ -466,16 +504,6 @@ class Result(Base):
         return Result(job=job, uploaded_at=datetime.utcnow())
 
 
-def arch_matches(arch, alias):
-    if arch == alias or alias == "any":
-        return True
-    if not "-" in arch and not "-" in alias:
-        return False
-    with open(os.devnull, 'wb') as devnull:
-        return 0 == subprocess.call(["/usr/bin/dpkg-architecture",
-                                     "-a%s" % (arch), "-i%s" % (alias)],
-                                    stdout=devnull, stderr=devnull)
-
 def create_source(dsc, group_suite, component, uploader):
     source = Source(
         name=dsc['Source'],
@@ -486,35 +514,21 @@ def create_source(dsc, group_suite, component, uploader):
         uploaded_at=datetime.utcnow()
     )
 
-    build_arch_indep = ""
-    if 'Build-Architecture-Indep' in dsc:
-        build_arch_indep = dsc['Build-Architecture-Indep']
-    elif 'X-Build-Architecture-Indep' in dsc:
-        build_arch_indep = dsc['X-Build-Architecture-Indep']
-    elif 'X-Arch-Indep-Build-Arch' in dsc:
-        build_arch_indep = dsc['X-Arch-Indep-Build-Arch']
-
-    for arch in group_suite.arches:
-        for x in dsc['Architecture'].split():
-            if arch_matches(arch.name, x):
-                source.arches.append(arch)
-                break
-    for arch in group_suite.arches:
-        for x in build_arch_indep.split():
-            if arch_matches(arch.name, x):
-                source.build_arch_indep.append(arch)
-                break
+    source.arches = get_source_arches(dsc['Architecture'].split(),
+                                      group_suite.arches)
 
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
     source.maintainers.append(Maintainer(
         comaintainer=False,
+        original_maintainer=False,
         **MAINTAINER.match(dsc.get('Maintainer')).groupdict()
     ))
 
     if dsc.get('XSBC-Original-Maintainer', None):
         source.maintainers.append(Maintainer(
             comaintainer=False,
+            original_maintainer=True,
             **MAINTAINER.match(dsc.get('XSBC-Original-Maintainer')).groupdict()
         ))
 
@@ -522,29 +536,38 @@ def create_source(dsc, group_suite, component, uploader):
     for who in [x.strip() for x in whos if x.strip() != ""]:
         source.maintainers.append(Maintainer(
             comaintainer=True,
+            original_maintainer=False,
             **MAINTAINER.match(who).groupdict()
         ))
 
     return source
 
 
-def create_jobs(source, arches=None):
+def create_jobs(source, valid_affinities):
     """
-    Create jobs for Source `source', for each arch in `arches'.
-    `arches' sould be a subset of `source.arches' or `None', in which case
-    `source.arches' will be used instead.
+    Create jobs for Source `source`, using the an architecture matching
+    `valid_affinities` for any arch "all" jobs.
     """
 
-    arches = arches or source.arches
-    aall = ([x for x in source.group_suite.arches if x.name == "all"] or [None])[0]
-    build_arch_indep = source.build_arch_indep or \
-                       [x for x in source.arches if x != aall]
+    aall = None
+    for arch in source.group_suite.arches:
+        if arch.name == "all":
+            aall = arch
+            break
+    else:
+        raise ValueError("Can't find arch:all in the suite arches.")
 
-    affinity = None
-    if [x for x in source.group_suite.arches if x != aall and x not in build_arch_indep]:
-        # There are arches that can't build this package, so pick one that can
-        affinity = ([x for x in build_arch_indep if x in arches] or
-                    build_arch_indep or [None])[0]
+    # Sources building arch-dependent packages should build any
+    # arch-independent packages on an architecture it is building
+    # arch-dependent packages on.
+    valid_arches = [x for x in source.arches if x.name != "any"] or \
+                   source.group_suite.arches
+
+    affinity = get_preferred_affinity(
+        debile.master.core.affinity_preference,
+        valid_affinities.split(),
+        valid_arches
+    )
 
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
@@ -557,7 +580,7 @@ def create_jobs(source, arches=None):
     builds = {}
 
     for check in source.group_suite.get_build_checks():
-        for arch in arches:
+        for arch in source.arches:
             jobaffinity = affinity if arch == aall else None
 
             j = Job(name="%s [%s]" % (check.name, arch.name),
@@ -569,7 +592,7 @@ def create_jobs(source, arches=None):
             source.jobs.append(j)
 
     for check in source.group_suite.get_binary_checks():
-        for arch in arches:
+        for arch in source.arches:
             jobaffinity = affinity if arch == aall else None
 
             deps = []
