@@ -38,5 +38,9 @@ def get_proxy():
             password=xml['password'],
             host=xml['host'],
             port=xml['port'],
-        ), transport=DebileSafeTransport(), allow_none=True)
+        ), transport=DebileSafeTransport(
+            key_file=xml.get('keyfile', None),
+            cert_file=xml.get('certfile', None),
+            ca_certs=xml.get('ca_certs', "/etc/ssl/certs/ca-certificates.crt")
+        ), allow_none=True)
     return proxy

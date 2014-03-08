@@ -42,9 +42,10 @@ def validate(cert, hostname):
 
 
 class DebileHTTPSConnection(httplib.HTTPSConnection):
-    def __init__(self, host, port=None, key_file=None, cert_file=None,
+    def __init__(self, host, port=None, key_file=None, cert_file=None, ca_certs=None,
                  strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
         httplib.HTTPSConnection.__init__(self, host=host, port=port, key_file=key_file, cert_file=cert_file, strict=strict, timeout=timeout, source_address=source_address)
+        self.ca_certs = ca_certs
 
     def connect(self):
         sock = socket.create_connection((self.host, self.port),
@@ -52,16 +53,29 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
+
+        cert_reqs=ssl.CERT_NONE if self.ca_certs is None else ssl.CERT_REQUIRED
         self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                                    do_handshake_on_connect=True,
-                                    ca_certs="/etc/ssl/certs/ca-certificates.crt",
-                                    cert_reqs=ssl.CERT_REQUIRED)
+                                    ca_certs=self.ca_certs, cert_reqs=cert_reqs,
+                                    do_handshake_on_connect=True)
 
         if not validate(self.sock.getpeercert(), self.host):
             raise Exception("https endpint presented invalid certificate")
 
 class DebileSafeTransport(xmlrpclib.Transport):
+    def __init__(self, key_file=None, cert_file=None, ca_certs=None):
+        xmlrpclib.Transport.__init__(self)
+        self.key_file = key_file
+        self.cert_file = cert_file
+        self.ca_certs = ca_certs
+
     def make_connection(self, host):
+        host = (host, {
+            'key_file':  self.key_file,
+            'cert_file': self.cert_file,
+            'ca_certs':  self.ca_certs,
+        })
+
         if self._connection and host == self._connection[0]:
             return self._connection[1]
 

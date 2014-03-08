@@ -139,7 +139,7 @@ class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
     pass
 
 class SecureXMLRPCServer(SimpleXMLRPCServer):
-    def __init__(self, addr, keyfile, certfile,
+    def __init__(self, addr, keyfile, certfile, ca_certs,
                  requestHandler=SimpleXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
                  bind_and_activate=True):
@@ -150,21 +150,23 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
                                     encoding=encoding,
                                     bind_and_activate=False)
 
-        self.socket = ssl.wrap_socket(self.socket, cert_reqs=ssl.CERT_NONE,
-                                      keyfile=keyfile, certfile=certfile)
+        cert_reqs=ssl.CERT_NONE if ca_certs is None else ssl.CERT_OPTIONAL
+        self.socket = ssl.wrap_socket(self.socket,
+                                      keyfile=keyfile, certfile=certfile,
+                                      ca_certs=ca_certs, cert_reqs=cert_reqs)
 
         if bind_and_activate:
             self.server_bind()
             self.server_activate()
 
-def serve(server, port, keyfile, certfile):
+def serve(server, port, keyfile, certfile, ca_certs):
     # Don't move the stuff below above; it would cause a circular
     # import; since it needs some of our kruft. I know it's bad form
     # but I'm tired of it.
     from debile.master.interface import DebileMasterInterface
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
-    server = SecureXMLRPCServer((server, port), keyfile, certfile,
+    server = SecureXMLRPCServer((server, port), keyfile, certfile, ca_certs,
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
     server.register_introspection_functions()
@@ -183,7 +185,8 @@ def main():
     logger.addHandler(syslog)
 
     logger.info("Booting debile-masterd daemon")
-    serve(xml["addr"], xml["port"], xml["keyfile"], xml["certfile"])
+    serve(xml["addr"], xml["port"], xml["keyfile"], xml["certfile"],
+          xml.get('ca_certs', "/etc/ssl/certs/ca-certificates.crt"))
 
 
 if __name__ == "__main__":
