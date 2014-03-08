@@ -143,6 +143,9 @@ class Arch(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
+    def __repr__(self):
+        return "<Arch: %s (%s)>" % (self.name, self.id)
+
 
 class Check(Base):
     __tablename__ = 'checks'
@@ -544,15 +547,19 @@ def create_jobs(source):
     """
 
     arches = source.arches
+
     aall = None
     for arch in source.group_suite.arches:
         if arch.name == "all":
             aall = arch
+            break
     else:
         raise ValueError("Can't find arch:all in the suite arches.")
 
-    affinity = get_affine_arch(source.arches)
-    print affinity
+    if [x.name for x in source.arches] == ['all']:
+        affinity = get_affine_arch(source.group_suite.arches)
+    else:
+        affinity = get_affine_arch(source.arches)
 
     raise Exception
 
