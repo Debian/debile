@@ -1,4 +1,4 @@
-from debile.master.arches import get_concrete_arches, get_affine_arch
+from debile.master.arches import get_preferred_affinity, get_source_arches
 import debile.master.core
 
 
@@ -25,62 +25,67 @@ valid_arches = [
 
 
 def test_affinity_basic():
-    a = debile.master.core.config['affinity']
-    debile.master.core.config['affinity'] = ['amd64', 'sparc', 'armhf']
-    arch = get_affine_arch([
-        FnordArch("amd64"),
-        FnordArch("sparc"),
-        FnordArch("ppc64"),
-    ])
+    arch = get_preferred_affinity(
+        ['amd64', 'sparc', 'armhf'],
+        ["amd64", "sparc", "ppc64"]
+    )
     assert arch.name == 'amd64'
-    debile.master.core.config['affinity'] = a
 
 
 def test_affinity_out_of_order():
-    a = debile.master.core.config['affinity']
-    debile.master.core.config['affinity'] = ['amd64', 'sparc', 'armhf']
-    arch = get_affine_arch([
-        FnordArch("ppc64"),
-        FnordArch("sparc"),
-        FnordArch("amd64"),
-    ])
+    arch = get_preferred_affinity(
+        ['amd64', 'sparc', 'armhf'],
+        ["ppc64", "sparc", "amd64"]
+    )
     assert arch.name == 'amd64'
-    debile.master.core.config['affinity'] = a
 
 
 def test_affinity_secondary():
-    a = debile.master.core.config['affinity']
-    debile.master.core.config['affinity'] = ['amd64', 'sparc', 'armhf']
-    arch = get_affine_arch([
-        FnordArch("ppc64"),
-        FnordArch("sparc"),
-    ])
+    arch = get_preferred_affinity(
+        ['amd64', 'sparc', 'armhf'],
+        ["ppc64", "sparc"]
+    )
     assert arch.name == 'sparc'
-    debile.master.core.config['affinity'] = a
 
+def test_affinity_any():
+    arch = get_preferred_affinity(
+        ['amd64', 'sparc', 'armhf'],
+        ["any"]
+    )
+    assert arch.name == 'amd64'
+
+def test_affinity_linux_any():
+    arch = get_preferred_affinity(
+        ['amd64', 'sparc', 'armhf'],
+        ["linux-any"]
+    )
+    assert arch.name == 'amd64'
+
+def test_affinity_any_arm():
+    arch = get_preferred_affinity(
+        ['amd64', 'sparc', 'armhf'],
+        ["any-arm"]
+    )
+    assert arch.name == 'armhf'
 
 def test_affinity_fail():
-    a = debile.master.core.config['affinity']
-    debile.master.core.config['affinity'] = ['amd64', 'sparc', 'armhf']
     try:
-        get_affine_arch([
-            FnordArch("ppc64"),
-            FnordArch("armel"),
-        ])
+        arch = get_preferred_affinity(
+            ['amd64', 'sparc', 'armhf'],
+            ["ppc64", "armel"]
+        )
         assert False == True, "Didn't bomb out as expected."
     except ValueError:
         pass
 
-    debile.master.core.config['affinity'] = a
-
 
 def test_any_arches():
-    assert set(valid_arches) == get_concrete_arches(['any'], valid_arches)
+    assert set(valid_arches) == get_source_arches(['any'], valid_arches)
 
 
 def test_simple_arches():
     assert set(['amd64', 'armhf']) == set([
-        x.name for x in get_concrete_arches(['amd64', 'armhf'], valid_arches)
+        x.name for x in get_source_arches(['amd64', 'armhf'], valid_arches)
     ])
 
 
@@ -88,7 +93,7 @@ def test_kfreebsd_arches():
     assert set([
         'kfreebsd-i386', 'kfreebsd-amd64', 'armhf'
     ]) == set([
-        x.name for x in get_concrete_arches([
+        x.name for x in get_source_arches([
             'kfreebsd-i386', 'kfreebsd-amd64', 'armhf'
         ], valid_arches)
     ])
@@ -97,7 +102,7 @@ def test_hurd_arches():
     assert set([
         'hurd-i386', 'hurd-amd64', 'armel'
     ]) == set([
-        x.name for x in get_concrete_arches([
+        x.name for x in get_source_arches([
             'hurd-i386', 'hurd-amd64', 'armel'
         ], valid_arches)
     ])
