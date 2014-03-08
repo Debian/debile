@@ -55,7 +55,6 @@ Groups:
 
       suites:
           - suite: unstable
-            affinity_preference: amd64 i386
             components:
                 - main
                 - contrib
