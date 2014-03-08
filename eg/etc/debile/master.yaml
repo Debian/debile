@@ -4,6 +4,12 @@ filerepo_chmod_mode: 660
 
 affinity_preference: ['amd64', 'i386']
 
+xmlrpc:
+    addr: 0.0.0.0
+    port: 22017
+    keyfile: /home/tag/debile.key
+    certfile: /home/tag/debile.crt
+
 repo:
     # custom_resolver: devnull.foo.resolver
     repo_path: "/srv/debile/pool/{name}"

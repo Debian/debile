@@ -33,7 +33,7 @@ def get_proxy():
         raise Exception("No xmlrpc found in slave yaml")
 
     proxy = xmlrpclib.ServerProxy(
-        "http://{user}:{password}@{host}:{port}/".format(
+        "https://{user}:{password}@{host}:{port}/".format(
             user=xml['user'],
             password=xml['password'],
             host=xml['host'],
