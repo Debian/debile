@@ -171,6 +171,10 @@ class Group(Base):
         "name": "name",
         "maintainer_id": "maintainer.username",
         "maintainer": "maintainer.name",
+        "repo_path": "repo_path",
+        "repo_url": "repo_url",
+        "files_path": "files_path",
+        "files_url": "files_url",
     }
     debilize = _debilize
 
@@ -189,7 +193,10 @@ class Group(Base):
             return getattr(m, func)(self)
 
         entires = ["repo_path", "repo_url", "files_path", "files_url",]
-        return {x: conf.get(x).format(**self.debilize()) for x in entires}
+        return {x: conf.get(x).format(
+            name=self.name,
+            id=self.id,
+        ) for x in entires}
 
     @property
     def repo_path(self):
