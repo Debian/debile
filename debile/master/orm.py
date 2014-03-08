@@ -30,7 +30,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
-from debile.master.arches import (arch_matches, get_concrete_arches)
+from debile.master.arches import (arch_matches, get_affine_arch)
 import debile.master.core
 
 
@@ -542,18 +542,17 @@ def create_jobs(source):
     `arches' sould be a subset of `source.arches' or `None', in which case
     `source.arches' will be used instead.
     """
-    raise NotImplementedError('Pending implementation.')
+    raise NotImplementedError()
 
-    arches = arches or source.arches
-    aall = ([x for x in source.group_suite.arches if x.name == "all"] or [None])[0]
-    build_arch_indep = source.build_arch_indep or \
-                       [x for x in source.arches if x != aall]
+    arches = source.arches
+    aall = None
+    for arch in source.group_suite.arches:
+        if arch.name == "all":
+            aall = arch
+    else:
+        raise ValueError("Can't find arch:all in the suite arches.")
 
-    affinity = None
-    if [x for x in source.group_suite.arches if x != aall and x not in build_arch_indep]:
-        # There are arches that can't build this package, so pick one that can
-        affinity = ([x for x in build_arch_indep if x in arches] or
-                    build_arch_indep or [None])[0]
+    affinity = get_affine_arch(source.arches)
 
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
