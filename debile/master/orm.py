@@ -557,10 +557,16 @@ def create_jobs(source, valid_affinities):
     else:
         raise ValueError("Can't find arch:all in the suite arches.")
 
+    # Sources building arch-dependent packages should build any
+    # arch-independent packages on an architecture it is building
+    # arch-dependent packages on.
+    valid_arches = [x for x in source.arches if x.name != "any"] or \
+                   source.group_suite.arches
+
     affinity = get_preferred_affinity(
         debile.master.core.affinity_preference,
         valid_affinities.split(),
-        source.group_suite.arches
+        valid_arches
     )
 
     for check in source.group_suite.get_source_checks():
