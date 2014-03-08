@@ -542,7 +542,6 @@ def create_jobs(source):
     `arches' sould be a subset of `source.arches' or `None', in which case
     `source.arches' will be used instead.
     """
-    raise NotImplementedError()
 
     arches = source.arches
     aall = None
@@ -553,6 +552,9 @@ def create_jobs(source):
         raise ValueError("Can't find arch:all in the suite arches.")
 
     affinity = get_affine_arch(source.arches)
+    print affinity
+
+    raise Exception
 
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
