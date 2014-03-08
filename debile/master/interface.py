@@ -64,6 +64,7 @@ class DebileMasterInterface(object):
         # the sane thing with Job.affinity.name.in_. Nonsense. Horseshit.
 
         job = NAMESPACE.session.query(Job).filter(
+            Job.externally_blocked==False,
             Job.assigned_at==None,
             Job.finished_at==None,
             Suite.name.in_(suites),

@@ -19,6 +19,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import re
+import importlib
 from datetime import datetime
 
 from firewoes.lib.orm import metadata
@@ -30,6 +31,7 @@ from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
 from debile.master.arches import (arch_matches, get_concrete_arches)
+import debile.master.core
 
 
 Base = declarative_base(metadata=metadata)
@@ -177,6 +179,21 @@ class Group(Base):
 
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
+
+    def get_repo_info(self):
+        """
+        get the repo_path, repo_url, files_path and files_url
+        """
+
+        conf = debile.master.core.config.get("repo", None)
+        custom_resolver = conf.get("custom_resolver", None)
+        if custom_resolver:
+            module, func = custom_resolver.rsplit(".", 1)
+            m = importlib.import_module(module)
+            return getattr(m, func)(self)
+
+        entires = ["repo_path", "repo_url", "files_path", "files_url",]
+        return {x: conf.get(x).format(**self.debilize()) for x in entires}
 
 
 # Many-to-Many relationship
@@ -354,6 +371,11 @@ class Job(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
+
+    externally_blocked = Column(Boolean, default=False)
+    # This is a temporary hack for tanglu until we get better support for
+    # pending job support, however that will exist. It's not exposed over the
+    # API since no one should be using this.
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check", foreign_keys=[check_id])

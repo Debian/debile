@@ -4,6 +4,13 @@ filerepo_chmod_mode: 660
 
 affinity: ['amd64']
 
+repo:
+    # custom_resolver: devnull.foo.resolver
+    repo_path: "/srv/debile/pool/{name}"
+    repo_url: "http://localhost/debile/pool/{name}"
+    files_path: "/srv/debile/files/{name}"
+    files_url: "http://localhost/debile/files/{name}"
+
 fedmsg:
     prefix: "org.anized"
     sign: false
