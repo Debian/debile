@@ -401,10 +401,9 @@ class Job(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
+    # This is a hack for Tanglu, so we can use dose for depwait calculations
+    # instead using the as-of-now unimplemented debile depwait support.
     externally_blocked = Column(Boolean, default=False)
-    # This is a temporary hack for tanglu until we get better support for
-    # pending job support, however that will exist. It's not exposed over the
-    # API since no one should be using this.
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check", foreign_keys=[check_id])
@@ -412,7 +411,7 @@ class Job(Base):
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    affinity_id = Column(Integer, ForeignKey('arches.id'), nullable=True)
+    affinity_id = Column(Integer, ForeignKey('arches.id'))
     affinity = relationship("Arch", foreign_keys=[affinity_id])
 
     source_id = Column(Integer, ForeignKey('sources.id'))
@@ -543,7 +542,7 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, valid_affinities):
+def create_jobs(source, valid_affinities, externally_blocked=False):
     """
     Create jobs for Source `source`, using the an architecture matching
     `valid_affinities` for any arch "all" jobs.
@@ -573,6 +572,7 @@ def create_jobs(source, valid_affinities):
         j = Job(name="%s [%s]" % (check.name, "source"),
                 check=check, arch=aall, affinity=affinity,
                 source=source, binary=None,
+                externally_blocked=externally_blocked,
                 builder=None, assigned_at=None,
                 finished_at=None, failed=None)
         source.jobs.append(j)
@@ -581,11 +581,12 @@ def create_jobs(source, valid_affinities):
 
     for check in source.group_suite.get_build_checks():
         for arch in source.arches:
-            jobaffinity = affinity if arch == aall else None
+            jobaffinity = affinity if arch == aall else arch
 
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch, affinity=jobaffinity,
                     source=source, binary=None,
+                    externally_blocked=externally_blocked,
                     builder=None, assigned_at=None,
                     finished_at=None, failed=None)
             builds[arch] = j
@@ -593,7 +594,7 @@ def create_jobs(source, valid_affinities):
 
     for check in source.group_suite.get_binary_checks():
         for arch in source.arches:
-            jobaffinity = affinity if arch == aall else None
+            jobaffinity = affinity if arch == aall else arch
 
             deps = []
             deps.append(builds[arch])
@@ -603,6 +604,7 @@ def create_jobs(source, valid_affinities):
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch, affinity=jobaffinity,
                     source=source, binary=None,
+                    externally_blocked=externally_blocked,
                     builder=None, assigned_at=None,
                     finished_at=None, failed=None)
             source.jobs.append(j)

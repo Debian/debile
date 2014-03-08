@@ -61,49 +61,53 @@ class ArchiveDebileBridge:
         self._pkginfo = PackageBuildInfoRetriever()
         self._suite = suite
 
-    def create_debile_job(self, session, pkg, pkg_component, pkg_arches):
-        uploader = "dak"
-        group = "default"
-        suite = pkg.suite
+    @staticmethod
+    def create_debile_source(session, group, suite, component_name, dsc_fname):
+        user = session.query(Person).filter_by(username="dak").one()
 
         group_suite = session.query(GroupSuite).filter(
             Group.name==group,
             Suite.name==suite,
         ).one()
+        component = session.query(Component).filter(
+            Component.name==component_name
+        ).one()
 
-        source = session.query(Source).filter(
-            Source.name==pkg.pkgname,
-            Source.version==pkg.version,
-            GroupSuite.group==group_suite.group,
-        ).first()
-
-        if not source:
-            dsc_fname = find_dsc(group_suite.group.repo_path, suite,
-                                 pkg_component, pkg.pkgname, pkg.version)
-            component = session.query(Component).filter_by(name=pkg_component).one()
-            user = session.query(Person).filter_by(username=uploader).one()
-            dsc = Dsc(open(dsc_fname))
-            source = create_source(dsc, group_suite, component, user)
-            arches = [x for x in source.arches if x.name in pkg_arches]
+        dsc = Dsc(open(dsc_fname))
+        if 'Build-Architecture-Indep' in dsc:
+            valid_affinities = dsc['Build-Architecture-Indep']
+        elif 'X-Build-Architecture-Indep' in dsc:
+            valid_affinities = dsc['X-Build-Architecture-Indep']
+        elif 'X-Arch-Indep-Build-Arch' in dsc:
+            valid_affinities = dsc['X-Arch-Indep-Build-Arch']
         else:
-            arches = list()
-            for arch in [x for x in source.arches if x.name in pkg_arches]:
-                job = session.query(Job).filter(
-                    Job.source==source,
-                    Job.arch==arch
-                ).first()
-                if job is None:
-                    arches.append(arch)
-            if len(arches) == 0:
-                return
+            valid_affinities = "any"
 
-        create_jobs(source, arches)
-        print("Created job for %s (archs: %s)" % (pkg.pkgname, str([x.name for x in arches])))
+        source = create_source(dsc, group_suite, component, user)
+        create_jobs(source, valid_affinities, externally_blocked=True)
 
         session.add(source)  # OK. Populated entry. Let's insert.
         session.commit()  # Neato.
 
+        print("Created source for %s %s" % (source.name, source.version))
         emit('accept', 'source', source.debilize())
+
+    @staticmethod
+    def unblock_debile_jobs(session, source, version, group, suite, arches)
+        source = session.query(Source).filter(
+            Source.name==source,
+            Source.version==version,
+            Group.name==group,
+            Suite.name==suite,
+        ).one()
+
+        for job in source.jobs:
+            if job.arch.name in arches:
+                job.externally_blocked=False
+                session.add(job)
+
+        print("Unblocked jobs for %s %s (arches: %s)" %
+              (source.name, source.version, str(arches)))
 
     def _filter_unsupported_archs(self, pkg_archs):
         sup_archs = list()
@@ -143,6 +147,24 @@ class ArchiveDebileBridge:
             yaml_file.close()
 
         for pkg in pkg_dict.values():
+            try:
+                with session() as s:
+                    source = session.query(Source).filter(
+                        Source.name==pkg.pkgname,
+                        Source.version==pkg.version,
+                        Group.name=="default",
+                        Suite.name==pkg.suite,
+                    ).first()
+                    if not source:
+                        dsc = find_dsc("/srv/archive.tanglu.org/tanglu",
+                                    pkg.suite, component, pkg.pkgname, pkg.version)
+                        ArchiveDebileBridge.create_debile_source(
+                            s, "default", pkg.suite, component, dsc
+                        )
+            except Exception as ex:
+                print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
+                continue
+
             archs = self._filter_unsupported_archs(pkg.archs)
             pkg_build_arches = list()
 
@@ -160,7 +182,10 @@ class ArchiveDebileBridge:
             if pkg_build_arches:
                 try:
                     with session() as s:
-                        self.create_debile_job(s, pkg, component, pkg_build_arches)
+                        ArchiveDebileBridge.unblock_debile_jobs(
+                            s, pkg.pkgname, pkg.version,
+                            "default", pkg.suite, pkg_build_arches
+                        )
                 except Exception as ex:
                     print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
 
