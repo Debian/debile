@@ -27,7 +27,8 @@ valid_arches = [
 def test_affinity_basic():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
-        ["amd64", "sparc", "ppc64"]
+        ["amd64", "sparc", "ppc64"],
+        valid_arches
     )
     assert arch.name == 'amd64'
 
@@ -35,7 +36,8 @@ def test_affinity_basic():
 def test_affinity_out_of_order():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
-        ["ppc64", "sparc", "amd64"]
+        ["ppc64", "sparc", "amd64"],
+        valid_arches
     )
     assert arch.name == 'amd64'
 
@@ -43,28 +45,32 @@ def test_affinity_out_of_order():
 def test_affinity_secondary():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
-        ["ppc64", "sparc"]
+        ["ppc64", "sparc"],
+        valid_arches
     )
     assert arch.name == 'sparc'
 
 def test_affinity_any():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
-        ["any"]
+        ["any"],
+        valid_arches
     )
     assert arch.name == 'amd64'
 
 def test_affinity_linux_any():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
-        ["linux-any"]
+        ["linux-any"],
+        valid_arches
     )
     assert arch.name == 'amd64'
 
 def test_affinity_any_arm():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
-        ["any-arm"]
+        ["any-arm"],
+        valid_arches
     )
     assert arch.name == 'armhf'
 
@@ -72,7 +78,8 @@ def test_affinity_fail():
     try:
         arch = get_preferred_affinity(
             ['amd64', 'sparc', 'armhf'],
-            ["ppc64", "armel"]
+            ["ppc64", "armel"],
+            valid_arches
         )
         assert False == True, "Didn't bomb out as expected."
     except ValueError:

@@ -74,7 +74,7 @@ def get_preferred_affinity(affinity_preference, valid_affinities, valid_arches):
             if arch_matches(affinity, alias):
                 return arch
 
-    raise ValueError("No valid affinity - preferences: '%s'; valid: '%s'; arches" % (
+    raise ValueError("No valid affinity - preferences: '%s'; valid: '%s'; arches %s" % (
         ", ".join(affinity_preference),
         ", ".join(valid_affinities),
         ", ".join([x.name for x in valid_arches]),
