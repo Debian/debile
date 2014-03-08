@@ -40,8 +40,6 @@ flavors = {
         'console_scripts': [
             'debile-master-init = debile.master.cli:init',
             'debile-incoming = debile.master.cli:process_incoming',
-            'debile-incoming-changes = debile.master.cli:process_incoming_changes',
-            'debile-incoming-dud = debile.master.cli:process_incoming_dud',
             'debile-import = debile.master.cli:import_db',
             'debile-master = debile.master.cli:serve',
         ],

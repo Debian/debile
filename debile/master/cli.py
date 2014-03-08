@@ -24,22 +24,10 @@ def init():
 
 
 def process_incoming():
-    import debile.master.incoming_changes
-    import debile.master.incoming_dud
-    import sys
-
-    for mod in [debile.master.incoming_changes, debile.master.incoming_dud]:
-        getattr(mod, 'process_directory')(*sys.argv[1:])
-
-def process_incoming_changes():
-    from debile.master.incoming_changes import process_directory
+    from debile.master.incoming import process_directory
     import sys
     return process_directory(*sys.argv[1:])
 
-def process_incoming_dud():
-    from debile.master.incoming_dud import process_directory
-    import sys
-    return process_directory(*sys.argv[1:])
 
 def import_db():
     from debile.master.dimport import import_from_yaml
