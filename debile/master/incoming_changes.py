@@ -130,10 +130,18 @@ def accept_source_changes(session, changes, user):
         pass
 
     component = session.query(Component).filter_by(name="main").one()
-    arches = dsc['Architecture'].split()
+
+    if 'Build-Architecture-Indep' in dsc:
+        valid_affinities = dsc['Build-Architecture-Indep']
+    elif 'X-Build-Architecture-Indep' in dsc:
+        valid_affinities = dsc['X-Build-Architecture-Indep']
+    elif 'X-Arch-Indep-Build-Arch' in dsc:
+        valid_affinities = dsc['X-Arch-Indep-Build-Arch']
+    else:
+        valid_affinities = "any"
 
     source = create_source(dsc, group_suite, component, user)
-    create_jobs(source)
+    create_jobs(source, valid_affinities)
 
     session.add(source)  # OK. Populated entry. Let's insert.
     session.commit()  # Neato.

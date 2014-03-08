@@ -30,7 +30,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
-from debile.master.arches import (arch_matches, get_affine_arch)
+from debile.master.arches import (get_preferred_affinity, get_source_arches)
 import debile.master.core
 
 
@@ -261,6 +261,8 @@ class GroupSuite(Base):
 
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite", foreign_keys=[suite_id])
+
+    affinity_preference = Column(String(255))
 
     components = relationship("Component", secondary=group_suite_component_association)
     arches = relationship("Arch", secondary=group_suite_arch_association)
@@ -512,11 +514,8 @@ def create_source(dsc, group_suite, component, uploader):
         uploaded_at=datetime.utcnow()
     )
 
-    for arch in group_suite.arches:
-        for x in dsc['Architecture'].split():
-            if arch_matches(arch.name, x):
-                source.arches.append(arch)
-                break
+    source.arches = get_source_arches(dsc['Architecture'].split(),
+                                      group_suite.arches)
 
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
@@ -544,14 +543,11 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source):
+def create_jobs(source, valid_affinities):
     """
-    Create jobs for Source `source', for each arch in `arches'.
-    `arches' sould be a subset of `source.arches' or `None', in which case
-    `source.arches' will be used instead.
+    Create jobs for Source `source`, using the an architecture matching
+    `valid_affinities` for any arch "all" jobs.
     """
-
-    arches = source.arches
 
     aall = None
     for arch in source.group_suite.arches:
@@ -561,10 +557,11 @@ def create_jobs(source):
     else:
         raise ValueError("Can't find arch:all in the suite arches.")
 
-    if [x.name for x in source.arches] == ['all']:
-        affinity = get_affine_arch(source.group_suite.arches)
-    else:
-        affinity = get_affine_arch(source.arches)
+    affinity = get_preferred_affinity(
+        source.group_suite.affinity_preference.split(),
+        valid_affinities.split()
+    )
+    affinity = [x for x in source.group_suite.arches if x.name == affinity][0]
 
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
@@ -577,7 +574,7 @@ def create_jobs(source):
     builds = {}
 
     for check in source.group_suite.get_build_checks():
-        for arch in arches:
+        for arch in source.arches:
             jobaffinity = affinity if arch == aall else None
 
             j = Job(name="%s [%s]" % (check.name, arch.name),
@@ -589,7 +586,7 @@ def create_jobs(source):
             source.jobs.append(j)
 
     for check in source.group_suite.get_binary_checks():
-        for arch in arches:
+        for arch in source.arches:
             jobaffinity = affinity if arch == aall else None
 
             deps = []

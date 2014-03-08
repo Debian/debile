@@ -36,9 +36,7 @@ def arch_matches(arch, alias):
         # This is a generalization for Debian. Please update if this is
         # wrong for other places. A hit to shell out is *COSTLY*; like; orders
         # of magnatude more costly.
-        if '-' in alias:
-            return False
-        return True
+        return not '-' in arch
 
     if alias == 'kfreebsd-any':
         return 'kfreebsd-' in arch
@@ -58,59 +56,37 @@ def arch_matches(arch, alias):
     return ret == 0
 
 
-def get_affine_arch(arches):
-    affinities = debile.master.core.config.get("affinity", [])
+def get_preferred_affinity(affinity_preference, valid_affinities):
+    """
+    Given a list of strings representing the preffered affinities of the suite,
+    and a list of string with valid affinities of the source, return the
+    preffered affinity to use for arch all jobs.
+    """
 
-    if affinities == []:
-        raise ValueError("No set affinity. This is a problem")
-
-    for affinity in affinities:
-        for arch in arches:
-            if arch_matches(arch.name, affinity):
-                return arch
+    for affinity in affinity_preference:
+        for alias in valid_affinities:
+            if arch_matches(affinity, alias):
+                return affinity
 
     raise ValueError("No valid affinity for series: '%s' from '%s'" % (
-        ", ".join([x.name for x in arches]),
-        ", ".join(affinities),
+        ", ".join(valid_affinities),
+        ", ".join(affinity_preference),
     ))
 
 
-def afilter(arches, arch):
-    return [
-        x for x in arches if arch_matches(x.name, arch)
-    ]
-
-
-def get_concrete_arches(arches, valid_arches):
+def get_source_arches(dsc_arches, valid_arches):
     """
-    Given a list of strings representing data from the .dsc `arches`,
-    and the `valid_arches` of the suite, return the concrete arches objects
-    which may be used.
+    Given a list of strings with the Architectures data from the dsc,
+    and a list of valid Arch objects from the suite, return the Arch
+    objects to add to the Source object.
     """
 
-    expansions = {"any": valid_arches,}
-    valid_wildcards = ["linux-any", "kfreebsd-any", "hurd-any"]
-    af = functools.partial(afilter, valid_arches)
-
-    for wildcard in valid_wildcards:
-        expansions[wildcard] = af(wildcard)
-
-    va = {a.name: a for a in valid_arches}
     ret = set()
 
-    for arch in arches:
-        if 'any' not in arch and arch not in va:
-            continue
+    for arch in valid_arches:
+        for alias in dsc_arches:
+            if arch_matches(arch.name, alias):
+                ret.add(arch)
+                break # Break inner loop, continue outer loop
 
-        if 'any' in arch and arch not in expansions:
-            raise NotImplementedError("I don't know about %s. Fix debile." % (
-                arch
-            ))
-
-        for x in expansions.get(arch, [va.get(arch)]):
-            if x is None:
-                raise ValueError("God what the hell is going on")
-                # This shouldn't happen, like, ever. Literally ever.
-
-            ret.add(x)
     return ret

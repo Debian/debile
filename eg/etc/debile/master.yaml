@@ -2,8 +2,6 @@
 database: sqlite:////home/tag/debile.db
 filerepo_chmod_mode: 660
 
-affinity: ['amd64']
-
 repo:
     # custom_resolver: devnull.foo.resolver
     repo_path: "/srv/debile/pool/{name}"

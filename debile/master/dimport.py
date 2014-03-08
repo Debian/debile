@@ -93,7 +93,8 @@ def import_dict(obj):
             for suite in suites:
                 gs = GroupSuite(
                     group=group,
-                    suite=s.query(Suite).filter_by(name=suite['suite']).one()
+                    suite=s.query(Suite).filter_by(name=suite['suite']).one(),
+                    affinity_preference=suite.pop('affinity_preference')
                 )
 
                 for component in suite.pop('components'):
