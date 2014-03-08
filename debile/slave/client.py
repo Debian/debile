@@ -21,10 +21,10 @@
 
 from debile.slave.utils import tdir, cd, dget, run_command
 from debile.slave.core import config
+from debile.utils.xmlrpc import DebileSafeTransport
 
 from contextlib import contextmanager
 import xmlrpclib
-import os
 
 
 def get_proxy():
@@ -38,5 +38,5 @@ def get_proxy():
             password=xml['password'],
             host=xml['host'],
             port=xml['port'],
-        ), allow_none=True)
+        ), transport=DebileSafeTransport(), allow_none=True)
     return proxy
