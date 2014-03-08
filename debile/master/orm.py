@@ -181,10 +181,6 @@ class Group(Base):
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
     def get_repo_info(self):
-        """
-        get the repo_path, repo_url, files_path and files_url
-        """
-
         conf = debile.master.core.config.get("repo", None)
         custom_resolver = conf.get("custom_resolver", None)
         if custom_resolver:
@@ -194,6 +190,22 @@ class Group(Base):
 
         entires = ["repo_path", "repo_url", "files_path", "files_url",]
         return {x: conf.get(x).format(**self.debilize()) for x in entires}
+
+    @property
+    def repo_path(self):
+        return self.get_repo_info()['repo_path']
+
+    @property
+    def repo_url(self):
+        return self.get_repo_info()['repo_url']
+
+    @property
+    def files_path(self):
+        return self.get_repo_info()['files_path']
+
+    @property
+    def files_url(self):
+        return self.get_repo_info()['files_url']
 
 
 # Many-to-Many relationship

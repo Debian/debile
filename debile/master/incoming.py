@@ -63,10 +63,6 @@ def process_changes(session, path):
     except NoResultFound:
         return reject_changes(session, changes, "invalid-group")
 
-    if not group.debile_should_process_changes:
-        # This file isn't for us, just leave it.
-        return
-
     try:
         key = changes.validate_signature()
     except ChangesFileException:
