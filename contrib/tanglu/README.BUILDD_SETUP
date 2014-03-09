@@ -31,11 +31,11 @@ Create sbuild base environments (for the bartholomea curent development branch) 
 The builders must have one amd64 and one i386 environment to be able to build packages for both architectures.
 
 Move the file /etc/schroot/chroot.d/bartholomea-* to /etc/schroot/chroot.d/staging-<arch>, where <arch> is the architecture of
-this envoronment.
-Then open the file and rename the header block to "staging" as well. You should als fix the "description" field of that file.
+this environment.
+Then open the file and rename the header block to "staging-<arch>" as well. You should als fix the "description" field of that file.
 
 Then log into the newly created environment:
- sbuild-shell staging
+ sbuild-shell staging-<arch>
 (replace arch with the desired architecture)
 then open /etc/apt/sources.list and add the following lines:
  deb http://archive.tanglu.org/tanglu staging main contrib non-free
@@ -71,9 +71,9 @@ Activate the virtualenv:
  source ENV/bin/activate
 Then install other dependencies:
  pip install -r requirements.txt
-Ten run:
+Then run:
  make develop
- (FIXME: Better use "productive" setting there?)
+ (FIXME: Better use "productive" and slave-only setting here?)
 
 === 7. Configure buildd software ===
 Create /etc/debile/slave.yaml using the template below.
@@ -85,7 +85,7 @@ for this builder.
 xmlrpc:
     user: "%helium.buildd.tanglu.org"
     password: s3kr37
-    host: ftp-master.tanglu.org
+    host: buildd.tanglu.org
     port: 22017
 
 gpg: GPGKEY_FINGERPRINT
