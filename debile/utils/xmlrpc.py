@@ -82,3 +82,22 @@ class DebileSafeTransport(xmlrpclib.Transport):
         chost, self._extra_headers, x509 = self.get_host_info(host)
         self._connection = host, DebileHTTPSConnection(chost, None, **(x509 or {}))
         return self._connection[1]
+
+
+def get_proxy(config):
+    xml = config.get("xmlrpc", None)
+    if xml is None:
+        raise Exception("No xmlrpc found in slave yaml")
+
+    proxy = xmlrpclib.ServerProxy(
+        "https://{user}:{password}@{host}:{port}/".format(
+            user=xml['user'],
+            password=xml['password'],
+            host=xml['host'],
+            port=xml['port'],
+        ), transport=DebileSafeTransport(
+            key_file=xml.get('keyfile', None),
+            cert_file=xml.get('certfile', None),
+            ca_certs=xml.get('ca_certs', "/etc/ssl/certs/ca-certificates.crt")
+        ), allow_none=True)
+    return proxy
