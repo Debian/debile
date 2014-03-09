@@ -59,14 +59,14 @@ def process_changes(session, path):
         return reject_changes(session, changes, "invalid-group")
 
     try:
-        key = changes.validate_signature()
+        fingerprint = changes.validate_signature()
     except ChangesFileException:
         return reject_changes(session, changes, "invalid-signature")
 
     #### Sourceful Uploads
     if changes.is_source_only_upload():
         try:
-            user = session.query(Person).filter_by(key=key).one()
+            user = session.query(Person).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-user")
         return accept_source_changes(session, changes, user)
@@ -74,7 +74,7 @@ def process_changes(session, path):
     #### Binary Uploads
     if changes.is_binary_only_upload():
         try:
-            builder = session.query(Builder).filter_by(key=key).one()
+            builder = session.query(Builder).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-builder")
         return accept_binary_changes(session, changes, builder)

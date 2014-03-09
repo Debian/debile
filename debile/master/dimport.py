@@ -47,25 +47,10 @@ def import_dict(obj):
 
     with session() as s:
         for user in users:
-            existing = None
-            try:
-                existing = s.query(Person).filter_by(
-                    username=user['username']
-                ).one()
-            except NoResultFound:
-                pass
-
-            p = Person(**user)
-
-            if existing:
-                p.id = existing.id
-                s.merge(p)
-            else:
-                s.add(p)
+            s.add(Person(**user))
 
         for builder in builders:
-            username = builder.pop('maintainer')
-            who = s.query(Person).filter_by(username=username).one()
+            who = s.query(Person).filter_by(email=builder['maintainer']).one()
             builder['maintainer'] = who
             builder['last_ping'] = datetime.utcnow()
             s.add(Builder(**builder))
@@ -85,7 +70,7 @@ def import_dict(obj):
         for group in groups:
             suites = group.pop('suites')
 
-            who = s.query(Person).filter_by(username=group['maintainer']).one()
+            who = s.query(Person).filter_by(email=group['maintainer']).one()
             group['maintainer'] = who
             group = Group(**group)
             s.add(group)

@@ -90,9 +90,7 @@ def get_proxy(config):
         raise Exception("No xmlrpc found in slave yaml")
 
     proxy = xmlrpclib.ServerProxy(
-        "https://{user}:{password}@{host}:{port}/".format(
-            user=xml['user'],
-            password=xml['password'],
+        "https://{host}:{port}/".format(
             host=xml['host'],
             port=xml['port'],
         ), transport=DebileSafeTransport(

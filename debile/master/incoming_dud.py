@@ -53,10 +53,13 @@ def process_dud(session, path):
     except DudFileException as e:
         return reject_dud(session, dud, "invalid-dud-upload")
 
-    key = dud.validate_signature()
+    try:
+        fingerprint = dud.validate_signature()
+    except DudFileException as e:
+        return reject_dud(session, dud, "invalid-signature")
 
     try:
-        builder = session.query(Builder).filter_by(key=key).one()
+        builder = session.query(Builder).filter_by(pgp=fingerprint).one()
     except NoResultFound:
         return reject_dud(session, dud, "invalid-dud-builder")
 

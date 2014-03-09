@@ -22,14 +22,12 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import Session, sessionmaker
 
 import debile.master.core
 from debile.master.utils import session
-from debile.master.orm import Person, Builder, Job
+from debile.master.orm import Person, Builder
 
-from base64 import b64decode
 import datetime as dt
 import SocketServer
 import threading
@@ -37,6 +35,7 @@ import logging
 from logging.handlers import SysLogHandler
 import os
 import ssl
+import hashlib
 
 from debile.master.core import config
 
@@ -90,41 +89,13 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
         if not hasattr(NAMESPACE, 'session'):
             set_session()
 
-        (basic, _, encoded) = self.headers.get('Authorization').partition(' ')
-        if basic.lower() != 'basic':
-            self.send_error(401, 'Only allowed basic type thing')
-        entity, password = b64decode(encoded.encode()).decode().split(":", 1)
+        cert = self.connection.getpeercert(True)
+        fingerprint = hashlib.sha1(cert).hexdigest().upper()
 
-        actor_auth_methods = {
-            "@": self.authenticate_user,
-            "%": self.authenticate_machine,
-        }
+        NAMESPACE.machine = NAMESPACE.session.query(Builder).filter_by(ssl=fingerprint).first()
+        NAMESPACE.user = NAMESPACE.session.query(Person).filter_by(ssl=fingerprint).first()
 
-        actor_type = entity[0]
-        entity = entity[1:]
-
-        try:
-            method = actor_auth_methods[actor_type]
-        except KeyError:
-            return False
-
-        return method(NAMESPACE.session, entity, password)
-
-    def authenticate_user(self, session, entity, password):
-        try:
-            luser = session.query(Person).filter_by(username=entity).one()
-            NAMESPACE.user = luser
-            return luser.validate(password)
-        except NoResultFound:
-            return False
-
-    def authenticate_machine(self, session, entity, password):
-        try:
-            machine = session.query(Builder).filter_by(name=entity).one()
-            NAMESPACE.machine = machine
-            return machine.validate(password)
-        except NoResultFound:
-            return False
+        return NAMESPACE.machine or NAMESPACE.user
 
     def parse_request(self, *args):
         if SimpleXMLRPCRequestHandler.parse_request(self, *args):

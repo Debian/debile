@@ -57,52 +57,47 @@ def _debilize(self):
 
 class Person(Base):
     __tablename__ = 'people'
-    __table_args__ = (UniqueConstraint('username'),)
+    __table_args__ = (UniqueConstraint('email'),)
     _debile_objs = {
         "id": "id",
-        "username": "username",
         "name": "name",
         "email": "email",
-        "key": "key",
+        "pgp": "pgp",
+        "ssl": "ssl",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(255))  # Unique
-
     name = Column(String(255))
     email = Column(String(255))
-    key = Column(String(255))
-    password = Column(String(255))  # Weak password. Not actually critical.
 
-    def validate(self, password):
-        return self.password == password
+    pgp = Column(String(40), nullable=True)
+    ssl = Column(String(40), nullable=True)
 
 
 class Builder(Base):
+    __table_args__ = (UniqueConstraint('name'),)
     __tablename__ = 'builders'
     _debile_objs = {
         "id": "id",
-        "maintainer_id": "maintainer.username",
-        "maintainer": "maintainer.name",
         "name": "name",
-        "key": "key",
         "last_ping": "last_ping",
+        "maintainer_name": "maintainer.name",
+        "maintainer_email": "maintainer.email",
+        "pgp": "pgp",
+        "ssl": "ssl",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    last_ping = Column(DateTime, nullable=False)
 
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
-    name = Column(String(255))
-    key = Column(String(255))
-    password = Column(String(255))  # Weak password. Not actually critical.
-    last_ping = Column(DateTime, nullable=False)
-
-    def validate(self, password):
-        return self.password == password
+    pgp = Column(String(40), nullable=True)
+    ssl = Column(String(40), nullable=True)
 
 
 class Suite(Base):
@@ -172,8 +167,8 @@ class Group(Base):
     _debile_objs = {
         "id": "id",
         "name": "name",
-        "maintainer_id": "maintainer.username",
-        "maintainer": "maintainer.name",
+        "maintainer_name": "maintainer.name",
+        "maintainer_email": "maintainer.email",
         "repo_path": "repo_path",
         "repo_url": "repo_url",
         "files_path": "files_path",
@@ -293,7 +288,8 @@ class Source(Base):
         "suite": "group_suite.suite.name",
         "component": "component.name",
         "group_id": "group_suite.group_id",
-        "uploader": "uploader.username",
+        "uploader_name": "uploader.name",
+        "uploader_email": "uploader.email",
         "uploaded_at": "uploaded_at",
     }
     debilize = _debilize

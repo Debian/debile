@@ -1,22 +1,30 @@
 ---
 Users:  # Users of Debile
     - name: Matthias Klumpp
-      username: mak
-      key: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
       email: mak@debian.org
-      password: s3kr37
+      pgp: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
+      ssl: 0000000000000000DEADBEEF0000000000000000
+
+    - name: Jon Severinsson
+      email: jon@severinsson.net
+      pgp: 32623A6F42F5DA4B0DBD5B2BCDBBA39E78415AD2
+      ssl: 0000000000000000DEADBEEF0000000000000000
 
     - name: Debian Archive Kit
-      username: dak
-      key: 0000000000000000DADADA000000000000000000
       email: dak@ftp-master.tanglu.org
-      password: s3kr37
+      pgp: 0000000000000000DEADBEEF0000000000000000
+      ssl: 0000000000000000DEADBEEF0000000000000000
 
 Builders:  # Machines that can build
     - name: helium.buildd.tanglu.org
-      key: 367D333376945BAE75CB466779A21745EC78A01D
-      maintainer: mak
-      password: s3kr37
+      maintainer: mak@debian.org
+      pgp: 367D333376945BAE75CB466779A21745EC78A01D
+      ssl: 0000000000000000DEADBEEF0000000000000000
+
+    - name: caesium.buildd.tanglu.org
+      maintainer: jon@severinsson.net
+      pgp: 517884F17B4964C46EEE3D56FFF33867C01E4D5A
+      ssl: 9B625D4D2B2C6913216B0DB3251141B32DA8E82F
 
 Suites:
     - name: aequorea-updates
@@ -46,7 +54,7 @@ Checks:
 
 Groups:
     - name: default
-      maintainer: mak
+      maintainer: mak@debian.org
 
       suites:
           - suite: staging
