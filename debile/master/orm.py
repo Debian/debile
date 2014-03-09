@@ -557,8 +557,8 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
     # Sources building arch-dependent packages should build any
     # arch-independent packages on an architecture it is building
     # arch-dependent packages on.
-    valid_arches = [x for x in source.arches if x.name != "any"] or \
-                   source.group_suite.arches
+    valid_arches = [x for x in source.arches if x.name != "all"] or \
+                   [x for x in source.group_suite.arches if x.name != "all"]
 
     affinity = get_preferred_affinity(
         debile.master.core.config["affinity_preference"],
