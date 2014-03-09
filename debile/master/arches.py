@@ -88,12 +88,12 @@ def get_source_arches(dsc_arches, valid_arches):
     objects to add to the Source object.
     """
 
-    ret = set()
+    ret = []
 
     for arch in valid_arches:
         for alias in dsc_arches:
             if arch_matches(arch.name, alias):
-                ret.add(arch)
+                ret.append(arch)
                 break # Break inner loop, continue outer loop
 
     return ret
