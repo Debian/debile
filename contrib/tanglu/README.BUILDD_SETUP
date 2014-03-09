@@ -112,6 +112,10 @@ Set user to <builder>.buildd.tanglu.org, where builder is the name of your build
 a percentage sign.
 The password is something you will receive when registering your builder at Tanglu. You need to change the value then.
 
+You will also add the tanglu-buildd certificate to the database of trusted certificates.
+To do that, copy tanglu-buildd.crt to /usr/local/share/ca-certificates/, then run
+ update-ca-certificates
+as root.
 
 === 8. Configure dput-ng ===
 Create /etc/dput.d/profiles/tanglu.json with the following data:
