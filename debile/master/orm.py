@@ -262,8 +262,6 @@ class GroupSuite(Base):
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite", foreign_keys=[suite_id])
 
-    affinity_preference = Column(String(255))
-
     components = relationship("Component", secondary=group_suite_component_association)
     arches = relationship("Arch", secondary=group_suite_arch_association)
     checks = relationship("Check", secondary=group_suite_check_association)
@@ -563,7 +561,7 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
                    source.group_suite.arches
 
     affinity = get_preferred_affinity(
-        debile.master.core.affinity_preference,
+        debile.master.core.config["affinity_preference"],
         valid_affinities.split(),
         valid_arches
     )
