@@ -3,5 +3,5 @@
 # infrastructure. If you're not from Tanglu, just ignore it.
 source /var/archive-kit/debile/ENV/bin/activate
 cd /pub/ftp/incoming
-debile-incoming .
+debile-incoming-dud .
 cd /tmp
