@@ -18,14 +18,15 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils.proxy import get_proxy
+from debile.utils.xmlrpc import get_proxy
+from debile.utils.core import config
 import sys
 
 
 def _create_slave(name, password, key):
     "Create a slave - debile-remote create-slave name password key"
 
-    proxy = get_proxy()
+    proxy = get_proxy(config)
 
     try:
         key = open(key, 'r').read()

@@ -20,10 +20,10 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.commands import PLUGINS, load_module
-from debile.slave.client import get_proxy
 from contextlib import contextmanager
 from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
+from debile.utils.xmlrpc import get_proxy
 from debile.utils.aget import aget
 from debile.utils.bget import bget
 from debile.utils.dud import Dud_
@@ -37,7 +37,7 @@ from logging.handlers import SysLogHandler
 import glob
 import time
 
-proxy = get_proxy()
+proxy = get_proxy(config)
 
 
 class IDidNothingError(Exception):

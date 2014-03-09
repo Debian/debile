@@ -35,9 +35,10 @@ import SocketServer
 import threading
 import logging
 from logging.handlers import SysLogHandler
-import os.path
 import os
+import ssl
 
+from debile.master.core import config
 
 NAMESPACE = threading.local()
 
@@ -137,15 +138,35 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
 class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
     pass
 
+class SecureXMLRPCServer(SimpleXMLRPCServer):
+    def __init__(self, addr, keyfile, certfile, ca_certs,
+                 requestHandler=SimpleXMLRPCRequestHandler,
+                 logRequests=True, allow_none=False, encoding=None,
+                 bind_and_activate=True):
+        SimpleXMLRPCServer.__init__(self, addr,
+                                    requestHandler=requestHandler,
+                                    logRequests=logRequests,
+                                    allow_none=allow_none,
+                                    encoding=encoding,
+                                    bind_and_activate=False)
 
-def serve(server, port):
+        cert_reqs=ssl.CERT_NONE if ca_certs is None else ssl.CERT_OPTIONAL
+        self.socket = ssl.wrap_socket(self.socket,
+                                      keyfile=keyfile, certfile=certfile,
+                                      ca_certs=ca_certs, cert_reqs=cert_reqs)
+
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
+
+def serve(server, port, keyfile, certfile, ca_certs):
     # Don't move the stuff below above; it would cause a circular
     # import; since it needs some of our kruft. I know it's bad form
     # but I'm tired of it.
     from debile.master.interface import DebileMasterInterface
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
-    server = SimpleXMLRPCServer((server, port),
+    server = SecureXMLRPCServer((server, port), keyfile, certfile, ca_certs,
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
     server.register_introspection_functions()
@@ -154,6 +175,8 @@ def serve(server, port):
 
 
 def main():
+    xml = config.get("xmlrpc", None)
+
     logger = logging.getLogger('debile')
     logger.setLevel(logging.DEBUG)
     syslog = SysLogHandler(address='/dev/log')
@@ -162,7 +185,8 @@ def main():
     logger.addHandler(syslog)
 
     logger.info("Booting debile-masterd daemon")
-    serve("0.0.0.0", 22017)
+    serve(xml["addr"], xml["port"], xml["keyfile"], xml["certfile"],
+          xml.get('ca_certs', "/etc/ssl/certs/ca-certificates.crt"))
 
 
 if __name__ == "__main__":
