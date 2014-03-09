@@ -93,7 +93,7 @@ class ArchiveDebileBridge:
         emit('accept', 'source', source.debilize())
 
     @staticmethod
-    def unblock_debile_jobs(session, source, version, group, suite, arches)
+    def unblock_debile_jobs(session, source, version, group, suite, arches):
         source = session.query(Source).filter(
             Source.name==source,
             Source.version==version,
@@ -149,7 +149,7 @@ class ArchiveDebileBridge:
         for pkg in pkg_dict.values():
             try:
                 with session() as s:
-                    source = session.query(Source).filter(
+                    source = s.query(Source).filter(
                         Source.name==pkg.pkgname,
                         Source.version==pkg.version,
                         Group.name=="default",
