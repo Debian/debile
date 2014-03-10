@@ -21,6 +21,7 @@ BASE=$(basename $0)
 DEBILE=/usr/bin/$BASE
 DEBILE_PIDFILE=/var/run/$BASE.pid
 DEBILE_OPTS=
+DEBILE_LOGFILE=/var/log/$BASE.log
 DEBILE_USER="Debian-debile"
 DEBILE_DESC="Debile Master"
 
@@ -48,11 +49,13 @@ case "$1" in
 		fail_unless_root
 		log_begin_msg "Starting $DEBILE_DESC: $BASE"
 		start-stop-daemon --start --background \
+			--no-close \
 			--exec "$DEBILE" \
 			--pidfile "$DEBILE_PIDFILE" \
 			--make-pidfile \
 			--chuid $DEBILE_USER \
-			-- $DEBILE_OPTS
+			-- $DEBILE_OPTS \
+				>> $DEBILE_LOGFILE 2>&1
 		log_end_msg $?
 		;;
 
