@@ -132,7 +132,7 @@ class DebileMasterInterface(object):
             raise ValueError("Slave already exists.")
 
         pgp = import_pgp(pgp)
-        ssl = import_ssl(ssl)
+        ssl = import_ssl(ssl, name)
 
         b = Builder(name=name, maintainer=NAMESPACE.user, pgp=pgp, ssl=ssl,
                     last_ping=datetime.utcnow())
@@ -148,7 +148,7 @@ class DebileMasterInterface(object):
             raise ValueError("User already exists.")
 
         pgp = import_pgp(pgp)
-        ssl = import_ssl(ssl)
+        ssl = import_ssl(ssl, name, email)
 
         p = Person(name=name, email=email, pgp=pgp, ssl=ssl)
         NAMESPACE.session.add(p)
