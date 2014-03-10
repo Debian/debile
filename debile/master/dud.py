@@ -32,6 +32,7 @@
 #   OTHER DEALINGS IN THE SOFTWARE.
 # -*- coding: utf-8 -*-
 
+from debile.master.core import config
 from debile.utils import run_command
 from debile.utils.deb822 import Dsc, Changes
 import firehose.model
@@ -143,11 +144,11 @@ class Dud(object):
         """
         Validate the GPG signature of a .changes file.
         """
-        gpg_path = "gpg"
 
         (gpg_output, gpg_output_stderr, exit_status) = run_command([
-            gpg_path, "--status-fd", "1", "--verify",
-            "--batch", self.get_dud_file(),
+            "gpg", "--batch", "--status-fd", "1",
+            "--no-default-keyring", "--keyring", config['keyrings']['pgp'],
+            "--verify", self.get_dud_file(),
         ])
 
         if exit_status == -1:

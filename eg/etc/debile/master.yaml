@@ -9,7 +9,10 @@ xmlrpc:
     port: 22017
     keyfile:  /srv/debile/master.key
     certfile: /srv/debile/master.crt
-    ca_certs: /srv/debile/clients.pem
+
+keyrings:
+    pgp: /srv/debile/keyring.pgp
+    ssl: /srv/debile/keyring.ssl
 
 repo:
     # custom_resolver: devnull.foo.resolver

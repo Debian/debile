@@ -1,5 +1,6 @@
 # Copyright (c) 2012-2013 Paul Tagliamonte <paultag@debian.org>
-# Copyright (c) 2013 Leo Cavaille <leo@cavaille.net>
+# Copyright (c) 2013      Leo Cavaille <leo@cavaille.net>
+# Copyright (c) 2014      Jon Severinsson <jon@severinsson.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -146,7 +147,8 @@ def serve(server, port, keyfile, certfile, ca_certs):
 
 
 def main():
-    xml = config.get("xmlrpc", None)
+    xml = config["xmlrpc"]
+    keyrings = config["keyrings"]
 
     logger = logging.getLogger('debile')
     logger.setLevel(logging.DEBUG)
@@ -156,8 +158,7 @@ def main():
     logger.addHandler(syslog)
 
     logger.info("Booting debile-masterd daemon")
-    serve(xml["addr"], xml["port"], xml["keyfile"], xml["certfile"],
-          xml.get('ca_certs', "/etc/ssl/certs/ca-certificates.crt"))
+    serve(xml["addr"], xml["port"], xml["keyfile"], xml["certfile"], keyrings["ssl"])
 
 
 if __name__ == "__main__":

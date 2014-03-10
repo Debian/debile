@@ -23,7 +23,7 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Maintainer, Binary,
                                Job, JobDependencies, Result)
 from debile.master.messaging import emit
-from debile.utils.keys import import_key
+from debile.master.keyrings import import_pgp, import_ssl
 
 from sqlalchemy import exists
 from datetime import datetime
@@ -127,18 +127,32 @@ class DebileMasterInterface(object):
         return NAMESPACE.session.query(Job).get(job_id).debilize()
 
     @user_method
-    def create_builder(self, slave_name, slave_password, key):
-        keyid = import_key(key)
-
-        obid = NAMESPACE.session.query(Builder).filter_by(
-            name=slave_name).count()
-
-        if obid != 0:
+    def create_builder(self, name, pgp, ssl):
+        if NAMESPACE.session.query(Builder).filter_by(name=name).first():
             raise ValueError("Slave already exists.")
 
-        b = Builder(maintainer=NAMESPACE.user, name=slave_name, key=keyid,
-                    password=slave_password, last_ping=dt.datetime.utcnow())
-        emit('create', 'slave', b.debilize())
+        pgp = import_pgp(pgp)
+        ssl = import_ssl(ssl)
+
+        b = Builder(name=name, maintainer=NAMESPACE.user, pgp=pgp, ssl=ssl,
+                    last_ping=datetime.utcnow())
         NAMESPACE.session.add(b)
         NAMESPACE.session.commit()
+
+        emit('create', 'slave', b.debilize())
         return b.debilize()
+
+    @user_method
+    def create_user(self, name, email, pgp, ssl):
+        if NAMESPACE.session.query(Builder).filter_by(email=email).first():
+            raise ValueError("User already exists.")
+
+        pgp = import_pgp(pgp)
+        ssl = import_ssl(ssl)
+
+        p = Person(name=name, email=email, pgp=pgp, ssl=ssl)
+        NAMESPACE.session.add(p)
+        NAMESPACE.session.commit()
+
+        emit('create', 'user', p.debilize())
+        return p.debilize()

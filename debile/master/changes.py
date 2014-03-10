@@ -40,6 +40,7 @@ __author__ = 'Jonny Lamb'
 __copyright__ = 'Copyright © 2008 Jonny Lamb, Copyright © 2010 Jan Dittberner'
 __license__ = 'MIT'
 
+from debile.master.core import config
 from debile.utils import run_command
 from debile.utils.deb822 import Dsc, Changes
 import hashlib
@@ -250,11 +251,11 @@ class Changes(object):
         Throws a :class:`dput.exceptions.ChangesFileException` if there's
         an issue with the GPG signature. Returns the GPG key ID.
         """
-        gpg_path = "gpg"
 
         (gpg_output, gpg_output_stderr, exit_status) = run_command([
-            gpg_path, "--status-fd", "1", "--verify",
-            "--batch", self.get_changes_file()
+            "gpg", "--batch", "--status-fd", "1",
+            "--no-default-keyring", "--keyring", config['keyrings']['pgp'],
+            "--verify", self.get_changes_file()
         ])
 
         if exit_status == -1:
