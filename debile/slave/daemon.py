@@ -26,7 +26,7 @@ from debile.slave.utils import tdir, cd, upload
 from debile.utils.xmlrpc import get_proxy
 from debile.utils.aget import aget
 from debile.utils.bget import bget
-from debile.utils.dud import Dud_
+from debile.utils.deb822 import Changes
 from dput.exceptions import DputError, DcutError
 
 from firehose.model import (Analysis, Generator, Metadata,
@@ -168,7 +168,7 @@ def iterate():
             prefix = "%s" % (str(job['id']))
 
             dudf = "{prefix}.dud".format(prefix=prefix)
-            dud = Dud_()
+            dud = Changes()
             dud['Created-By'] = "Dummy Entry <dummy@example.com>"
             dud['Source'] = package['source']['name']
             dud['Version'] = package['source']['version']

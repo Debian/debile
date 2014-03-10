@@ -29,7 +29,7 @@ from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
                                GroupSuite, Source, Binary, Job, create_source,
                                create_jobs)
-from debile.utils.changes import parse_changes_file, ChangesFileException
+from debile.master.changes import parse_changes_file, ChangesFileException
 
 
 def process_directory(path):

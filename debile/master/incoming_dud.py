@@ -25,7 +25,7 @@ from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound
 
 from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
-from debile.utils.dud import Dud, DudFileException
+from debile.master.dud import parse_dud_file, DudFileException
 from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Builder, Job, Result)
@@ -43,7 +43,7 @@ def process_directory(path):
 
 
 def process_dud(session, path):
-    dud = Dud(filename=path)
+    dud = parse_dud_file(path)
     jid = dud.get("X-Debile-Job", None)
     if jid is None:
         return reject_dud(session, dud, "missing-dud-job")
