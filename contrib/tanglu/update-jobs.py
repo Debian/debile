@@ -101,7 +101,7 @@ class ArchiveDebileBridge:
             Group.name==group,
             Suite.name==suite,
             Job.externally_blocked==True,
-            Job.arch_id.in_(arches),
+            Job.arch_id.in_(arch_ids),
         ).all()
 
         if not jobs:
