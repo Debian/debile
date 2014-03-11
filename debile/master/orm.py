@@ -26,6 +26,7 @@ from firewoes.lib.orm import metadata
 from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
@@ -285,7 +286,7 @@ class Source(Base):
         "id": "id",
         "name": "name",
         "version": "version",
-        "suite": "group_suite.suite.name",
+        "suite": "suite.name",
         "component": "component.name",
         "group_id": "group_suite.group_id",
         "uploader_name": "uploader.name",
@@ -300,6 +301,14 @@ class Source(Base):
 
     group_suite_id = Column(Integer, ForeignKey('group_suites.id'))
     group_suite = relationship("GroupSuite", foreign_keys=[group_suite_id])
+
+    @hybrid_property
+    def group(self):
+        return self.group_suite.group
+
+    @hybrid_property
+    def suite(self):
+        return self.group_suite.suite
 
     component_id = Column(Integer, ForeignKey('components.id'))
     component = relationship("Component", foreign_keys=[component_id])
@@ -342,17 +351,25 @@ class Binary(Base):
         "id": "id",
         "name": "source.name",
         "version": "source.version",
-        "suite": "source.group_suite.suite.name",
-        "component": "source.component.name",
-        "arch": "build_job.arch.name",
-        "group_id": "source.group_suite.group_id",
+        "suite": "suite.name",
+        "component": "component.name",
+        "arch": "arch.name",
+        "group_id": "group_suite.group_id",
         "source_id": "source_id",
-        "builder": "build_job.builder.name",
+        "builder": "builder.name",
         "uploaded_at": "uploaded_at",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
+
+    @hybrid_property
+    def name(self):
+        return self.source.name
+
+    @hybrid_property
+    def version(self):
+        return self.source.version
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source", backref="binaries",
@@ -363,6 +380,30 @@ class Binary(Base):
                                               use_alter=True))
     build_job = relationship("Job", backref="built_binary",
                              foreign_keys=[build_job_id])
+
+    @hybrid_property
+    def group_suite(self):
+        return self.source.group_suite
+
+    @hybrid_property
+    def group(self):
+        return self.source.group
+
+    @hybrid_property
+    def suite(self):
+        return self.source.suite
+
+    @hybrid_property
+    def component(self):
+        return self.source.component
+
+    @hybrid_property
+    def arch(self):
+        return self.build_job.arch
+
+    @hybrid_property
+    def builder(self):
+        return self.build_job.builder
 
     uploaded_at = Column(DateTime)
 
@@ -378,11 +419,11 @@ class Job(Base):
         "id": "id",
         "name": "name",
         "check": "check.name",
-        "suite": "source.group_suite.suite.name",
-        "component": "source.component.name",
+        "suite": "suite.name",
+        "component": "component.name",
         "arch": "arch.name",
         "affinity": "affinity.name",
-        "group_id": "source.group_suite.group_id",
+        "group_id": "group_suite.group_id",
         "source_id": "source_id",
         "binary_id": "binary_id",
         "builder": "builder.name",
@@ -401,6 +442,22 @@ class Job(Base):
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check", foreign_keys=[check_id])
+
+    @hybrid_property
+    def group_suite(self):
+        return self.source.group_suite
+
+    @hybrid_property
+    def group(self):
+        return self.source.group
+
+    @hybrid_property
+    def suite(self):
+        return self.source.suite
+
+    @hybrid_property
+    def component(self):
+        return self.source.component
 
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch", foreign_keys=[arch_id])

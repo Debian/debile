@@ -116,7 +116,7 @@ def accept_dud(session, dud, builder):
     session.commit()  # Neato.
 
     try:
-        repo = FileRepo(job.source.group_suite.group.files_path)
+        repo = FileRepo(job.group.files_path)
         repo.add_dud(dud)
     except FilesAlreadyRegistered:
         return reject_dud(session, dud, "dud-files-already-registered")

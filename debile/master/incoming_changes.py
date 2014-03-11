@@ -172,10 +172,10 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(
             session, changes, "binary-source-version-mismatch")
 
-    if changes.get('X-Lucy-Group', "default") != source.group_suite.group.name:
+    if changes.get('X-Lucy-Group', "default") != source.group.name:
         return reject_changes(session, changes, "binary-source-group-mismatch")
 
-    if changes.get('Distribution') != source.group_suite.suite.name:
+    if changes.get('Distribution') != source.suite.name:
         return reject_changes(session, changes, "binary-source-suite-mismatch")
 
     if changes.get("Architecture") != job.arch.name:
@@ -188,7 +188,7 @@ def accept_binary_changes(session, changes, builder):
 
     ## OK. Let's make sure we can add this.
     try:
-        repo = Repo(job.source.group_suite.group.repo_path)
+        repo = Repo(job.group.repo_path)
         repo.add_changes(changes)
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
