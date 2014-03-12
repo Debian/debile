@@ -504,6 +504,23 @@ class Job(Base):
             for jd in self.blocking:
                 session.delete(jd)
 
+    @property
+    def files_path(self):
+        return "{root}/{source}/{version}/{id}".format(
+            root=self.group.files_path,
+            source=self.source.name,
+            version=self.source.version,
+            id=self.id
+        )
+
+    @property
+    def files_url(self):
+        return "{root}/{source}/{version}/{id}".format(
+            root=self.group.files_url,
+            source=self.source.name,
+            version=self.source.version,
+            id=self.id
+        )
 
 
 class JobDependencies(Base):
