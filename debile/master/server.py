@@ -23,7 +23,7 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 import debile.master.core
 from debile.master.core import config
@@ -123,7 +123,8 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
                                     encoding=encoding,
                                     bind_and_activate=False)
 
-        cert_reqs = ssl.CERT_NONE if ca_certs is None else ssl.CERT_OPTIONAL
+        cert_reqs = (ssl.CERT_NONE if ca_certs is None
+                     else ssl.CERT_REQUIRED)
         self.socket = ssl.wrap_socket(self.socket,
                                       keyfile=keyfile, certfile=certfile,
                                       ca_certs=ca_certs, cert_reqs=cert_reqs)

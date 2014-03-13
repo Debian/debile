@@ -44,13 +44,15 @@ def validate(cert, hostname):
 
 class DebileHTTPSConnection(httplib.HTTPSConnection):
     def __init__(
-        self, host, port=None, key_file=None, cert_file=None,
-        ca_certs=None, strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+        self, host, port=None,
+        key_file=None, cert_file=None, ca_certs=None,
+        strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
         source_address=None
     ):
         httplib.HTTPSConnection.__init__(
-            self, host=host, port=port, key_file=key_file,
-            cert_file=cert_file, strict=strict, timeout=timeout,
+            self, host=host, port=port,
+            key_file=key_file, cert_file=cert_file,
+            strict=strict, timeout=timeout,
             source_address=source_address
         )
         self.ca_certs = ca_certs
@@ -58,8 +60,7 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
     def connect(self):
         sock = socket.create_connection(
             (self.host, self.port),
-            self.timeout,
-            self.source_address
+            self.timeout, self.source_address
         )
         if self._tunnel_host:
             self.sock = sock
@@ -69,8 +70,9 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
                      else ssl.CERT_REQUIRED)
 
         self.sock = ssl.wrap_socket(
-            sock, self.key_file, self.cert_file, ca_certs=self.ca_certs,
-            cert_reqs=cert_reqs, do_handshake_on_connect=True
+            sock, self.key_file, self.cert_file,
+            ca_certs=self.ca_certs, cert_reqs=cert_reqs,
+            do_handshake_on_connect=True
         )
 
         if not validate(self.sock.getpeercert(), self.host):
@@ -95,12 +97,8 @@ class DebileSafeTransport(xmlrpclib.Transport):
             return self._connection[1]
 
         chost, self._extra_headers, x509 = self.get_host_info(host)
+        self._connection = host, DebileHTTPSConnection(chost, None, **(x509 or {}))
 
-        kwargs = {}
-        if x509:
-            kwargs = x509
-
-        self._connection = host, DebileHTTPSConnection(chost, None, **kwargs)
         return self._connection[1]
 
 

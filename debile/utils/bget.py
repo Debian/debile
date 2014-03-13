@@ -57,9 +57,9 @@ def find_debs(archive, suite, component, arch, source, version):
 
         for entry in Packages.iter_paragraphs(packages):
             name = entry['Source'] if 'Source' in entry else entry['Package']
-        if ((name == source and entry['Version'] == version) or
-                (name == "%s (%s)" % (source, version))):
-            filenames.append(entry['Filename'])
+            if ((name == source and entry['Version'] == version) or
+                    (name == "%s (%s)" % (source, version))):
+                filenames.append(entry['Filename'])
 
     if filenames == []:
         raise Exception("Damnit, no such packages?")

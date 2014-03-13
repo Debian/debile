@@ -255,10 +255,8 @@ class GroupSuite(Base):
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite", foreign_keys=[suite_id])
 
-    components = relationship(
-        "Component",
-        secondary=group_suite_component_association
-    )
+    components = relationship("Component",
+                              secondary=group_suite_component_association)
     arches = relationship("Arch", secondary=group_suite_arch_association)
     checks = relationship("Check", secondary=group_suite_check_association)
 

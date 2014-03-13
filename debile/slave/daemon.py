@@ -140,8 +140,8 @@ def iterate():
 
         group = proxy.get_group(job['group_id'])
         source = proxy.get_source(job['source_id'])
-        binary = proxy.get_binary(
-            job['binary_id']) if job['binary_id'] else None
+        binary = (proxy.get_binary(job['binary_id'])
+                  if job['binary_id'] else None)
 
         package = {
             "name": source['name'],

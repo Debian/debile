@@ -21,7 +21,7 @@
 import debile.master.core
 
 from contextlib import contextmanager
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 
 @contextmanager
