@@ -26,6 +26,7 @@ from gzip import GzipFile
 import requests
 import os
 
+
 def find_debs(archive, suite, component, arch, source, version):
     url = find_dsc(archive, suite, component, source, version)
     if url[:7] == "http://":
@@ -42,12 +43,13 @@ def find_debs(archive, suite, component, arch, source, version):
 
     filenames = []
     for component in components:
-        url = "{archive}/dists/{suite}/{component}/binary-{arch}/Packages.gz".format(
-            archive=archive,
-            suite=suite,
-            component=component,
-            arch=arch,
-        )
+        url = (
+            "{archive}/dists/{suite}/{component}/binary-{arch}/"
+            "Packages.gz".format(
+                archive=archive,
+                suite=suite,
+                component=component,
+                arch=arch,))
         if url[:7] == "http://":
             packages = GzipFile(fileobj=StringIO(requests.get(url).content))
         else:
@@ -55,8 +57,9 @@ def find_debs(archive, suite, component, arch, source, version):
 
         for entry in Packages.iter_paragraphs(packages):
             name = entry['Source'] if 'Source' in entry else entry['Package']
-            if (name == source and entry['Version'] == version) or (name == "%s (%s)" % (source, version)):
-                filenames.append(entry['Filename'])
+        if ((name == source and entry['Version'] == version) or
+                (name == "%s (%s)" % (source, version))):
+            filenames.append(entry['Filename'])
 
     if filenames == []:
         raise Exception("Damnit, no such packages?")
@@ -71,11 +74,13 @@ def find_debs(archive, suite, component, arch, source, version):
 
     return ret
 
+
 def bget(archive, suite, component, arch, source, version):
     debs = find_debs(archive, suite, component, arch, source, version)
     for deb in debs:
         dget(deb)
     return [os.path.basename(url) for url in debs]
+
 
 def main():
     import sys

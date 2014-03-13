@@ -25,44 +25,52 @@ import sys
 
 
 def _create_slave(name, pgp, ssl):
-    "Create a slave: debile-remote create-slave <name> <pgp-key> <ssl-cert>"
+    """
+        Create a slave:
+            debile-remote create-slave <name> <pgp-key> <ssl-cert>
+    """
 
     try:
         pgp = open(pgp, 'r').read()
     except IOError as e:
         print("Error whilst opening OpenPGP public key.")
-        print("   %s when trying to open %s" % (str(e), key))
-        return -1
+        print("   %s when trying to open %s" % (str(e), pgp))
+        raise
 
     try:
         ssl = open(ssl, 'r').read()
     except IOError as e:
         print("Error whilst opening SSL client certificate.")
-        print("   %s when trying to open %s" % (str(e), key))
-        return -1
+        print("   %s when trying to open %s" % (str(e), ssl))
+        raise
 
     proxy = get_proxy(config)
-    print proxy.create_builder(name, pgp, ssl)
+    print(proxy.create_builder(name, pgp, ssl))
+
 
 def _create_user(name, email, pgp, ssl):
-    "Create a user:  debile-remote create-user <name> <email> <pgp-key> <ssl-cert>"
+    """
+    Create a user:
+        debile-remote create-user <name> <email> <pgp-key> <ssl-cert>
+    """
 
     try:
         pgp = open(pgp, 'r').read()
     except IOError as e:
         print("Error whilst opening OpenPGP public key.")
-        print("   %s when trying to open %s" % (str(e), key))
-        return -1
+        print("   %s when trying to open %s" % (str(e), pgp))
+        raise
 
     try:
         ssl = open(ssl, 'r').read()
     except IOError as e:
         print("Error whilst opening SSL client certificate.")
-        print("   %s when trying to open %s" % (str(e), key))
-        return -1
+        print("   %s when trying to open %s" % (str(e), ssl))
+        raise
 
     proxy = get_proxy(config)
-    print proxy.create_user(name, email, pgp, ssl)
+    print(proxy.create_user(name, email, pgp, ssl))
+
 
 def _help():
     print("Commands:")

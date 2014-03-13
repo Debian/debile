@@ -22,15 +22,18 @@
 from debian.deb822 import _gpg_multivalued
 from debian.deb822 import Changes as Changes_
 import hashlib
+import os
+
 
 # Copy of debian.deb822.Dsc with Package-List: support added.
 class Dsc(_gpg_multivalued):
     _multivalued_fields = {
-        "package-list": [ "name", "type", "section", "priority"],
-        "files": [ "md5sum", "size", "name" ],
+        "package-list": ["name", "type", "section", "priority"],
+        "files": ["md5sum", "size", "name"],
         "checksums-sha1": ["sha1", "size", "name"],
         "checksums-sha256": ["sha256", "size", "name"],
     }
+
 
 # Extention to debian.deb822.Changes with add_file() support
 # Also useful for Debile *.dud files.
