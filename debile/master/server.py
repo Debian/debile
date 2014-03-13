@@ -23,7 +23,7 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 import debile.master.core
 from debile.master.core import config
@@ -72,9 +72,7 @@ def user_method(fn):
 
 
 def set_session():
-    Session = sessionmaker(bind=debile.master.core.engine)
-    session = Session()
-    NAMESPACE.session = session
+    NAMESPACE.session = sessionmaker(bind=debile.master.core.engine)()
 
 
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):

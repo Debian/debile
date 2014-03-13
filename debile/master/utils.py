@@ -21,13 +21,12 @@
 import debile.master.core
 
 from contextlib import contextmanager
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 
 @contextmanager
 def session():
-    Session = sessionmaker(bind=debile.master.core.engine)
-    session_ = Session()
+    session_ = sessionmaker(bind=debile.master.core.engine)()
 
     try:
         yield session_

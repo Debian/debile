@@ -448,6 +448,7 @@ class Job(Base):
                 session.delete(jd)
 
 
+
 class JobDependencies(Base):
     __tablename__ = 'job_dependencies'
     _debile_objs = {

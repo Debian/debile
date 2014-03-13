@@ -42,7 +42,7 @@ __license__ = 'MIT'
 
 from debile.master.core import config
 from debile.utils import run_command
-from debile.utils.deb822 import Dsc, Changes
+from debile.utils import deb822
 import hashlib
 import os.path
 import sys
@@ -81,9 +81,9 @@ class Changes(object):
 
         if filename:
             self._absfile = os.path.abspath(filename)
-            self._data = Changes(open(filename))
+            self._data = deb822.Changes(open(filename))
         else:
-            self._data = Changes(string)
+            self._data = deb822.Changes(string)
 
         if len(self._data) == 0:
             raise ChangesFileException('Changes file could not be parsed.')
@@ -178,7 +178,7 @@ class Changes(object):
         return self._parse_section(self._data['Files'][0]['priority'])[1]
 
     def get_dsc_obj(self):
-        return Dsc(open(self.get_dsc(), 'r'))
+        return deb822.Dsc(open(self.get_dsc(), 'r'))
 
     def get_dsc(self):
         """
