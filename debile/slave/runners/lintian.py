@@ -26,7 +26,7 @@ from debile.slave.utils import run_command
 def lintian(targets, analysis, lintian_binary='lintian'):
 
     if not isinstance(targets, list):
-        targets = [targets,]
+        targets = [targets]
 
     log = ""
     failed = False

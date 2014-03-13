@@ -28,7 +28,6 @@ from debile.slave.core import config
 def run(target, package, job, firehose):
     raise NotImplemented("Not ported yet")
 
-
     # Fix this single-deb horseshit, no?
     if not target.endswith(".deb"):
         raise Exception("Non-deb given")
