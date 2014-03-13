@@ -2,7 +2,7 @@
 Users:  # Users of Debile
     - name: Matthias Klumpp
       email: mak@debian.org
-      pgp: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
+      pgp: D33A3F0CA16B0ACC51A60738494C8A5FBF4DECEB
       ssl: 0000000000000000DEADBEEF0000000000000000
 
     - name: Jon Severinsson
