@@ -87,7 +87,7 @@ def test_affinity_fail():
 
 
 def test_any_arches():
-    assert set(valid_arches) == get_source_arches(['any'], valid_arches)
+    assert valid_arches == get_source_arches(['any'], valid_arches)
 
 
 def test_simple_arches():
