@@ -47,7 +47,7 @@ def process_changes(session, path):
     changes = parse_changes_file(path)
     try:
         changes.validate()
-    except ChangesFileException as e:
+    except ChangesFileException:
         return reject_changes(session, changes, "invalid-upload")
 
     group = changes.get('X-Lucy-Group', "default")
@@ -103,8 +103,8 @@ def accept_source_changes(session, changes, user):
 
     try:
         group_suite = session.query(GroupSuite).filter(
-            Group.name==group,
-            Suite.name==suite,
+            Group.name == group,
+            Suite.name == suite,
         ).one()
     except MultipleResultsFound:
         return reject_changes(session, changes, "internal-error")
@@ -119,9 +119,9 @@ def accept_source_changes(session, changes, user):
 
     try:
         source = session.query(Source).filter(
-            Source.name==dsc['Source'],
-            Source.version==dsc['Version'],
-            GroupSuite.group==group_suite.group,
+            Source.name == dsc['Source'],
+            Source.version == dsc['Version'],
+            GroupSuite.group == group_suite.group,
         ).one()
         return reject_changes(session, changes, "source-already-in-group")
     except MultipleResultsFound:
@@ -169,7 +169,8 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(session, changes, "binary-source-name-mismatch")
 
     if changes.get("Version") != source.version:
-        return reject_changes(session, changes, "binary-source-version-mismatch")
+        return reject_changes(
+            session, changes, "binary-source-version-mismatch")
 
     if changes.get('X-Lucy-Group', "default") != source.group_suite.group.name:
         return reject_changes(session, changes, "binary-source-group-mismatch")
@@ -201,7 +202,6 @@ def accept_binary_changes(session, changes, builder):
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
         os.unlink(fp)
-
 
 
 DELEGATE = {

@@ -23,22 +23,18 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 import debile.master.core
-from debile.master.utils import session
+from debile.master.core import config
 from debile.master.orm import Person, Builder
 
-import datetime as dt
+from logging.handlers import SysLogHandler
 import SocketServer
 import threading
-import logging
-from logging.handlers import SysLogHandler
-import os
-import ssl
 import hashlib
-
-from debile.master.core import config
+import logging
+import ssl
 
 NAMESPACE = threading.local()
 
@@ -81,7 +77,6 @@ def set_session():
     NAMESPACE.session = session
 
 
-
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
 
@@ -93,8 +88,12 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
         cert = self.connection.getpeercert(True)
         fingerprint = hashlib.sha1(cert).hexdigest().upper()
 
-        NAMESPACE.machine = NAMESPACE.session.query(Builder).filter_by(ssl=fingerprint).first()
-        NAMESPACE.user = NAMESPACE.session.query(Person).filter_by(ssl=fingerprint).first()
+        NAMESPACE.machine = NAMESPACE.session.query(Builder).filter_by(
+            ssl=fingerprint
+        ).first()
+        NAMESPACE.user = NAMESPACE.session.query(Person).filter_by(
+            ssl=fingerprint
+        ).first()
 
         return NAMESPACE.machine or NAMESPACE.user
 
@@ -110,11 +109,13 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
 class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
     pass
 
+
 class SecureXMLRPCServer(SimpleXMLRPCServer):
-    def __init__(self, addr, keyfile, certfile, ca_certs,
-                 requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=True, allow_none=False, encoding=None,
-                 bind_and_activate=True):
+    def __init__(
+        self, addr, keyfile, certfile, ca_certs,
+        requestHandler=SimpleXMLRPCRequestHandler, logRequests=True,
+        allow_none=False, encoding=None, bind_and_activate=True
+    ):
         SimpleXMLRPCServer.__init__(self, addr,
                                     requestHandler=requestHandler,
                                     logRequests=logRequests,
@@ -122,7 +123,7 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
                                     encoding=encoding,
                                     bind_and_activate=False)
 
-        cert_reqs=ssl.CERT_NONE if ca_certs is None else ssl.CERT_OPTIONAL
+        cert_reqs = ssl.CERT_NONE if ca_certs is None else ssl.CERT_OPTIONAL
         self.socket = ssl.wrap_socket(self.socket,
                                       keyfile=keyfile, certfile=certfile,
                                       ca_certs=ca_certs, cert_reqs=cert_reqs)
@@ -130,6 +131,7 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
         if bind_and_activate:
             self.server_bind()
             self.server_activate()
+
 
 def serve(server, port, keyfile, certfile, ca_certs):
     # Don't move the stuff below above; it would cause a circular
@@ -153,12 +155,15 @@ def main():
     logger = logging.getLogger('debile')
     logger.setLevel(logging.DEBUG)
     syslog = SysLogHandler(address='/dev/log')
-    formatter = logging.Formatter('[debile-master] %(levelname)7s - %(message)s')
+    formatter = logging.Formatter(
+        '[debile-master] %(levelname)7s - %(message)s'
+    )
     syslog.setFormatter(formatter)
     logger.addHandler(syslog)
 
     logger.info("Booting debile-masterd daemon")
-    serve(xml["addr"], xml["port"], xml["keyfile"], xml["certfile"], keyrings["ssl"])
+    serve(xml["addr"], xml["port"], xml["keyfile"],
+          xml["certfile"], keyrings["ssl"])
 
 
 if __name__ == "__main__":

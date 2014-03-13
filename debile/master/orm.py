@@ -26,7 +26,7 @@ from firewoes.lib.orm import metadata
 from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
@@ -190,7 +190,7 @@ class Group(Base):
             m = importlib.import_module(module)
             return getattr(m, func)(self, conf)
 
-        entires = ["repo_path", "repo_url", "files_path", "files_url",]
+        entires = ["repo_path", "repo_url", "files_path", "files_url"]
 
         for entry in entires:
             if conf.get(entry) is None:
@@ -219,25 +219,23 @@ class Group(Base):
 
 
 # Many-to-Many relationship
-group_suite_component_association = \
+group_suite_component_association = (
     Table('group_suite_component_association', Base.metadata,
-        Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-        Column('component_id', Integer, ForeignKey('components.id'))
-    )
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
+          Column('component_id', Integer, ForeignKey('components.id'))))
 
-# Many-to-Many relationship
-group_suite_arch_association = \
+
+group_suite_arch_association = (
     Table('group_suite_arch_association', Base.metadata,
-        Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-        Column('arch_id', Integer, ForeignKey('arches.id'))
-    )
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
+          Column('arch_id', Integer, ForeignKey('arches.id'))))
 
-# Many-to-Many relationship
-group_suite_check_association = \
+
+group_suite_check_association = (
     Table('group_suite_check_association', Base.metadata,
-        Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-        Column('check_id', Integer, ForeignKey('checks.id'))
-    )
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
+          Column('check_id', Integer, ForeignKey('checks.id'))))
+
 
 class GroupSuite(Base):
     __tablename__ = 'group_suites'
@@ -257,26 +255,30 @@ class GroupSuite(Base):
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite", foreign_keys=[suite_id])
 
-    components = relationship("Component", secondary=group_suite_component_association)
+    components = relationship(
+        "Component",
+        secondary=group_suite_component_association
+    )
     arches = relationship("Arch", secondary=group_suite_arch_association)
     checks = relationship("Check", secondary=group_suite_check_association)
 
     def get_source_checks(self):
-        return [x for x in self.checks if x.source==True and x.build==False]
+        return [x for x in self.checks
+                if x.source == True and x.build == False]
 
     def get_binary_checks(self):
-        return [x for x in self.checks if x.binary==True and x.build==False]
+        return [x for x in self.checks
+                if x.binary == True and x.build == False]
 
     def get_build_checks(self):
-        return [x for x in self.checks if x.build==True]
+        return [x for x in self.checks if x.build == True]
 
 
 # Many-to-Many relationship
-source_arch_association = \
+source_arch_association = (
     Table('source_arch_association', Base.metadata,
-        Column('source_id', Integer, ForeignKey('sources.id')),
-        Column('arch_id', Integer, ForeignKey('arches.id'))
-    )
+          Column('source_id', Integer, ForeignKey('sources.id')),
+          Column('arch_id', Integer, ForeignKey('arches.id'))))
 
 
 class Source(Base):

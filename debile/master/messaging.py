@@ -36,6 +36,7 @@ if fedmsg:
         endpoints=fcfg.get("endpoints", {}),
     )
 
+
 def emit(topic, modname, message):
     # <topic_prefix>.<env>.<modname>.<topic>
     modname = "debile.%s" % (modname)

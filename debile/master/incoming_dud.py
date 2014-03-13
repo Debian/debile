@@ -50,12 +50,12 @@ def process_dud(session, path):
 
     try:
         dud.validate()
-    except DudFileException as e:
+    except DudFileException:
         return reject_dud(session, dud, "invalid-dud-upload")
 
     try:
         fingerprint = dud.validate_signature()
-    except DudFileException as e:
+    except DudFileException:
         return reject_dud(session, dud, "invalid-signature")
 
     try:
@@ -109,7 +109,7 @@ def accept_dud(session, dud, builder):
     result = Result.from_job(job)
     result.failed = failed
     result.firehose = fire
-    session.merge(result)  # Needed because a *lot* of the Firehose is 
+    session.merge(result)  # Needed because a *lot* of the Firehose is
     # going to need unique ${WORLD}.
 
     job.dud_uploaded(session, result)

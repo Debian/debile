@@ -34,7 +34,7 @@
 
 from debile.master.core import config
 from debile.utils import run_command
-from debile.utils.deb822 import Dsc, Changes
+from debile.utils.deb822 import Changes
 import firehose.model
 import hashlib
 import os.path

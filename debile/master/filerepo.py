@@ -18,10 +18,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils import run_command
 from debile.utils.config import load_master_config
 import os
 import shutil
+
 
 class FilesException(Exception):
     pass

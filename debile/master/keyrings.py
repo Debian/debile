@@ -22,7 +22,7 @@
 from debile.utils import run_command
 from debile.master.core import config
 import fcntl
-import os
+
 
 def import_pgp(keydata):
     """
@@ -54,8 +54,9 @@ def import_pgp(keydata):
 
 def import_ssl(certdata, cn=None, email=None):
     """
-    certdata should be pem-formated certificate data to be added to the keyring.
-    The return value will be the sha1 fingerprint of the certificate added.
+    certdata should be pem-formated certificate data to be added to the
+    keyring. The return value will be the sha1 fingerprint of the certificate
+    added.
     """
 
     # Check that this realy is a pem-formated certificate,
@@ -69,19 +70,25 @@ def import_ssl(certdata, cn=None, email=None):
     subject = None
     for line in out.split("\n"):
         data = line.split("=", 2)
+
         if data[0] == "SHA1 Fingerprint":
-            fingerprint = data[1].replace(':','')
+            fingerprint = data[1].replace(':', '')
+
         if data[0] == "subject":
             subject = data[1].split('/')
 
     if fingerprint is None or subject is None:
-        raise ValueError("And nothing of value was lost (openssl failed to import)")
+        raise ValueError(
+            "And nothing of value was lost (openssl failed to import)"
+        )
 
     # SSLSocket breaks badly on multiple certifiates with the same subject
     # in the keyring, so ensure that it unique to this slave/user.
-    if (cn and not "CN={cn}".format(cn=cn) in subject) or \
-       (email and not "emailAddress={email}".format(email=email)):
-        raise ValueError("And nothing of value was lost (openssl failed to import)")
+    if ((cn and not "CN={cn}".format(cn=cn) in subject) or
+            (email and not "emailAddress={email}".format(email=email))):
+        raise ValueError(
+            "And nothing of value was lost (openssl failed to import)"
+        )
 
     # Add the valid pem-formated certificate to the keyring.
     keyring = open(config['keyrings']['ssl'], 'a')

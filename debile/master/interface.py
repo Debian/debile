@@ -20,12 +20,10 @@
 
 from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Maintainer, Binary,
-                               Job, JobDependencies, Result)
+                               Group, Source, Binary, Job, JobDependencies)
 from debile.master.messaging import emit
 from debile.master.keyrings import import_pgp, import_ssl
 
-from sqlalchemy import exists
 from datetime import datetime
 
 
@@ -64,16 +62,16 @@ class DebileMasterInterface(object):
         # the sane thing with Job.affinity.name.in_. Nonsense. Horseshit.
 
         job = NAMESPACE.session.query(Job).filter(
-            Job.externally_blocked==False,
-            Job.assigned_at==None,
-            Job.finished_at==None,
+            Job.externally_blocked == False,
+            Job.assigned_at == None,
+            Job.finished_at == None,
             Suite.name.in_(suites),
             Component.name.in_(components),
             Job.arch_id.in_(arches),
             Job.affinity_id.in_(arches),
             Check.name.in_(capabilities),
         ).outerjoin(Job.depedencies).filter(
-            JobDependencies.id==None
+            JobDependencies.id == None
         ).first()
 
         if job is None:

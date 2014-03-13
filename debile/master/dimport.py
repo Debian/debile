@@ -21,11 +21,9 @@
 import yaml
 from datetime import datetime
 
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Maintainer, Binary)
+                               Group, GroupSuite)
 
 
 def import_from_yaml(whence):
@@ -76,17 +74,19 @@ def import_dict(obj):
             s.add(group)
 
             for suite in suites:
-                gs = GroupSuite(
-                    group=group,
-                    suite=s.query(Suite).filter_by(name=suite['suite']).one()
-                )
+                gs = GroupSuite(group=group, suite=s.query(Suite).filter_by(
+                    name=suite['suite']).one())
 
                 for component in suite.pop('components'):
-                    component = s.query(Component).filter_by(name=component).one()
+                    component = s.query(Component).filter_by(
+                        name=component
+                    ).one()
                     gs.components.append(component)
+
                 for arch in suite.pop('arches'):
                     arch = s.query(Arch).filter_by(name=arch).one()
                     gs.arches.append(arch)
+
                 for check in suite.pop('checks'):
                     check = s.query(Check).filter_by(name=check).one()
                     gs.checks.append(check)

@@ -39,7 +39,7 @@ class Repo(object):
         self.include(dist, changes.get_changes_file())
 
     def _exec(self, *args):
-        cmd = ["reprepro", "-Vb", self.root,] + list(args)
+        cmd = ["reprepro", "-Vb", self.root] + list(args)
         out, err, ret = run_command(cmd)
         if ret != 0:
             raise RepoException(ret)
