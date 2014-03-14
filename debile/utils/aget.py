@@ -25,11 +25,13 @@ from gzip import GzipFile
 import requests
 import os
 
+
 def dget(path):
     out, err, ret = run_command(["dget", "-u", path])
     if ret != 0:
         print ret, err
         raise Exception("dget failed to download package")
+
 
 def find_dsc(archive, suite, component, source, version):
     url = "{archive}/dists/{suite}/{component}/source/Sources.gz".format(

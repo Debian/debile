@@ -33,6 +33,7 @@ def get_host_list(cert):
     else:
         return [x[0][1] for x in cert['subject'] if x[0][0] == 'commonName']
 
+
 def validate(cert, hostname):
     hosts = get_host_list(cert)
     for host in hosts:
@@ -42,25 +43,41 @@ def validate(cert, hostname):
 
 
 class DebileHTTPSConnection(httplib.HTTPSConnection):
-    def __init__(self, host, port=None, key_file=None, cert_file=None, ca_certs=None,
-                 strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
-        httplib.HTTPSConnection.__init__(self, host=host, port=port, key_file=key_file, cert_file=cert_file, strict=strict, timeout=timeout, source_address=source_address)
+    def __init__(
+        self, host, port=None,
+        key_file=None, cert_file=None, ca_certs=None,
+        strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+        source_address=None
+    ):
+        httplib.HTTPSConnection.__init__(
+            self, host=host, port=port,
+            key_file=key_file, cert_file=cert_file,
+            strict=strict, timeout=timeout,
+            source_address=source_address
+        )
         self.ca_certs = ca_certs
 
     def connect(self):
-        sock = socket.create_connection((self.host, self.port),
-                                        self.timeout, self.source_address)
+        sock = socket.create_connection(
+            (self.host, self.port),
+            self.timeout, self.source_address
+        )
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
 
-        cert_reqs=ssl.CERT_NONE if self.ca_certs is None else ssl.CERT_REQUIRED
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                                    ca_certs=self.ca_certs, cert_reqs=cert_reqs,
-                                    do_handshake_on_connect=True)
+        cert_reqs = (ssl.CERT_NONE if self.ca_certs is None
+                     else ssl.CERT_REQUIRED)
+
+        self.sock = ssl.wrap_socket(
+            sock, self.key_file, self.cert_file,
+            ca_certs=self.ca_certs, cert_reqs=cert_reqs,
+            do_handshake_on_connect=True
+        )
 
         if not validate(self.sock.getpeercert(), self.host):
             raise Exception("https endpint presented invalid certificate")
+
 
 class DebileSafeTransport(xmlrpclib.Transport):
     def __init__(self, key_file=None, cert_file=None, ca_certs=None):
@@ -81,6 +98,7 @@ class DebileSafeTransport(xmlrpclib.Transport):
 
         chost, self._extra_headers, x509 = self.get_host_info(host)
         self._connection = host, DebileHTTPSConnection(chost, None, **(x509 or {}))
+
         return self._connection[1]
 
 
@@ -90,9 +108,7 @@ def get_proxy(config):
         raise Exception("No xmlrpc found in slave yaml")
 
     proxy = xmlrpclib.ServerProxy(
-        "https://{user}:{password}@{host}:{port}/".format(
-            user=xml['user'],
-            password=xml['password'],
+        "https://{host}:{port}/".format(
             host=xml['host'],
             port=xml['port'],
         ), transport=DebileSafeTransport(

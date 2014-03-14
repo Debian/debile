@@ -1,5 +1,5 @@
 ---
-database: sqlite:////home/tag/debile.db
+database: sqlite:////srv/debile/debile.db
 filerepo_chmod_mode: 660
 
 affinity_preference: ['amd64', 'i386']
@@ -7,8 +7,12 @@ affinity_preference: ['amd64', 'i386']
 xmlrpc:
     addr: 0.0.0.0
     port: 22017
-    keyfile: /home/tag/debile.key
-    certfile: /home/tag/debile.crt
+    keyfile:  /srv/debile/master.key
+    certfile: /srv/debile/master.crt
+
+keyrings:
+    pgp: /srv/debile/keyring.pgp
+    ssl: /srv/debile/keyring.ssl
 
 repo:
     # custom_resolver: devnull.foo.resolver

@@ -61,7 +61,6 @@ def parse_findbugs(payload):
         else:
             severity = "concern"
 
-
         yield Issue(cwe=None,
                     testid=testid,
                     location=Location(

@@ -24,7 +24,6 @@ from debile.slave.utils import run_command
 from firehose.model import Stats
 import firehose.parsers.gcc as fgcc
 
-from schroot import schroot
 from datetime import timedelta
 from io import StringIO
 import glob

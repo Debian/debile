@@ -25,7 +25,7 @@ from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound
 
 from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
-from debile.utils.dud import Dud, DudFileException
+from debile.master.dud import parse_dud_file, DudFileException
 from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Builder, Job, Result)
@@ -43,20 +43,23 @@ def process_directory(path):
 
 
 def process_dud(session, path):
-    dud = Dud(filename=path)
+    dud = parse_dud_file(path)
     jid = dud.get("X-Debile-Job", None)
     if jid is None:
         return reject_dud(session, dud, "missing-dud-job")
 
     try:
         dud.validate()
-    except DudFileException as e:
+    except DudFileException:
         return reject_dud(session, dud, "invalid-dud-upload")
 
-    key = dud.validate_signature()
+    try:
+        fingerprint = dud.validate_signature()
+    except DudFileException:
+        return reject_dud(session, dud, "invalid-signature")
 
     try:
-        builder = session.query(Builder).filter_by(key=key).one()
+        builder = session.query(Builder).filter_by(pgp=fingerprint).one()
     except NoResultFound:
         return reject_dud(session, dud, "invalid-dud-builder")
 
@@ -106,15 +109,15 @@ def accept_dud(session, dud, builder):
     result = Result.from_job(job)
     result.failed = failed
     result.firehose = fire
-    session.merge(result)  # Needed because a *lot* of the Firehose is 
+    session.merge(result)  # Needed because a *lot* of the Firehose is
     # going to need unique ${WORLD}.
 
     job.dud_uploaded(session, result)
     session.commit()  # Neato.
 
     try:
-        repo = FileRepo(job.source.group_suite.group.files_path)
-        repo.add_dud(dud)
+        repo = FileRepo()
+        repo.add_dud(job.files_path, dud)
     except FilesAlreadyRegistered:
         return reject_dud(session, dud, "dud-files-already-registered")
 

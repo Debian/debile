@@ -18,8 +18,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 def init():
-    from debile.master.orm import init as init_db
+    from debile.master.orm import init_db
     return init_db()
 
 
@@ -31,15 +32,18 @@ def process_incoming():
     for mod in [debile.master.incoming_changes, debile.master.incoming_dud]:
         getattr(mod, 'process_directory')(*sys.argv[1:])
 
+
 def process_incoming_changes():
     from debile.master.incoming_changes import process_directory
     import sys
     return process_directory(*sys.argv[1:])
 
+
 def process_incoming_dud():
     from debile.master.incoming_dud import process_directory
     import sys
     return process_directory(*sys.argv[1:])
+
 
 def import_db():
     from debile.master.dimport import import_from_yaml

@@ -1,11 +1,11 @@
 ---
 xmlrpc:
-    user: "%leliel.pault.ag"
-    password: s3kr37
     host: debile-master
     port: 22017
+    keyfile: /etc/debile/leliel.key
+    certfile: /etc/debile/leliel.crt
 
-gpg: GPGFINGERPRINTGOESHEREATSOMEPOINTSOONISH
+gpg: 0000000000000000DEADBEEF00000000000000000
 
 dput:
     host: debile-master

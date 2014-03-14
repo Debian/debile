@@ -28,7 +28,7 @@ def findbugs(deb, analysis):
     run_command(["dpkg", "-x", deb, "binary"])
     with cd('binary'):
         out, err, ret = run_command([
-                'fb', 'analyze', '-effort:max', '-xml:withMessages', '.'
+            'fb', 'analyze', '-effort:max', '-xml:withMessages', '.'
         ])
 
         xmlbytes = out.encode("utf-8")

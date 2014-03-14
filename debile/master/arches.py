@@ -54,12 +54,14 @@ def arch_matches(arch, alias):
     return ret == 0
 
 
-def get_preferred_affinity(affinity_preference, valid_affinities, valid_arches):
+def get_preferred_affinity(
+    affinity_preference, valid_affinities, valid_arches
+):
     """
-    Given a list of strings representing the preffered affinities in the config,
-    a list of string with valid affinities of the source, and a list of valid
-    architectures in the suite, return the arch object to use as affinity for
-    arch "all" jobs.
+    Given a list of strings representing the preffered affinities in the
+    config, a list of string with valid affinities of the source, and a list
+    of valid architectures in the suite, return the arch object to use as
+    affinity for arch "all" jobs.
     """
 
     for affinity in affinity_preference:
@@ -67,18 +69,18 @@ def get_preferred_affinity(affinity_preference, valid_affinities, valid_arches):
         for x in valid_arches:
             if x.name == affinity:
                 arch = x
-                break;
+                break
         if arch is None:
             continue
         for alias in valid_affinities:
             if arch_matches(affinity, alias):
                 return arch
 
-    raise ValueError("No valid affinity - preferences: '%s'; valid: '%s'; arches %s" % (
-        ", ".join(affinity_preference),
-        ", ".join(valid_affinities),
-        ", ".join([x.name for x in valid_arches]),
-    ))
+    raise ValueError(
+        "No valid affinity - preferences: '%s'; valid: '%s'; arches %s" % (
+            ", ".join(affinity_preference),
+            ", ".join(valid_affinities),
+            ", ".join([x.name for x in valid_arches]),))
 
 
 def get_source_arches(dsc_arches, valid_arches):
@@ -94,6 +96,6 @@ def get_source_arches(dsc_arches, valid_arches):
         for alias in dsc_arches:
             if arch_matches(arch.name, alias):
                 ret.append(arch)
-                break # Break inner loop, continue outer loop
+                break  # Break inner loop, continue outer loop
 
     return ret

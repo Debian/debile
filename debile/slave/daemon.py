@@ -26,15 +26,14 @@ from debile.slave.utils import tdir, cd, upload
 from debile.utils.xmlrpc import get_proxy
 from debile.utils.aget import aget
 from debile.utils.bget import bget
-from debile.utils.dud import Dud_
+from debile.utils.deb822 import Changes
 from dput.exceptions import DputError, DcutError
 
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
 import logging
-from logging.handlers import SysLogHandler
-import glob
+# from logging.handlers import SysLogHandler
 import time
 
 proxy = get_proxy(config)
@@ -110,8 +109,13 @@ def workon(suites, components, arches, capabilities):
     if job is None:
         yield
     else:
-        logger.info("Acquired job id=%s (%s) for %s/%s",
-                     job['id'], job['name'], job['suite'], job['arch'])
+        logger.info(
+            "Acquired job id=%s (%s) for %s/%s",
+            job['id'],
+            job['name'],
+            job['suite'],
+            job['arch']
+        )
         try:
             yield job
         except:
@@ -136,7 +140,8 @@ def iterate():
 
         group = proxy.get_group(job['group_id'])
         source = proxy.get_source(job['source_id'])
-        binary = proxy.get_binary(job['binary_id']) if job['binary_id'] else None
+        binary = (proxy.get_binary(job['binary_id'])
+                  if job['binary_id'] else None)
 
         package = {
             "name": source['name'],
@@ -168,7 +173,7 @@ def iterate():
             prefix = "%s" % (str(job['id']))
 
             dudf = "{prefix}.dud".format(prefix=prefix)
-            dud = Dud_()
+            dud = Changes()
             dud['Created-By'] = "Dummy Entry <dummy@example.com>"
             dud['Source'] = package['source']['name']
             dud['Version'] = package['source']['version']
@@ -207,7 +212,8 @@ def main():
     #logger = logging.getLogger('debile')
     #logger.setLevel(logging.DEBUG)
     #syslog = SysLogHandler(address='/dev/log')
-    #formatter = logging.Formatter('[debile-slave] %(levelname)7s - %(message)s')
+    #formatter = logging.Formatter(
+    #                '[debile-slave] %(levelname)7s - %(message)s')
     #syslog.setFormatter(formatter)
     #logger.addHandler(syslog)
     #logger.info("Booting debile-slave daemon")
@@ -225,8 +231,7 @@ def main():
         except (DputError, DcutError, Exception) as e:
             logger.warning(
                 "Er, we got a fatal error: %s. Restarting in a minute" % (
-                    str(e)
-            ))
+                    str(e)))
 
             import traceback
             logger.warning(traceback.format_exc())

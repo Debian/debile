@@ -20,12 +20,10 @@
 
 from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Maintainer, Binary,
-                               Job, JobDependencies, Result)
+                               Group, Source, Binary, Job, JobDependencies)
 from debile.master.messaging import emit
-from debile.utils.keys import import_key
+from debile.master.keyrings import import_pgp, import_ssl
 
-from sqlalchemy import exists
 from datetime import datetime
 
 
@@ -64,16 +62,16 @@ class DebileMasterInterface(object):
         # the sane thing with Job.affinity.name.in_. Nonsense. Horseshit.
 
         job = NAMESPACE.session.query(Job).filter(
-            Job.externally_blocked==False,
-            Job.assigned_at==None,
-            Job.finished_at==None,
+            Job.externally_blocked == False,
+            Job.assigned_at == None,
+            Job.finished_at == None,
             Suite.name.in_(suites),
             Component.name.in_(components),
             Job.arch_id.in_(arches),
             Job.affinity_id.in_(arches),
             Check.name.in_(capabilities),
         ).outerjoin(Job.depedencies).filter(
-            JobDependencies.id==None
+            JobDependencies.id == None
         ).first()
 
         if job is None:
@@ -127,18 +125,32 @@ class DebileMasterInterface(object):
         return NAMESPACE.session.query(Job).get(job_id).debilize()
 
     @user_method
-    def create_builder(self, slave_name, slave_password, key):
-        keyid = import_key(key)
-
-        obid = NAMESPACE.session.query(Builder).filter_by(
-            name=slave_name).count()
-
-        if obid != 0:
+    def create_builder(self, name, pgp, ssl):
+        if NAMESPACE.session.query(Builder).filter_by(name=name).first():
             raise ValueError("Slave already exists.")
 
-        b = Builder(maintainer=NAMESPACE.user, name=slave_name, key=keyid,
-                    password=slave_password, last_ping=dt.datetime.utcnow())
-        emit('create', 'slave', b.debilize())
+        pgp = import_pgp(pgp)
+        ssl = import_ssl(ssl, name)
+
+        b = Builder(name=name, maintainer=NAMESPACE.user, pgp=pgp, ssl=ssl,
+                    last_ping=datetime.utcnow())
         NAMESPACE.session.add(b)
         NAMESPACE.session.commit()
+
+        emit('create', 'slave', b.debilize())
         return b.debilize()
+
+    @user_method
+    def create_user(self, name, email, pgp, ssl):
+        if NAMESPACE.session.query(Builder).filter_by(email=email).first():
+            raise ValueError("User already exists.")
+
+        pgp = import_pgp(pgp)
+        ssl = import_ssl(ssl, name, email)
+
+        p = Person(name=name, email=email, pgp=pgp, ssl=ssl)
+        NAMESPACE.session.add(p)
+        NAMESPACE.session.commit()
+
+        emit('create', 'user', p.debilize())
+        return p.debilize()

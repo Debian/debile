@@ -30,72 +30,63 @@
 #   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #   OTHER DEALINGS IN THE SOFTWARE.
-# -*- coding: utf-8 -*-
+"""
+This code deals with the reading and processing of Debian .changes files. This
+code is copyright (c) Jonny Lamb, and is used by dput, rather then created as
+a result of it. Thank you Jonny.
+"""
 
+__author__ = 'Jonny Lamb'
+__copyright__ = 'Copyright © 2008 Jonny Lamb, Copyright © 2010 Jan Dittberner'
+__license__ = 'MIT'
+
+from debile.master.core import config
 from debile.utils import run_command
-from debile import __version__
-from debian import deb822
-import firehose.model
+from debile.utils import deb822
 import hashlib
 import os.path
 import sys
 
-from email.Utils import formatdate
 
-
-class Dud_(deb822.Changes):
-    def add_file(self, fp):
-        statinfo = os.stat(fp)
-        size = statinfo.st_size
-
-        algos = {
-            "Files": "md5",
-            "Checksums-Sha1": "sha1",
-            "Checksums-Sha256": "sha256",
-        }
-
-        for key, algo in algos.items():
-            if key not in self:
-                self[key] = []
-
-            m = hashlib.new(algo)
-            with open(fp, "rb") as fd:
-                for chunk in iter((lambda: fd.read(128 * m.block_size)), b''):
-                    m.update(chunk)
-
-            if key != "Files":
-                self[key].append({
-                    algo: m.hexdigest(),
-                    "size": size,
-                    "name": fp
-                })
-            else:
-                self[key].append({
-                    "md5sum": m.hexdigest(),
-                    "size": size,
-                    "section": 'debile',
-                    "priority": 'debile',
-                    "name": fp
-                })
-
-
-class DudFileException(Exception):
+class ChangesFileException(Exception):
     pass
 
 
-class Dud(object):
+class Changes(object):
+    """
+    Changes object to help process and store information regarding Debian
+    .changes files, used in the upload process.
+    """
+
     def __init__(self, filename=None, string=None):
+        """
+        Object constructor. The object allows the user to specify **either**:
+
+        #. a path to a *changes* file to parse
+        #. a string with the *changes* file contents.
+
+        ::
+
+        a = Changes(filename='/tmp/packagename_version.changes')
+        b = Changes(string='Source: packagename\\nMaintainer: ...')
+
+        ``filename``
+            Path to *changes* file to parse.
+
+        ``string``
+            *changes* file in a string to parse.
+        """
         if (filename and string) or (not filename and not string):
             raise TypeError
 
         if filename:
             self._absfile = os.path.abspath(filename)
-            self._data = Dud_(open(filename))
+            self._data = deb822.Changes(open(filename))
         else:
-            self._data = Dud_(string)
+            self._data = deb822.Changes(string)
 
         if len(self._data) == 0:
-            raise DudFileException('dud file could not be parsed.')
+            raise ChangesFileException('Changes file could not be parsed.')
         if filename:
             self.basename = os.path.basename(filename)
         else:
@@ -106,6 +97,18 @@ class Dud(object):
         if sys.version_info[0] >= 3:
             self.is_python3 = True
 
+    def is_source_only_upload(self):
+        for f in self.get_files():
+            if f.endswith(".deb") or f.endswith(".udeb"):
+                return False
+        return True
+
+    def is_binary_only_upload(self):
+        for f in self.get_files():
+            if not (f.endswith(".deb") or f.endswith(".udeb")):
+                return False
+        return True
+
     def get_filename(self):
         """
         Returns the filename from which the changes file was generated from.
@@ -115,21 +118,7 @@ class Dud(object):
         """
         return self.basename
 
-    def get_firehose(self):
-        return firehose.model.Analysis.from_xml(
-            open(self.get_firehose_file(), 'r'))
-
-    def get_firehose_file(self):
-        for item in self.get_files():
-            if item.endswith('.firehose.xml'):
-                return item
-
-    def get_log_file(self):
-        for item in self.get_files():
-            if item.endswith('.log'):
-                return item
-
-    def get_dud_file(self):
+    def get_changes_file(self):
         """
         Return the full, absolute path to the changes file. For just the
         filename, please see :meth:`get_filename`.
@@ -138,6 +127,9 @@ class Dud(object):
 
     def get_files(self):
         """
+        Returns a list of files referenced in the changes file, such as
+        the .dsc, .deb(s), .orig.tar.gz, and .diff.gz or .debian.tar.gz.
+        All strings in the array will be absolute paths to the files.
         """
         return [os.path.join(self._directory, z['name'])
                 for z in self._data['Files']]
@@ -173,7 +165,81 @@ class Dud(object):
         """
         return self._data.get(key, default)
 
+    def get_component(self):
+        """
+        Returns the component of the package.
+        """
+        return self._parse_section(self._data['Files'][0]['section'])[0]
+
+    def get_priority(self):
+        """
+        Returns the priority of the package.
+        """
+        return self._parse_section(self._data['Files'][0]['priority'])[1]
+
+    def get_dsc_obj(self):
+        return deb822.Dsc(open(self.get_dsc(), 'r'))
+
+    def get_dsc(self):
+        """
+        Returns the name of the .dsc file.
+        """
+        for item in self.get_files():
+            if item.endswith('.dsc'):
+                return item
+
+    def get_diff(self):
+        """
+        Returns the name of the .diff.gz file if there is one, otherwise None.
+        """
+        for item in self.get_files():
+            if item.endswith('.diff.gz') or item.endswith('.debian.tar.gz'):
+                return item
+
+        return None
+
+    def get_pool_path(self):
+        """
+        Returns the path the changes file would be
+        """
+        return self._data.get_pool_path()
+
+    def get_package_name(self):
+        """
+        Returns the source package name
+        """
+        return self.get("Source")
+
+    def _parse_section(self, section):
+        """
+        Works out the component and section from the "Section" field.
+        Sections like `python` or `libdevel` are in main.
+        Sections with a prefix, separated with a forward-slash also show the
+        component.
+        It returns a list of strings in the form [component, section].
+
+        For example, `non-free/python` has component `non-free` and section
+        `python`.
+
+        ``section``
+        Section name to parse.
+        """
+        if '/' in section:
+            return section.split('/')
+        else:
+            return ['main', section]
+
+    def set_directory(self, directory):
+        if directory:
+            self._directory = directory
+        else:
+            self._directory = ""
+
     def validate(self, check_hash="md5", check_signature=True):
+        """
+        See :meth:`validate_checksums` for ``check_hash``, and
+        :meth:`validate_signature` if ``check_signature`` is True.
+        """
         self.validate_checksums(check_hash)
         if check_signature:
             self.validate_signature(check_signature)
@@ -181,16 +247,19 @@ class Dud(object):
     def validate_signature(self, check_signature=True):
         """
         Validate the GPG signature of a .changes file.
+
+        Throws a :class:`dput.exceptions.ChangesFileException` if there's
+        an issue with the GPG signature. Returns the GPG key ID.
         """
-        gpg_path = "gpg"
 
         (gpg_output, gpg_output_stderr, exit_status) = run_command([
-            gpg_path, "--status-fd", "1", "--verify",
-            "--batch", self.get_dud_file(),
+            "gpg", "--batch", "--status-fd", "1",
+            "--no-default-keyring", "--keyring", config['keyrings']['pgp'],
+            "--verify", self.get_changes_file()
         ])
 
         if exit_status == -1:
-            raise DudFileException(
+            raise ChangesFileException(
                 "Unknown problem while verifying signature")
 
         # contains verbose human readable GPG information
@@ -203,13 +272,13 @@ class Dud(object):
         if gpg_output.count('[GNUPG:] GOODSIG'):
             pass
         elif gpg_output.count('[GNUPG:] BADSIG'):
-            raise DudFileException("Bad signature")
+            raise ChangesFileException("Bad signature")
         elif gpg_output.count('[GNUPG:] ERRSIG'):
-            raise DudFileException("Error verifying signature")
+            raise ChangesFileException("Error verifying signature")
         elif gpg_output.count('[GNUPG:] NODATA'):
-            raise DudFileException("No signature on")
+            raise ChangesFileException("No signature on")
         else:
-            raise DudFileException(
+            raise ChangesFileException(
                 "Unknown problem while verifying signature"
             )
 
@@ -253,14 +322,15 @@ class Dud(object):
                     "get_files() returns different files than Files: knows?!")
 
             with open(filename, "rb") as fc:
-                for chunk in iter(
-                    (lambda: fc.read(128 * hash_type.block_size)),
-                    b''
-                ):
+                while True:
+                    chunk = fc.read(131072)
+                    if not chunk:
+                        break
                     hash_type.update(chunk)
+            fc.close()
 
             if not hash_type.hexdigest() == changed_files[field_name]:
-                raise DudFileException(
+                raise ChangesFileException(
                     "Checksum mismatch for file %s: %s != %s" % (
                         filename,
                         hash_type.hexdigest(),
@@ -268,13 +338,13 @@ class Dud(object):
                     ))
 
 
-def parse_dud_file(filename, directory=None):
+def parse_changes_file(filename, directory=None):
     """
     Parse a .changes file and return a dput.changes.Change instance with
     parsed changes file data. The optional directory argument refers to the
     base directory where the referred files from the changes file are expected
     to be located.
     """
-    _c = Dud(filename=filename)
+    _c = Changes(filename=filename)
     _c.set_directory(directory)
     return(_c)

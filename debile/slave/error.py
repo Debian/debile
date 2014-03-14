@@ -20,6 +20,5 @@
 # DEALINGS IN THE SOFTWARE.
 
 
-
 class EthelError(Exception):
     pass

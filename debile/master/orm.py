@@ -26,7 +26,8 @@ from firewoes.lib.orm import metadata
 from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
@@ -57,52 +58,47 @@ def _debilize(self):
 
 class Person(Base):
     __tablename__ = 'people'
-    __table_args__ = (UniqueConstraint('username'),)
+    __table_args__ = (UniqueConstraint('email'),)
     _debile_objs = {
         "id": "id",
-        "username": "username",
         "name": "name",
         "email": "email",
-        "key": "key",
+        "pgp": "pgp",
+        "ssl": "ssl",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(255))  # Unique
-
     name = Column(String(255))
     email = Column(String(255))
-    key = Column(String(255))
-    password = Column(String(255))  # Weak password. Not actually critical.
 
-    def validate(self, password):
-        return self.password == password
+    pgp = Column(String(40), nullable=True)
+    ssl = Column(String(40), nullable=True)
 
 
 class Builder(Base):
+    __table_args__ = (UniqueConstraint('name'),)
     __tablename__ = 'builders'
     _debile_objs = {
         "id": "id",
-        "maintainer_id": "maintainer.username",
-        "maintainer": "maintainer.name",
         "name": "name",
-        "key": "key",
         "last_ping": "last_ping",
+        "maintainer_name": "maintainer.name",
+        "maintainer_email": "maintainer.email",
+        "pgp": "pgp",
+        "ssl": "ssl",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    last_ping = Column(DateTime, nullable=False)
 
     maintainer_id = Column(Integer, ForeignKey('people.id'))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
-    name = Column(String(255))
-    key = Column(String(255))
-    password = Column(String(255))  # Weak password. Not actually critical.
-    last_ping = Column(DateTime, nullable=False)
-
-    def validate(self, password):
-        return self.password == password
+    pgp = Column(String(40), nullable=True)
+    ssl = Column(String(40), nullable=True)
 
 
 class Suite(Base):
@@ -172,8 +168,8 @@ class Group(Base):
     _debile_objs = {
         "id": "id",
         "name": "name",
-        "maintainer_id": "maintainer.username",
-        "maintainer": "maintainer.name",
+        "maintainer_name": "maintainer.name",
+        "maintainer_email": "maintainer.email",
         "repo_path": "repo_path",
         "repo_url": "repo_url",
         "files_path": "files_path",
@@ -195,7 +191,7 @@ class Group(Base):
             m = importlib.import_module(module)
             return getattr(m, func)(self, conf)
 
-        entires = ["repo_path", "repo_url", "files_path", "files_url",]
+        entires = ["repo_path", "repo_url", "files_path", "files_url"]
 
         for entry in entires:
             if conf.get(entry) is None:
@@ -224,25 +220,23 @@ class Group(Base):
 
 
 # Many-to-Many relationship
-group_suite_component_association = \
+group_suite_component_association = (
     Table('group_suite_component_association', Base.metadata,
-        Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-        Column('component_id', Integer, ForeignKey('components.id'))
-    )
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
+          Column('component_id', Integer, ForeignKey('components.id'))))
 
-# Many-to-Many relationship
-group_suite_arch_association = \
+
+group_suite_arch_association = (
     Table('group_suite_arch_association', Base.metadata,
-        Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-        Column('arch_id', Integer, ForeignKey('arches.id'))
-    )
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
+          Column('arch_id', Integer, ForeignKey('arches.id'))))
 
-# Many-to-Many relationship
-group_suite_check_association = \
+
+group_suite_check_association = (
     Table('group_suite_check_association', Base.metadata,
-        Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-        Column('check_id', Integer, ForeignKey('checks.id'))
-    )
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
+          Column('check_id', Integer, ForeignKey('checks.id'))))
+
 
 class GroupSuite(Base):
     __tablename__ = 'group_suites'
@@ -262,26 +256,28 @@ class GroupSuite(Base):
     suite_id = Column(Integer, ForeignKey('suites.id'))
     suite = relationship("Suite", foreign_keys=[suite_id])
 
-    components = relationship("Component", secondary=group_suite_component_association)
+    components = relationship("Component",
+                              secondary=group_suite_component_association)
     arches = relationship("Arch", secondary=group_suite_arch_association)
     checks = relationship("Check", secondary=group_suite_check_association)
 
     def get_source_checks(self):
-        return [x for x in self.checks if x.source==True and x.build==False]
+        return [x for x in self.checks
+                if x.source == True and x.build == False]
 
     def get_binary_checks(self):
-        return [x for x in self.checks if x.binary==True and x.build==False]
+        return [x for x in self.checks
+                if x.binary == True and x.build == False]
 
     def get_build_checks(self):
-        return [x for x in self.checks if x.build==True]
+        return [x for x in self.checks if x.build == True]
 
 
 # Many-to-Many relationship
-source_arch_association = \
+source_arch_association = (
     Table('source_arch_association', Base.metadata,
-        Column('source_id', Integer, ForeignKey('sources.id')),
-        Column('arch_id', Integer, ForeignKey('arches.id'))
-    )
+          Column('source_id', Integer, ForeignKey('sources.id')),
+          Column('arch_id', Integer, ForeignKey('arches.id'))))
 
 
 class Source(Base):
@@ -290,10 +286,11 @@ class Source(Base):
         "id": "id",
         "name": "name",
         "version": "version",
-        "suite": "group_suite.suite.name",
+        "suite": "suite.name",
         "component": "component.name",
         "group_id": "group_suite.group_id",
-        "uploader": "uploader.username",
+        "uploader_name": "uploader.name",
+        "uploader_email": "uploader.email",
         "uploaded_at": "uploaded_at",
     }
     debilize = _debilize
@@ -304,6 +301,14 @@ class Source(Base):
 
     group_suite_id = Column(Integer, ForeignKey('group_suites.id'))
     group_suite = relationship("GroupSuite", foreign_keys=[group_suite_id])
+
+    @hybrid_property
+    def group(self):
+        return self.group_suite.group
+
+    @hybrid_property
+    def suite(self):
+        return self.group_suite.suite
 
     component_id = Column(Integer, ForeignKey('components.id'))
     component = relationship("Component", foreign_keys=[component_id])
@@ -346,17 +351,25 @@ class Binary(Base):
         "id": "id",
         "name": "source.name",
         "version": "source.version",
-        "suite": "source.group_suite.suite.name",
-        "component": "source.component.name",
-        "arch": "build_job.arch.name",
-        "group_id": "source.group_suite.group_id",
+        "suite": "suite.name",
+        "component": "component.name",
+        "arch": "arch.name",
+        "group_id": "group_suite.group_id",
         "source_id": "source_id",
-        "builder": "build_job.builder.name",
+        "builder": "builder.name",
         "uploaded_at": "uploaded_at",
     }
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
+
+    @hybrid_property
+    def name(self):
+        return self.source.name
+
+    @hybrid_property
+    def version(self):
+        return self.source.version
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source", backref="binaries",
@@ -367,6 +380,30 @@ class Binary(Base):
                                               use_alter=True))
     build_job = relationship("Job", backref="built_binary",
                              foreign_keys=[build_job_id])
+
+    @hybrid_property
+    def group_suite(self):
+        return self.source.group_suite
+
+    @hybrid_property
+    def group(self):
+        return self.source.group
+
+    @hybrid_property
+    def suite(self):
+        return self.source.suite
+
+    @hybrid_property
+    def component(self):
+        return self.source.component
+
+    @hybrid_property
+    def arch(self):
+        return self.build_job.arch
+
+    @hybrid_property
+    def builder(self):
+        return self.build_job.builder
 
     uploaded_at = Column(DateTime)
 
@@ -382,11 +419,11 @@ class Job(Base):
         "id": "id",
         "name": "name",
         "check": "check.name",
-        "suite": "source.group_suite.suite.name",
-        "component": "source.component.name",
+        "suite": "suite.name",
+        "component": "component.name",
         "arch": "arch.name",
         "affinity": "affinity.name",
-        "group_id": "source.group_suite.group_id",
+        "group_id": "group_suite.group_id",
         "source_id": "source_id",
         "binary_id": "binary_id",
         "builder": "builder.name",
@@ -405,6 +442,22 @@ class Job(Base):
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check", foreign_keys=[check_id])
+
+    @hybrid_property
+    def group_suite(self):
+        return self.source.group_suite
+
+    @hybrid_property
+    def group(self):
+        return self.source.group
+
+    @hybrid_property
+    def suite(self):
+        return self.source.suite
+
+    @hybrid_property
+    def component(self):
+        return self.source.component
 
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch", foreign_keys=[arch_id])
@@ -450,6 +503,24 @@ class Job(Base):
                  self.built_binary is not None):
             for jd in self.blocking:
                 session.delete(jd)
+
+    @property
+    def files_path(self):
+        return "{root}/{source}/{version}/{id}".format(
+            root=self.group.files_path,
+            source=self.source.name,
+            version=self.source.version,
+            id=self.id
+        )
+
+    @property
+    def files_url(self):
+        return "{root}/{source}/{version}/{id}".format(
+            root=self.group.files_url,
+            source=self.source.name,
+            version=self.source.version,
+            id=self.id
+        )
 
 
 class JobDependencies(Base):
@@ -613,6 +684,6 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
                 j.depedencies.append(dep)
 
 
-def init():
-    from debile.master.core import engine
+def init_db():
+    from debile.master.utils import engine
     Base.metadata.create_all(engine)

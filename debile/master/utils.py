@@ -18,16 +18,23 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import debile.master.core
+from debile.master.core import config
 
 from contextlib import contextmanager
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+engine = create_engine(config.get('database'))
+
+
+def make_session():
+    return sessionmaker(bind=engine)()
 
 
 @contextmanager
 def session():
-    Session = sessionmaker(bind=debile.master.core.engine)
-    session_ = Session()
+    session_ = make_session()
 
     try:
         yield session_

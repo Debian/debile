@@ -10,16 +10,20 @@
 # Description:
 #  I'm lazy.
 #  Fix me.
+#  Silly paultag, just ask directly next time. -tianon
+#  Updated init script sponsored by Depeche Mode.
 ### END INIT INFO
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 BASE=$(basename $0)
 
 DEBILE=/usr/bin/$BASE
 DEBILE_PIDFILE=/var/run/$BASE.pid
 DEBILE_OPTS=
+DEBILE_LOGFILE=/var/log/$BASE.log
 DEBILE_USER="Debian-debile"
-
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+DEBILE_DESC="Debile Master"
 
 # Get lsb functions
 . /lib/lsb/init-functions
@@ -28,12 +32,6 @@ if [ -f /etc/default/$BASE ]; then
 	. /etc/default/$BASE
 fi
 
-# see also init_is_upstart in /lib/lsb/init-functions
-# if [ -x /sbin/initctl ] && /sbin/initctl version 2>/dev/null | /bin/grep -q upstart; then
-# 	log_failure_msg "Debile is managed via upstart, try using service $BASE $1"
-# 	exit 1
-# fi
-
 if [ ! -x $DEBILE ]; then
 	log_failure_msg "$DEBILE not present or not executable"
 	exit 1
@@ -41,7 +39,7 @@ fi
 
 fail_unless_root() {
 	if [ "$(id -u)" != '0' ]; then
-		log_failure_msg "debile-master must be run as root"
+		log_failure_msg "$DEBILE_DESC must be run as root"
 		exit 1
 	fi
 }
@@ -49,18 +47,21 @@ fail_unless_root() {
 case "$1" in
 	start)
 		fail_unless_root
-		log_begin_msg "Starting Debile Master: $BASE"
+		log_begin_msg "Starting $DEBILE_DESC: $BASE"
 		start-stop-daemon --start --background \
+			--no-close \
 			--exec "$DEBILE" \
 			--pidfile "$DEBILE_PIDFILE" \
-            --chuid $DEBILE_USER \
-			-- $DEBILE_OPTS
+			--make-pidfile \
+			--chuid $DEBILE_USER \
+			-- $DEBILE_OPTS \
+				>> $DEBILE_LOGFILE 2>&1
 		log_end_msg $?
 		;;
 
 	stop)
 		fail_unless_root
-		log_begin_msg "Stopping Debile Master: $BASE"
+		log_begin_msg "Stopping $DEBILE_DESC: $BASE"
 		start-stop-daemon --stop \
 			--pidfile "$DEBILE_PIDFILE"
 		log_end_msg $?

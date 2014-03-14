@@ -1,27 +1,25 @@
 ---
 Users:  # Users of Debile
     - name: Paul Tagliamonte
-      username: paultag
-      key: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
       email: paultag@debian.org
-      password: s3kr37
+      pgp: 57DC4BD33F73E0CDBA98D22AF7EBEE8EB7982329
+      ssl: 0000000000000000DEADBEEF0000000000000000
 
     - name: Archive Rebuilder
-      username: rebuild
-      key: 2EA5C67F0A37D37C64C7B5EDC0A1FC9FD80D7B69
       email: help@debuild.me
-      password: s3kr37
+      pgp: 2EA5C67F0A37D37C64C7B5EDC0A1FC9FD80D7B69
+      ssl: 0000000000000000DEADBEEF0000000000000000
 
 Builders:  # Machines that can build
     - name: leliel.pault.ag
-      key: 21CAF89F520676541CD7088849E9153AF7901FAE
-      maintainer: paultag
-      password: s3kr37
+      maintainer: paultag@debian.org
+      pgp: 21CAF89F520676541CD7088849E9153AF7901FAE
+      ssl: 0000000000000000DEADBEEF0000000000000000
 
     - name: helios.pault.ag
-      key: 0C267E932994895CDE7B6B3ECB4315D1BC490D41
-      maintainer: paultag
-      password: s3kr375
+      maintainer: paultag@debian.org
+      pgp: 0C267E932994895CDE7B6B3ECB4315D1BC490D41
+      ssl: 0000000000000000DEADBEEF0000000000000000
 
 Suites:
     - name: unstable
@@ -51,7 +49,7 @@ Checks:
 
 Groups:
     - name: default
-      maintainer: paultag
+      maintainer: paultag@debian.org
 
       suites:
           - suite: unstable

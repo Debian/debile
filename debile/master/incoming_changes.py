@@ -29,7 +29,7 @@ from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
                                GroupSuite, Source, Binary, Job, create_source,
                                create_jobs)
-from debile.utils.changes import parse_changes_file, ChangesFileException
+from debile.master.changes import parse_changes_file, ChangesFileException
 
 
 def process_directory(path):
@@ -47,7 +47,7 @@ def process_changes(session, path):
     changes = parse_changes_file(path)
     try:
         changes.validate()
-    except ChangesFileException as e:
+    except ChangesFileException:
         return reject_changes(session, changes, "invalid-upload")
 
     group = changes.get('X-Lucy-Group', "default")
@@ -59,14 +59,14 @@ def process_changes(session, path):
         return reject_changes(session, changes, "invalid-group")
 
     try:
-        key = changes.validate_signature()
+        fingerprint = changes.validate_signature()
     except ChangesFileException:
         return reject_changes(session, changes, "invalid-signature")
 
     #### Sourceful Uploads
     if changes.is_source_only_upload():
         try:
-            user = session.query(Person).filter_by(key=key).one()
+            user = session.query(Person).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-user")
         return accept_source_changes(session, changes, user)
@@ -74,7 +74,7 @@ def process_changes(session, path):
     #### Binary Uploads
     if changes.is_binary_only_upload():
         try:
-            builder = session.query(Builder).filter_by(key=key).one()
+            builder = session.query(Builder).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-builder")
         return accept_binary_changes(session, changes, builder)
@@ -103,8 +103,8 @@ def accept_source_changes(session, changes, user):
 
     try:
         group_suite = session.query(GroupSuite).filter(
-            Group.name==group,
-            Suite.name==suite,
+            Group.name == group,
+            Suite.name == suite,
         ).one()
     except MultipleResultsFound:
         return reject_changes(session, changes, "internal-error")
@@ -119,9 +119,9 @@ def accept_source_changes(session, changes, user):
 
     try:
         source = session.query(Source).filter(
-            Source.name==dsc['Source'],
-            Source.version==dsc['Version'],
-            GroupSuite.group==group_suite.group,
+            Source.name == dsc['Source'],
+            Source.version == dsc['Version'],
+            GroupSuite.group == group_suite.group,
         ).one()
         return reject_changes(session, changes, "source-already-in-group")
     except MultipleResultsFound:
@@ -169,12 +169,13 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(session, changes, "binary-source-name-mismatch")
 
     if changes.get("Version") != source.version:
-        return reject_changes(session, changes, "binary-source-version-mismatch")
+        return reject_changes(
+            session, changes, "binary-source-version-mismatch")
 
-    if changes.get('X-Lucy-Group', "default") != source.group_suite.group.name:
+    if changes.get('X-Lucy-Group', "default") != source.group.name:
         return reject_changes(session, changes, "binary-source-group-mismatch")
 
-    if changes.get('Distribution') != source.group_suite.suite.name:
+    if changes.get('Distribution') != source.suite.name:
         return reject_changes(session, changes, "binary-source-suite-mismatch")
 
     if changes.get("Architecture") != job.arch.name:
@@ -187,7 +188,7 @@ def accept_binary_changes(session, changes, builder):
 
     ## OK. Let's make sure we can add this.
     try:
-        repo = Repo(job.source.group_suite.group.repo_path)
+        repo = Repo(job.group.repo_path)
         repo.add_changes(changes)
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
@@ -201,7 +202,6 @@ def accept_binary_changes(session, changes, builder):
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
         os.unlink(fp)
-
 
 
 DELEGATE = {
