@@ -29,7 +29,7 @@ engine = create_engine(config.get('database'))
 
 
 def make_session():
-    sessionmaker(bind=engine)()
+    return sessionmaker(bind=engine)()
 
 
 @contextmanager
