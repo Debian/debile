@@ -84,9 +84,10 @@ for this builder.
 ---
 xmlrpc:
     user: "%helium.buildd.tanglu.org"
-    password: s3kr37
     host: buildd.tanglu.org
     port: 22017
+    keyfile: /srv/buildd/helium.key
+    certfile: /srv/buildd/helium.crt
 
 gpg: GPGKEY_FINGERPRINT
 
@@ -110,7 +111,11 @@ components:
 ### EOF ###
 Set user to <builder>.buildd.tanglu.org, where builder is the name of your builder. The name must be prefixed with
 a percentage sign.
-The password is something you will receive when registering your builder at Tanglu. You need to change the value then.
+Then, you can generate the key and cert defined above, using OpenSSL:
+ $ openssl req -x509 -nodes -newkey rsa:3072 -sha256 -keyout testslave.key -out testslave.crt
+(it's a good idea to use the name of your builder for the key name)
+File out the information. The "Organization" is "Tanglu Project", "Unit Name" is "Package Build Service".
+Use the "<builder>.buildd.tanglu.org" string as FQDN (of course with "<builder>" replaced with the builder's name)
 
 You will also add the tanglu-buildd certificate to the database of trusted certificates.
 To do that, copy tanglu-buildd.crt to /usr/local/share/ca-certificates/, then run
@@ -137,9 +142,12 @@ Create /etc/dput.d/profiles/tanglu.json with the following data:
 TODO
 
 === 10. Register the buildd ===
-Tell the build-master admin (currently Matthias Klumpp <mak@debian.org>) about the new buildd and give him access to the machine.
+Tell the build-master admin (currently Matthias Klumpp <mak@debian.org>) about the new buildd and give him or the build admin team access
+to the machine.
 In the process, some generic settings will be checked and we will perform a testbuild, then add the machine to the buildd pool and register it's key
 with the archive kit.
-You will also receive your private password to add to slave.yaml then.
+Don't forget to send your SSL certificate generated in step 7 with your mail, so we can add it to the build master's keyring and allow your slave to connect.
 
-And you're done! Check if builds work before disabling maintenance mode on the buildmaster!
+And you're done!
+
+NOTE: Check if builds work before disabling maintenance mode on the buildmaster!
