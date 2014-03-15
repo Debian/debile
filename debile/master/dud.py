@@ -34,7 +34,7 @@
 
 from debile.master.core import config
 from debile.utils import run_command
-from debile.utils.deb822 import Changes
+from debile.utils import deb822
 import firehose.model
 import hashlib
 import os.path
@@ -52,17 +52,17 @@ class Dud(object):
 
         if filename:
             self._absfile = os.path.abspath(filename)
-            self._data = Changes(open(filename))
+            self._directory = os.path.dirname(self._absfile)
+            self._basename = os.path.basename(self._absfile)
+            self._data = deb822.Changes(open(self._absfile))
         else:
-            self._data = Changes(string)
+            self._absfile = None
+            self._directory = ""
+            self._basename = None
+            self._data = deb822.Changes(string)
 
         if len(self._data) == 0:
             raise DudFileException('dud file could not be parsed.')
-        if filename:
-            self.basename = os.path.basename(filename)
-        else:
-            self.basename = None
-        self._directory = ""
 
         self.is_python3 = False
         if sys.version_info[0] >= 3:
@@ -70,12 +70,19 @@ class Dud(object):
 
     def get_filename(self):
         """
-        Returns the filename from which the changes file was generated from.
+        Returns the filename from which the dud file was generated from.
         Please do note this is just the basename, not the entire full path, or
         even a relative path. For the absolute path to the changes file, please
-        see :meth:`get_changes_file`.
+        see :meth:`get_dud_file`.
         """
-        return self.basename
+        return self._basename
+
+    def get_dud_file(self):
+        """
+        Return the full, absolute path to the dud file. For just the
+        filename, please see :meth:`get_filename`.
+        """
+        return self._absfile
 
     def get_firehose(self):
         return firehose.model.Analysis.from_xml(
@@ -90,13 +97,6 @@ class Dud(object):
         for item in self.get_files():
             if item.endswith('.log'):
                 return item
-
-    def get_dud_file(self):
-        """
-        Return the full, absolute path to the changes file. For just the
-        filename, please see :meth:`get_filename`.
-        """
-        return os.path.join(self._directory, self.get_filename())
 
     def get_files(self):
         """
@@ -228,15 +228,3 @@ class Dud(object):
                         hash_type.hexdigest(),
                         changed_files[field_name]
                     ))
-
-
-def parse_dud_file(filename, directory=None):
-    """
-    Parse a .changes file and return a dput.changes.Change instance with
-    parsed changes file data. The optional directory argument refers to the
-    base directory where the referred files from the changes file are expected
-    to be located.
-    """
-    _c = Dud(filename=filename)
-    _c.set_directory(directory)
-    return(_c)

@@ -81,17 +81,17 @@ class Changes(object):
 
         if filename:
             self._absfile = os.path.abspath(filename)
-            self._data = deb822.Changes(open(filename))
+            self._directory = os.path.dirname(self._absfile)
+            self._basename = os.path.basename(self._absfile)
+            self._data = deb822.Changes(open(self._absfile))
         else:
+            self._absfile = None
+            self._directory = ""
+            self._basename = None
             self._data = deb822.Changes(string)
 
         if len(self._data) == 0:
             raise ChangesFileException('Changes file could not be parsed.')
-        if filename:
-            self.basename = os.path.basename(filename)
-        else:
-            self.basename = None
-        self._directory = ""
 
         self.is_python3 = False
         if sys.version_info[0] >= 3:
@@ -116,14 +116,14 @@ class Changes(object):
         even a relative path. For the absolute path to the changes file, please
         see :meth:`get_changes_file`.
         """
-        return self.basename
+        return self._basename
 
     def get_changes_file(self):
         """
         Return the full, absolute path to the changes file. For just the
         filename, please see :meth:`get_filename`.
         """
-        return os.path.join(self._directory, self.get_filename())
+        return self._absfile
 
     def get_files(self):
         """
@@ -229,12 +229,6 @@ class Changes(object):
         else:
             return ['main', section]
 
-    def set_directory(self, directory):
-        if directory:
-            self._directory = directory
-        else:
-            self._directory = ""
-
     def validate(self, check_hash="md5", check_signature=True):
         """
         See :meth:`validate_checksums` for ``check_hash``, and
@@ -336,15 +330,3 @@ class Changes(object):
                         hash_type.hexdigest(),
                         changed_files[field_name]
                     ))
-
-
-def parse_changes_file(filename, directory=None):
-    """
-    Parse a .changes file and return a dput.changes.Change instance with
-    parsed changes file data. The optional directory argument refers to the
-    base directory where the referred files from the changes file are expected
-    to be located.
-    """
-    _c = Changes(filename=filename)
-    _c.set_directory(directory)
-    return(_c)

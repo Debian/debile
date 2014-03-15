@@ -29,7 +29,7 @@ from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
                                GroupSuite, Source, Binary, Job, create_source,
                                create_jobs)
-from debile.master.changes import parse_changes_file, ChangesFileException
+from debile.master.changes import Changes, ChangesFileException
 
 
 def process_directory(path):
@@ -42,7 +42,7 @@ def process_directory(path):
 
 
 def process_changes(session, path):
-    changes = parse_changes_file(path)
+    changes = Changes(path)
     try:
         changes.validate()
     except ChangesFileException:
