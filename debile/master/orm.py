@@ -46,8 +46,9 @@ def _debilize(self):
             if foo is None:
                 return foo
             return getthing(foo, remote)
-        local = name
-        return getattr(obj, local)
+        if name == "__str__":
+            return str(obj)
+        return getattr(obj, name)
 
     ret = {}
     for attribute, path in self._debile_objs.items():
@@ -75,6 +76,12 @@ class Person(Base):
     pgp = Column(String(40), nullable=True)
     ssl = Column(String(40), nullable=True)
 
+    def __str__(self):
+        return "%s <%s>" % (self.name, self.email)
+
+    def __repr__(self):
+        return "<Person: %s (%s)>" % (self.email, self.id)
+
 
 class Builder(Base):
     __table_args__ = (UniqueConstraint('name'),)
@@ -100,6 +107,12 @@ class Builder(Base):
     pgp = Column(String(40), nullable=True)
     ssl = Column(String(40), nullable=True)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<Builder: %s (%s)>" % (self.name, self.id)
+
 
 class Suite(Base):
     __tablename__ = 'suites'
@@ -112,6 +125,12 @@ class Suite(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<Suite: %s (%s)>" % (self.name, self.id)
 
 
 class Component(Base):
@@ -126,6 +145,12 @@ class Component(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<Component: %s (%s)>" % (self.name, self.id)
+
 
 class Arch(Base):
     __tablename__ = 'arches'
@@ -138,6 +163,9 @@ class Arch(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
+
+    def __str__(self):
+        return self.name
 
     def __repr__(self):
         return "<Arch: %s (%s)>" % (self.name, self.id)
@@ -160,6 +188,12 @@ class Check(Base):
     source = Column(Boolean)
     binary = Column(Boolean)
     build = Column(Boolean)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<Check: %s (%s)>" % (self.name, self.id)
 
 
 class Group(Base):
@@ -218,6 +252,12 @@ class Group(Base):
     def files_url(self):
         return self.get_repo_info()['files_url']
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<Group: %s (%s)>" % (self.name, self.id)
+
 
 # Many-to-Many relationship
 group_suite_component_association = (
@@ -242,7 +282,7 @@ class GroupSuite(Base):
     __tablename__ = 'group_suites'
     _debile_objs = {
         "id": "id",
-        "group_id": "group_id",
+        "group": "group.name",
         "suite": "suite.name",
     }
     debilize = _debilize
@@ -272,6 +312,12 @@ class GroupSuite(Base):
     def get_build_checks(self):
         return [x for x in self.checks if x.build == True]
 
+    def __str__(self):
+        return "%s/%s" % (self.group, self.suite)
+
+    def __repr__(self):
+        return "<GroupSuite: %s/%s (%s)>" % (self.group, self.suite, self.id)
+
 
 # Many-to-Many relationship
 source_arch_association = (
@@ -286,6 +332,7 @@ class Source(Base):
         "id": "id",
         "name": "name",
         "version": "version",
+        "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
         "group_id": "group_suite.group_id",
@@ -320,6 +367,12 @@ class Source(Base):
 
     uploaded_at = Column(DateTime, nullable=False)
 
+    def __str__(self):
+        return "%s (%s)" % (self.name, self.version)
+
+    def __repr__(self):
+        return "<Source: %s/%s (%s)>" % (self.name, self.version, self.id)
+
 
 class Maintainer(Base):
     __tablename__ = 'maintainers'
@@ -344,6 +397,12 @@ class Maintainer(Base):
     source = relationship("Source", backref='maintainers',
                           foreign_keys=[source_id])
 
+    def __str__(self):
+        return "%s <%s>" % (self.name, self.email)
+
+    def __repr__(self):
+        return "<Maintainer: %s (%s)>" % (self.email, self.id)
+
 
 class Binary(Base):
     __tablename__ = 'binaries'
@@ -351,6 +410,7 @@ class Binary(Base):
         "id": "id",
         "name": "source.name",
         "version": "source.version",
+        "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
         "arch": "arch.name",
@@ -412,13 +472,21 @@ class Binary(Base):
         return Binary(build_job=job, source=job.source,
                       uploaded_at=datetime.utcnow())
 
+    def __str__(self):
+        return "%s (%s)" % (self.name, self.version)
+
+    def __repr__(self):
+        return "<Binary: %s/%s (%s)>" % (self.name, self.version, self.id)
+
 
 class Job(Base):
     __tablename__ = 'jobs'
     _debile_objs = {
         "id": "id",
+        "source": "source.__str__",
         "name": "name",
         "check": "check.name",
+        "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
         "arch": "arch.name",
@@ -522,6 +590,12 @@ class Job(Base):
             id=self.id
         )
 
+    def __str__(self):
+        return "%s %s" % (self.source, self.name)
+
+    def __repr__(self):
+        return "<Job: %s %s (%s)>" % (self.source, self.name, self.id)
+
 
 class JobDependencies(Base):
     __tablename__ = 'job_dependencies'
@@ -549,6 +623,15 @@ class Result(Base):
     __tablename__ = 'results'
     _debile_objs = {
         "id": "id",
+        "source": "source.__str__",
+        "job": "job.name",
+        "group": "group.name",
+        "suite": "suite.name",
+        "component": "component.name",
+        "arch": "arch.name",
+        "group_id": "group_suite.group_id",
+        "source_id": "job.source_id",
+        "binary_id": "job.binary_id",
         "job_id": "job_id",
         "firehose_id": "firehose_id",
         "failed": "failed",
@@ -560,6 +643,34 @@ class Result(Base):
 
     job_id = Column(Integer, ForeignKey('jobs.id'))
     job = relationship("Job", foreign_keys=[job_id])
+
+    @hybrid_property
+    def source(self):
+        return self.job.source
+
+    @hybrid_property
+    def binary(self):
+        return self.job.binary
+
+    @hybrid_property
+    def group_suite(self):
+        return self.job.group_suite
+
+    @hybrid_property
+    def group(self):
+        return self.job.group
+
+    @hybrid_property
+    def suite(self):
+        return self.job.suite
+
+    @hybrid_property
+    def component(self):
+        return self.job.component
+
+    @hybrid_property
+    def arch(self):
+        return self.job.arch
 
     firehose_id = Column(String, ForeignKey('analysis.id'))
     firehose = relationship(Analysis)
