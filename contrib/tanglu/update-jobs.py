@@ -85,9 +85,7 @@ class ArchiveDebileBridge:
 
         source = create_source(dsc, group_suite, component, user)
         create_jobs(source, valid_affinities, externally_blocked=True)
-
-        session.add(source)  # OK. Populated entry. Let's insert.
-        session.commit()  # Neato.
+        session.add(source)
 
         print("Created source for %s %s" % (source.name, source.version))
         emit('accept', 'source', source.debilize())

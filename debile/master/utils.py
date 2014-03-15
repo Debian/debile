@@ -38,8 +38,9 @@ def session():
 
     try:
         yield session_
-    except:
-        # Don't let it through
-        raise
-    else:
         session_.commit()
+    except:
+        session_.rollback()
+        raise
+    finally:
+        session_.close()

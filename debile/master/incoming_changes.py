@@ -33,14 +33,12 @@ from debile.master.changes import parse_changes_file, ChangesFileException
 
 
 def process_directory(path):
-    with session() as s:
-        abspath = os.path.abspath(path)
-        for fp in os.listdir(abspath):
-            path = os.path.join(abspath, fp)
-            for glob, handler in DELEGATE.items():
-                if fnmatch.fnmatch(path, glob):
-                    handler(s, path)
-                    break
+    abspath = os.path.abspath(path)
+    for fp in os.listdir(abspath):
+        path = os.path.join(abspath, fp)
+        if fnmatch.fnmatch(path, "*.changes"):
+            with session() as s:
+                process_changes(s, path)
 
 
 def process_changes(session, path):
@@ -142,9 +140,7 @@ def accept_source_changes(session, changes, user):
 
     source = create_source(dsc, group_suite, component, user)
     create_jobs(source, valid_affinities)
-
-    session.add(source)  # OK. Populated entry. Let's insert.
-    session.commit()  # Neato.
+    session.add(source)
 
     # OK. We have a changes in order. Let's roll.
     repo = Repo(group_suite.group.repo_path)
@@ -185,6 +181,7 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(session, changes, "wrong-builder")
 
     binary = Binary.from_job(job)
+    session.add(binary)
 
     ## OK. Let's make sure we can add this.
     try:
@@ -194,16 +191,10 @@ def accept_binary_changes(session, changes, builder):
         return reject_changes(session, changes, 'stupid-source-thing')
 
     job.changes_uploaded(session, binary)
-    session.add(binary)
-    session.commit()
+    session.add(job)
 
     emit('accept', 'binary', binary.debilize())
 
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():
         os.unlink(fp)
-
-
-DELEGATE = {
-    "*.changes": process_changes,
-}

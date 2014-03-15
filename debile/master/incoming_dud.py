@@ -32,14 +32,12 @@ from debile.master.orm import (Builder, Job, Result)
 
 
 def process_directory(path):
-    with session() as s:
-        abspath = os.path.abspath(path)
-        for fp in os.listdir(abspath):
-            path = os.path.join(abspath, fp)
-            for glob, handler in DELEGATE.items():
-                if fnmatch.fnmatch(path, glob):
-                    handler(s, path)
-                    break
+    abspath = os.path.abspath(path)
+    for fp in os.listdir(abspath):
+        path = os.path.join(abspath, fp)
+        if fnmatch.fnmatch(path, "*.dud"):
+            with session() as s:
+                process_dud(s, path)
 
 
 def process_dud(session, path):
@@ -109,11 +107,10 @@ def accept_dud(session, dud, builder):
     result = Result.from_job(job)
     result.failed = failed
     result.firehose = fire
-    session.merge(result)  # Needed because a *lot* of the Firehose is
-    # going to need unique ${WORLD}.
+    session.add(result)
 
     job.dud_uploaded(session, result)
-    session.commit()  # Neato.
+    session.add(job)
 
     try:
         repo = FileRepo()
@@ -123,8 +120,3 @@ def accept_dud(session, dud, builder):
 
     emit('receive', 'result', result.debilize())
     #  repo.add_dud removes the files
-
-
-DELEGATE = {
-    "*.dud": process_dud,
-}
