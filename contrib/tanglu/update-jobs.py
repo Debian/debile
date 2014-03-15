@@ -113,7 +113,7 @@ class ArchiveDebileBridge:
                 session.add(job)
 
         print("Unblocked jobs for %s %s (arches: %s)" %
-              (source.name, source.version, str(arches)))
+              (source, version, str(arches)))
 
     def _filter_unsupported_archs(self, pkg_archs):
         sup_archs = list()
