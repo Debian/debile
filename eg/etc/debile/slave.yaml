@@ -4,6 +4,7 @@ xmlrpc:
     port: 22017
     keyfile: /etc/debile/leliel.key
     certfile: /etc/debile/leliel.crt
+    # ca_certs: /etc/ssl/certs/ca-certificates.crt
 
 gpg: 0000000000000000DEADBEEF00000000000000000
 

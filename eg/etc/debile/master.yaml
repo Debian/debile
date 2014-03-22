@@ -12,12 +12,12 @@ xmlrpc:
 
 keyrings:
     pgp: /srv/debile/keyring.pgp
-    ssl: /srv/debile/keyring.ssl
+    ssl: /srv/debile/keyring.pem
 
 repo:
     # custom_resolver: devnull.foo.resolver
-    repo_path: "/srv/debile/pool/{name}"
-    repo_url: "http://localhost/debile/pool/{name}"
+    repo_path: "/srv/debile/repo/{name}"
+    repo_url: "http://localhost/debile/repo/{name}"
     files_path: "/srv/debile/files/{name}"
     files_url: "http://localhost/debile/files/{name}"
 

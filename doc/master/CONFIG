@@ -2,37 +2,54 @@ WIP, needs more
 
  - Welcome :)
 
- - do install
-     deb http://debile.anized.org/archive/ rc-buggy main
+
+ - Installation:
+     echo "deb http://debile.anized.org/archive/ rc-buggy main" | sudo tee /etc/apt/sources.list.d/debile.list
      curl http://debile.anized.org/key.asc | sudo apt-key add -
-     apt-get update
-     apt-get install debile-master
+     sudo apt-get update
+     sudo apt-get install debile-master
 
-  - do configure
-     mkdir -p /srv/debile/
-     chown -R debile:debile /srv/debile/
-     su to debile
 
-:: process.sh ::
-#!/bin/bash
-cd /srv/debile/incoming/UploadQueue/
-debile-incoming .
+ - Configuration:
+     sudo mkdir -p /srv/debile/incoming/UploadQueue /srv/debile/files/default /srv/debile/repo/default
+     sudo chown -R Debian-debile:Debian-debile /srv/debile/
+     sudo chmod 0773 /srv/debile/incoming/UploadQueue
 
-     chmod +x process.sh
-     crontab -e
+     # Edit /etc/debile/master.yaml
+     #  - repo_url: "http://<myhostname>/debile/repo/{name}"
+     #  - files_url: "http://<myhostname>/debile/files/{name}"
 
-*/02 * * * * /srv/debile/process.sh
+     # Create:
 
-     mkdir files incoming pool
-     cd incoming
-     mkdir UploadQueue
-     chmod ugo+rwx UploadQueue
-     cd pool
-     mkdir -p default/conf
-     cd default
-     mkdir logs
+:: /etc/cron.d/debile ::
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin
+*/5 * * * * Debian-debile debile-incoming-changes /srv/debile/incoming/UploadQueue
+*/5 * * * * Debian-debile debile-incoming-dud /srv/debile/incoming/UploadQueue
+
+     sudo -u Debian-debile /bin/bash
+     umask 0077
+
+     # To create a self-signed certificate:
+     # (you'll also need to copy master.crt to all slaves/users and set ca_certs: in slave.yaml/user.yaml)
+     openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -x509 -keyout /srv/debile/master.key -out /srv/debile/master.crt
+
+     # To create a certificate request for a CA-signed certificate:
+     # (you'll also need to concatenate the certificate and CA-chain into /srv/debile/master.crt)
+     openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -keyout /srv/debile/master.key -out /srv/debile/master.csr
+
+     # Create a /etc/debile/debile.yaml to seed the debile-master database.
+     debile-master-init
+     debile-import /etc/debile/debile.yaml
+
+     # For each user/slave added to debile.yaml, add the self-signed ssl certificate and the pgp public key to the approriate keyring:
+     cat >>/srv/debile/keyring.pem </path/to/ssl-cert.pem
+     gpg --no-default-keyring --keyring /srv/debile/keyring.pgp --import /path/to/public-key.pgp
+
+     cd /srv/debile/repo/default
+     mkdir conf logs
      cd conf
-     Create:
+     # Create:
 
 :: distributions ::
 Origin: Paul Tagliamonte
@@ -57,19 +74,8 @@ Cleanup: on_deny on_error
 :: uploaders ::
 allow * by unsigned
 
-     exit shell
 
-     edit /etc/debile/master.yaml
-       - base: /srv/debile/pool
-       - url: http://irill6.inria.fr/pool/
-       - files: /srv/debile/files
-
-     debile-master-init
-     get a debile.yaml
-     debile-import debile.yaml
-     restart debile-master
-
-  - do anonftp
+ - Anonymous FTP:
      apt-get install vsftpd
      edit /etc/vsftpd.conf
 

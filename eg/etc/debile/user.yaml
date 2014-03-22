@@ -4,3 +4,4 @@ xmlrpc:
     port: 22017
     keyfile: /home/paultag/.debile/paultag.key
     certfile: /home/paultag/.debile/paultag.crt
+    # ca_certs: /etc/ssl/certs/ca-certificates.crt
