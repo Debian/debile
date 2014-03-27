@@ -22,18 +22,14 @@ import os
 import apt_pkg
 import yaml
 from optparse import OptionParser
-import fnmatch
 
+from debile.utils.deb822 import Dsc
 from debile.master.utils import session
 from debile.master.messaging import emit
-from debile.master.filerepo import FilesAlreadyRegistered
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Maintainer, Binary,
                                Job, JobDependencies, Result,
                                create_source, create_jobs)
-
-from debian.deb822 import Dsc
-import debile.master.core
 
 from rapidumolib.pkginfo import *
 from rapidumolib.utils import *
@@ -63,7 +59,7 @@ class ArchiveDebileBridge:
         self._suite = suite
 
     @staticmethod
-    def create_debile_source(session, group, suite, component_name, dsc_fname):
+    def create_debile_source(session, group, suite, component_name, installed_arches, dsc_fname):
         user = session.query(Person).filter_by(email="dak@ftp-master.tanglu.org").one()
 
         group_suite = session.query(GroupSuite).filter(
@@ -85,21 +81,22 @@ class ArchiveDebileBridge:
             valid_affinities = "any"
 
         source = create_source(dsc, group_suite, component, user)
-        create_jobs(source, valid_affinities, externally_blocked=True)
+        create_jobs(source, valid_affinities,
+                    installed_arches=installed_arches,
+                    externally_blocked=True)
         session.add(source)
 
         print("Created source for %s %s" % (source.name, source.version))
         emit('accept', 'source', source.debilize())
 
+        return source
+
     @staticmethod
-    def unblock_debile_jobs(session, source, version, group, suite, arches):
+    def unblock_debile_jobs(session, source, arches):
         arch_ids = [x.id for x in session.query(Arch).filter(Arch.name.in_(arches)).all()]
         jobs = session.query(Job).filter(
-            Source.name==source,
-            Source.version==version,
-            Group.name==group,
-            Suite.name==suite,
-            Job.externally_blocked==True,
+            Job.source == source,
+            Job.externally_blocked == True,
             Job.arch_id.in_(arch_ids),
         ).all()
 
@@ -108,24 +105,11 @@ class ArchiveDebileBridge:
 
         for job in jobs:
             if job.arch.name in arches:
-                job.externally_blocked=False
+                job.externally_blocked = False
                 session.add(job)
 
         print("Unblocked jobs for %s %s (arches: %s)" %
-              (source, version, str(arches)))
-
-    def _filter_unsupported_archs(self, pkg_archs):
-        sup_archs = list()
-        for arch in self._supported_archs:
-            if ('any' in pkg_archs) or ('linux-any' in pkg_archs) or (arch in pkg_archs) or (("any-"+arch) in pkg_archs):
-                # source arch:any doesn't mean we can build on arch:all
-                if arch != "all":
-                    sup_archs.append(arch)
-        if ("all" in pkg_archs):
-            sup_archs.append("all")
-
-        # return and remove duplicates
-        return list(set(sup_archs))
+              (source.name, source.version, str(arches)))
 
     def _get_package_depwait_report(self, pkg, arch):
         for nbpkg in self.bcheck_data[arch]:
@@ -133,7 +117,6 @@ class ArchiveDebileBridge:
                 if nbpkg['status'] == 'broken':
                     return yaml.dump(nbpkg['reasons'])
         return None
-
 
     def sync_packages(self, component):
         pkg_list = self._pkginfo.get_packages_for(self._suite, component)
@@ -160,42 +143,25 @@ class ArchiveDebileBridge:
                         Group.name=="default",
                         Suite.name==pkg.suite,
                     ).first()
+
                     if not source:
                         dsc = os.path.join(REPO_DIR, pkg.directory, pkg.dsc)
-                        ArchiveDebileBridge.create_debile_source(
-                            s, "default", pkg.suite, component, dsc
-                        )
+                        source = ArchiveDebileBridge.create_debile_source(s, "default", pkg.suite, component, pkg.installed_archs, dsc)
+
+                    unblock_arches = [arch for arch in self._supported_archs
+                                      if not self._get_package_depwait_report(pkg, arch)]
+
+                    if unblock_arches:
+                        ArchiveDebileBridge.unblock_debile_jobs(s, source, unblock_arches)
+
             except Exception as ex:
                 print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
                 continue
 
-            archs = self._filter_unsupported_archs(pkg.archs)
-            pkg_build_arches = list()
-
-            if len(archs) <= 0:
-                print("Skipping job %s %s on %s, no architectures found!" % (pkg.pkgname, pkg.version, pkg.suite))
-                continue
-
-            for arch in archs:
-                if not arch in pkg.installed_archs:
-                    if self.debugMode:
-                        print("Package %s not built for %s!" % (pkg.pkgname, arch))
-                    if not self._get_package_depwait_report(pkg, arch):
-                        pkg_build_arches.append(arch)
-
-            if pkg_build_arches:
-                try:
-                    with session() as s:
-                        ArchiveDebileBridge.unblock_debile_jobs(
-                            s, pkg.pkgname, pkg.version,
-                            "default", pkg.suite, pkg_build_arches
-                        )
-                except Exception as ex:
-                    print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
-
     def sync_packages_all(self):
         for comp in self._archive_components:
             self.sync_packages(comp)
+
 
 def main():
     # init Apt, we need it later
