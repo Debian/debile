@@ -416,7 +416,6 @@ class Binary(Base):
         "arch": "arch.name",
         "group_id": "group_suite.group_id",
         "source_id": "source_id",
-        "builder": "builder.name",
         "uploaded_at": "uploaded_at",
     }
     debilize = _debilize
@@ -431,13 +430,17 @@ class Binary(Base):
     def version(self):
         return self.source.version
 
+    arch_id = Column(Integer, ForeignKey('arches.id'))
+    arch = relationship("Arch", foreign_keys=[arch_id])
+
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source", backref="binaries",
                           foreign_keys=[source_id])
 
     build_job_id = Column(Integer, ForeignKey('jobs.id',
                                               name='fk_build_job_id',
-                                              use_alter=True))
+                                              use_alter=True),
+                          nullable=True, default=None)
     build_job = relationship("Job", backref="built_binary",
                              foreign_keys=[build_job_id])
 
@@ -457,19 +460,11 @@ class Binary(Base):
     def component(self):
         return self.source.component
 
-    @hybrid_property
-    def arch(self):
-        return self.build_job.arch
-
-    @hybrid_property
-    def builder(self):
-        return self.build_job.builder
-
     uploaded_at = Column(DateTime)
 
     @staticmethod
     def from_job(job):
-        return Binary(build_job=job, source=job.source,
+        return Binary(build_job=job, source=job.source, arch=job.arch,
                       uploaded_at=datetime.utcnow())
 
     def __str__(self):
@@ -722,7 +717,8 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, valid_affinities, externally_blocked=False):
+def create_jobs(source, valid_affinities,
+                installed_arches=[], externally_blocked=False):
     """
     Create jobs for Source `source`, using the an architecture matching
     `valid_affinities` for any arch "all" jobs.
@@ -757,32 +753,44 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
         source.jobs.append(j)
 
     builds = {}
+    binaries = {}
 
     for check in source.group_suite.get_build_checks():
         for arch in source.arches:
             jobaffinity = affinity if arch == aall else arch
 
-            j = Job(name="%s [%s]" % (check.name, arch.name),
-                    check=check, arch=arch, affinity=jobaffinity,
-                    source=source, binary=None,
-                    externally_blocked=externally_blocked,
-                    builder=None, assigned_at=None,
-                    finished_at=None, failed=None)
-            builds[arch] = j
-            source.jobs.append(j)
+            if arch.name in installed_arches:
+                b = Binary(source=source, arch=arch,
+                           uploaded_at=source.uploaded_at)
+                binaries[arch] = b
+                source.binaries.append(b)
+            else:
+                j = Job(name="%s [%s]" % (check.name, arch.name),
+                        check=check, arch=arch, affinity=jobaffinity,
+                        source=source, binary=None,
+                        externally_blocked=externally_blocked,
+                        builder=None, assigned_at=None,
+                        finished_at=None, failed=None)
+                builds[arch] = j
+                source.jobs.append(j)
 
     for check in source.group_suite.get_binary_checks():
         for arch in source.arches:
             jobaffinity = affinity if arch == aall else arch
 
             deps = []
-            deps.append(builds[arch])
+            if arch in builds:
+                deps.append(builds[arch])
             if aall in builds and aall != arch:
                 deps.append(builds[aall])
 
+            binary = None
+            if arch in binaries:
+                binary = binaries[arch]
+
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch, affinity=jobaffinity,
-                    source=source, binary=None,
+                    source=source, binary=binary,
                     builder=None, assigned_at=None,
                     finished_at=None, failed=None)
             source.jobs.append(j)
