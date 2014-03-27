@@ -24,7 +24,6 @@ import yaml
 from optparse import OptionParser
 import fnmatch
 
-from debile.utils.aget import find_dsc
 from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.filerepo import FilesAlreadyRegistered
@@ -42,6 +41,8 @@ from rapidumolib.config import *
 from package_buildcheck import *
 
 NEEDSBUILD_EXPORT_DIR = "/srv/dak/export/needsbuild"
+REPO_DIR = "/srv/archive.tanglu.org/tanglu"
+
 
 class ArchiveDebileBridge:
     def __init__(self, suite):
@@ -160,8 +161,7 @@ class ArchiveDebileBridge:
                         Suite.name==pkg.suite,
                     ).first()
                     if not source:
-                        dsc = find_dsc("/srv/archive.tanglu.org/tanglu",
-                                    pkg.suite, component, pkg.pkgname, pkg.version)
+                        dsc = os.path.join(REPO_DIR, pkg.directory, pkg.dsc)
                         ArchiveDebileBridge.create_debile_source(
                             s, "default", pkg.suite, component, dsc
                         )
