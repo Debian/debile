@@ -86,6 +86,9 @@ class DebileMasterInterface(object):
             Job.check_id.in_(check_ids),
         ).outerjoin(Job.depedencies).filter(
             JobDependencies.id == None
+        ).outerjoin(Job.check).outerjoin(Job.source).order_by(
+            Check.build.desc(),
+            Source.uploaded_at.asc(),
         ).first()
 
         if job is None:
