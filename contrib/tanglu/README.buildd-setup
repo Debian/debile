@@ -62,18 +62,18 @@ before using them!).
 Clone the Tanglu debile software:
  git clone git://gitorious.org/tanglu/debile.git debile-git
 (ideally in /srv/buildd)
-Execute "make install_slave" in the source directory. This will install the required software to build Tanglu packages.
-Please keep the Git clone up-to-date and install new software versions from time to time.
 
 Then create a new Python virtualenv in the cloned debile directory:
  virtualenv --system-site-packages ENV
 Activate the virtualenv:
  source ENV/bin/activate
 Then install other dependencies:
- pip install -r requirements.txt
+ pip install -r requirements-slave.txt
 Then run:
  make develop
  (FIXME: Better use "productive" and slave-only setting here?)
+
+Please keep the Git clone up-to-date and install new software versions from time to time.
 
 === 7. Configure buildd software ===
 Create /etc/debile/slave.yaml using the template below.
@@ -96,6 +96,7 @@ dput:
 
 checks:
     - lintian
+    - build
 
 arches:
     - amd64
