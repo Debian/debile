@@ -20,6 +20,8 @@
 
 from debile.utils import run_command
 
+import re
+
 
 def arch_matches(arch, alias):
     """
@@ -27,20 +29,27 @@ def arch_matches(arch, alias):
     useful for the complex any-* rules.
     """
 
-    if arch == alias or alias == "any":
+    if arch == alias:
+        return True
+
+    if arch == 'all' or arch == 'source':
+        # These psedu-arches does not match any wildcards or aliases
+        return False
+
+    if alias == 'any':
+        # The 'any' wildcard matches all *real* architectures
         return True
 
     if alias == 'linux-any':
-        # This is a generalization for Debian. Please update if this is
-        # wrong for other places. A hit to shell out is *COSTLY*; like; orders
-        # of magnatude more costly.
-        return not '-' in arch
+        # GNU/Linux arches are named <cpuabi>
+        # Other Linux arches are named <libc>-linux-<cpuabi>
+        return '-linux-' in arch or not '-' in arch
 
-    if alias == 'kfreebsd-any':
-        return 'kfreebsd-' in arch
-
-    if alias == 'hurd-any':
-        return 'hurd-' in arch
+    if alias.endswith('-any'):
+        # Non-Linux GNU/<os> arches are named <os>-<cpuabi>
+        # Other non-Linux arches are named <libc>-<os>-<cpuabi>
+        osname, abiarch = alias.rsplit('-', 1)
+        return re.match('(^|-)' + osname + '-', arch)
 
     if not "-" in arch and not "-" in alias:
         return False
