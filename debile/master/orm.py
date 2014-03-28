@@ -752,7 +752,6 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
         j = Job(name="%s [%s]" % (check.name, "source"),
                 check=check, arch=aall, affinity=affinity,
                 source=source, binary=None,
-                externally_blocked=externally_blocked,
                 builder=None, assigned_at=None,
                 finished_at=None, failed=None)
         source.jobs.append(j)
@@ -784,7 +783,6 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch, affinity=jobaffinity,
                     source=source, binary=None,
-                    externally_blocked=externally_blocked,
                     builder=None, assigned_at=None,
                     finished_at=None, failed=None)
             source.jobs.append(j)
