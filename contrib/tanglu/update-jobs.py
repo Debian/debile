@@ -31,10 +31,9 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Job, JobDependencies, Result,
                                create_source, create_jobs)
 
-from rapidumolib.pkginfo import *
-from rapidumolib.utils import *
-from rapidumolib.config import *
-from package_buildcheck import *
+from rapidumolib.pkginfo import PackageBuildInfoRetriever
+from rapidumolib.config import RapidumoConfig
+from package_buildcheck import BuildCheck
 
 NEEDSBUILD_EXPORT_DIR = "/srv/dak/export/needsbuild"
 REPO_DIR = "/srv/archive.tanglu.org/tanglu"
@@ -48,11 +47,13 @@ class ArchiveDebileBridge:
 
         self._distro = conf.distro_name
         self._incoming_path = conf.archive_config['incoming']
-        archive_path = conf.archive_config['path']
         devel_suite = conf.archive_config['devel_suite']
         staging_suite = conf.archive_config['staging_suite']
-        self._archive_components = conf.get_supported_components(devel_suite).split(" ")
-        self._supported_archs = conf.get_supported_archs(devel_suite).split (" ")
+        a_suite = suite
+        if suite == staging_suite:
+            a_suite = devel_suite
+        self._archive_components = conf.get_supported_components(a_suite).split(" ")
+        self._supported_archs = conf.get_supported_archs(a_suite).split(" ")
         self._supported_archs.append("all")
 
         self._pkginfo = PackageBuildInfoRetriever()
@@ -63,11 +64,11 @@ class ArchiveDebileBridge:
         user = session.query(Person).filter_by(email="dak@ftp-master.tanglu.org").one()
 
         group_suite = session.query(GroupSuite).filter(
-            Group.name==group,
-            Suite.name==suite,
+            Group.name == group,
+            Suite.name == suite,
         ).one()
         component = session.query(Component).filter(
-            Component.name==component_name
+            Component.name == component_name
         ).one()
 
         dsc = Dsc(open(dsc_fname))
@@ -138,10 +139,10 @@ class ArchiveDebileBridge:
             try:
                 with session() as s:
                     source = s.query(Source).filter(
-                        Source.name==pkg.pkgname,
-                        Source.version==pkg.version,
-                        Group.name=="default",
-                        Suite.name==pkg.suite,
+                        Source.name == pkg.pkgname,
+                        Source.version == pkg.version,
+                        Group.name == "default",
+                        Suite.name == pkg.suite,
                     ).first()
 
                     if not source:
@@ -169,8 +170,8 @@ def main():
 
     parser = OptionParser()
     parser.add_option("-u", "--update-jobs",
-                  action="store_true", dest="update", default=False,
-                  help="syncronize Debile with archive contents")
+                      action="store_true", dest="update", default=False,
+                      help="syncronize Debile with archive contents")
 
     (options, args) = parser.parse_args()
 
