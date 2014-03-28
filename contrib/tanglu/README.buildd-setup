@@ -126,10 +126,6 @@ as root.
 Create /etc/dput.d/profiles/tanglu.json with the following data:
 ### BEGIN FILE ###
 {
-    "-hooks": [
-        "gpg",
-        "suite-mismatch"
-    ],
     "fqdn": "ftp-master.tanglu.org",
     "incoming": "~/incoming/",
     "login": "anonymous",
