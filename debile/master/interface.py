@@ -20,7 +20,8 @@
 
 from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, Source, Binary, Job, JobDependencies)
+                               Group, GroupSuite, Source, Binary, Job,
+                               JobDependencies)
 from debile.master.messaging import emit
 from debile.master.keyrings import import_pgp, import_ssl
 
@@ -52,24 +53,37 @@ class DebileMasterInterface(object):
     # The following trio of methods handle the job control.
 
     @builder_method
-    def get_next_job(self, suites, components, arches, capabilities):
-        arches = [
+    def get_next_job(self, suites, components, arches, checks):
+        suite_ids = [
+            x.id for x in NAMESPACE.session.query(Suite).filter(
+                Suite.name.in_(suites)
+            ).all()
+        ]
+        component_ids = [
+            x.id for x in NAMESPACE.session.query(Component).filter(
+                Component.name.in_(components)
+            ).all()
+        ]
+        arch_ids = [
             x.id for x in NAMESPACE.session.query(Arch).filter(
                 Arch.name.in_(arches)
             ).all()
         ]
-        # This horseshit nonsense is due to SQLAlchemy not doing
-        # the sane thing with Job.affinity.name.in_. Nonsense. Horseshit.
+        check_ids = [
+            x.id for x in NAMESPACE.session.query(Check).filter(
+                Check.name.in_(checks)
+            ).all()
+        ]
 
         job = NAMESPACE.session.query(Job).filter(
             Job.externally_blocked == False,
             Job.assigned_at == None,
             Job.finished_at == None,
-            Suite.name.in_(suites),
-            Component.name.in_(components),
-            Job.arch_id.in_(arches),
-            Job.affinity_id.in_(arches),
-            Check.name.in_(capabilities),
+            GroupSuite.suite_id.in_(suite_ids),
+            Source.component_id.in_(component_ids),
+            Job.arch_id.in_(arch_ids),
+            Job.affinity_id.in_(arch_ids),
+            Job.check_id.in_(check_ids),
         ).outerjoin(Job.depedencies).filter(
             JobDependencies.id == None
         ).first()
