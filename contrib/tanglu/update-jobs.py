@@ -22,6 +22,7 @@ import os
 import apt_pkg
 import yaml
 from optparse import OptionParser
+from apt_pkg import version_compare
 
 from debile.utils.deb822 import Dsc
 from debile.master.utils import session
@@ -86,6 +87,15 @@ class ArchiveDebileBridge:
                     installed_arches=installed_arches,
                     externally_blocked=True)
         session.add(source)
+
+        # Drop any old jobs that are still pending.
+        jobs = session.query(Job).filter(
+            Source.group_suite == source.group_suite,
+            Source.name == source.name,
+        )
+        for job in jobs:
+            if not job.assigned_at and version_compare(source.version, job.source.version) > 0:
+                session.delete(job)
 
         print("Created source for %s %s" % (source.name, source.version))
         emit('accept', 'source', source.debilize())

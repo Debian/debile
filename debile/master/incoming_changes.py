@@ -21,6 +21,7 @@
 import os
 import fnmatch
 
+from debian.debian_support import version_compare
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
@@ -141,6 +142,15 @@ def accept_source_changes(session, changes, user):
     source = create_source(dsc, group_suite, component, user)
     create_jobs(source, valid_affinities)
     session.add(source)
+
+    # Drop any old jobs that are still pending.
+    jobs = session.query(Job).filter(
+        Source.group_suite == source.group_suite,
+        Source.name == source.name,
+    )
+    for job in jobs:
+        if not job.assigned_at and version_compare(source.version, job.source.version) > 0:
+            session.delete(job)
 
     # OK. We have a changes in order. Let's roll.
     repo = Repo(group_suite.group.repo_path)
