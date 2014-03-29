@@ -205,7 +205,7 @@ def iterate():
 
 def main():
     logging.basicConfig(
-        format='%(asctime)s - %(levelname)8s - [debile-master] %(message)s',
+        format='%(asctime)s - %(levelname)8s - [debile-slave] %(message)s',
         level=logging.DEBUG
     )
 
@@ -219,7 +219,7 @@ def main():
     #logger.info("Booting debile-slave daemon")
 
     logger = logging
-    logger.info("Booting debile-masterd daemon")
+    logger.info("Booting debile-slave daemon")
 
     while True:
         try:
