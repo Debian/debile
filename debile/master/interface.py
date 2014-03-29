@@ -54,6 +54,10 @@ class DebileMasterInterface(object):
 
     @builder_method
     def get_next_job(self, suites, components, arches, checks):
+        NAMESPACE.machine.last_ping = datetime.utcnow();
+        NAMESPACE.session.add(NAMESPACE.machine)
+        NAMESPACE.session.commit()
+
         suite_ids = [
             x.id for x in NAMESPACE.session.query(Suite).filter(
                 Suite.name.in_(suites)
