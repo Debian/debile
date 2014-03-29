@@ -26,7 +26,7 @@ Create sbuild base environments (for the bartholomea curent development branch) 
    sbuild-createchroot --arch=i386 --make-sbuild-tarball=/var/lib/sbuild/staging-i386.tar.gz bartholomea `mktemp -d` http://archive.tanglu.org/tanglu
 
  :: amd64 builder:
-   sbuild-createchroot --arch=amd64 --make-sbuild-tarball=/var/lib/sbuild/staging-amd64.tar.gz aequorea `mktemp -d` http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=amd64 --make-sbuild-tarball=/var/lib/sbuild/staging-amd64.tar.gz bartholomea `mktemp -d` http://archive.tanglu.org/tanglu
 
 The builders must have one amd64 and one i386 environment to be able to build packages for both architectures.
 
@@ -122,6 +122,10 @@ You will also add the tanglu-buildd certificate to the database of trusted certi
 To do that, copy tanglu-buildd.crt to /usr/local/share/ca-certificates/, then run
  update-ca-certificates
 as root.
+
+It is also very important that you set
+ $resolve_alternatives = 1;
+in /etc/sbuild/sbuild.conf, so we can resolve alternative build-dependencies in Tanglu.
 
 === 8. Configure dput-ng ===
 Create /etc/dput.d/profiles/tanglu.json with the following data:
