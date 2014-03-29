@@ -48,6 +48,30 @@ def _create_slave(name, pgp, ssl):
     print(proxy.create_builder(name, pgp, ssl))
 
 
+def _update_slave_keys(name, pgp, ssl):
+    """
+        Replace the pgp public key and ssl certificate of a slave:
+            debile-remote update-slave-keys <name> <pgp-key> <ssl-cert>
+    """
+
+    try:
+        pgp = open(pgp, 'r').read()
+    except IOError as e:
+        print("Error whilst opening OpenPGP public key.")
+        print("   %s when trying to open %s" % (str(e), pgp))
+        raise
+
+    try:
+        ssl = open(ssl, 'r').read()
+    except IOError as e:
+        print("Error whilst opening SSL client certificate.")
+        print("   %s when trying to open %s" % (str(e), ssl))
+        raise
+
+    proxy = get_proxy(config)
+    print(proxy.update_builder_keys(name, pgp, ssl))
+
+
 def _create_user(name, email, pgp, ssl):
     """
     Create a user:
@@ -70,6 +94,30 @@ def _create_user(name, email, pgp, ssl):
 
     proxy = get_proxy(config)
     print(proxy.create_user(name, email, pgp, ssl))
+
+
+def _update_user_keys(email, pgp, ssl):
+    """
+        Replace the pgp public key and ssl certificate of a user:
+            debile-remote update-user-keys <email> <pgp-key> <ssl-cert>
+    """
+
+    try:
+        pgp = open(pgp, 'r').read()
+    except IOError as e:
+        print("Error whilst opening OpenPGP public key.")
+        print("   %s when trying to open %s" % (str(e), pgp))
+        raise
+
+    try:
+        ssl = open(ssl, 'r').read()
+    except IOError as e:
+        print("Error whilst opening SSL client certificate.")
+        print("   %s when trying to open %s" % (str(e), ssl))
+        raise
+
+    proxy = get_proxy(config)
+    print(proxy.update_user_keys(email, pgp, ssl))
 
 
 def _rerun_job(job_id):
@@ -110,7 +158,9 @@ def _help():
 
 COMMANDS = {
     "create-slave": _create_slave,
+    "update-slave-keys": _update_slave_keys,
     "create-user": _create_user,
+    "update-user-keys": _update_user_keys,
     "rerun-job": _rerun_job,
     "rerun-check": _rerun_check,
     "retry-failed": _retry_failed,

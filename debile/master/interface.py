@@ -23,7 +23,7 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Binary, Job,
                                JobDependencies)
 from debile.master.messaging import emit
-from debile.master.keyrings import import_pgp, import_ssl
+from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 
 from debian.debian_support import Version
 from datetime import datetime
@@ -166,8 +166,22 @@ class DebileMasterInterface(object):
         return b.debilize()
 
     @user_method
+    def update_builder_keys(self, name, pgp, ssl):
+        builder = NAMESPACE.session.query(Builder).filter_by(name=name).first()
+
+        if not builder:
+            raise ValueError("No builder with name %s." % name)
+
+        builder.pgp = import_pgp(pgp)
+        builder.ssl = import_ssl(ssl, name)
+
+        NAMESPACE.session.add(builder)
+        NAMESPACE.session.commit()
+        clean_ssl_keyring()
+
+    @user_method
     def create_user(self, name, email, pgp, ssl):
-        if NAMESPACE.session.query(Builder).filter_by(email=email).first():
+        if NAMESPACE.session.query(Person).filter_by(email=email).first():
             raise ValueError("User already exists.")
 
         pgp = import_pgp(pgp)
@@ -179,6 +193,20 @@ class DebileMasterInterface(object):
 
         emit('create', 'user', p.debilize())
         return p.debilize()
+
+    @user_method
+    def update_user_keys(self, name, pgp, ssl):
+        user = NAMESPACE.session.query(Person).filter_by(email=email).first()
+
+        if not user:
+            raise ValueError("No user with email %s." % email)
+
+        user.pgp = import_pgp(pgp)
+        user.ssl = import_ssl(ssl, name)
+
+        NAMESPACE.session.add(user)
+        NAMESPACE.session.commit()
+        clean_ssl_keyring()
 
     # Re-run jobs
 

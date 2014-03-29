@@ -21,7 +21,12 @@
 
 from debile.utils import run_command
 from debile.master.core import config
+from debile.master.orm import Person, Builder
+
+from base64 import b64decode
+from hashlib import sha1
 import fcntl
+import os
 
 
 def import_pgp(keydata):
@@ -97,3 +102,29 @@ def import_ssl(certdata, cn=None, email=None):
     keyring.close()
 
     return fingerprint
+
+def clean_ssl_keyring(session):
+    old = open(config['keyrings']['ssl'], 'r+')
+    fcntl.lockf(old, fcntl.LOCK_EX)
+
+    new = open(config['keyrings']['ssl'] + '.tmp', 'w')
+    fcntl.lockf(new, fcntl.LOCK_EX)
+
+    for line in old:
+        if "-BEGIN CERTIFICATE-" in line:
+            der = b""
+            pem = line
+        elif "-END CERTIFICATE-" in line:
+            pem += line
+            fingerprint = sha1(der).hexdigest().upper()
+            builder = session.query(Builder).filter_by(ssl=fingerprint).first()
+            user = session.query(Person).filter_by(ssl=fingerprint).first()
+            if builder or user:
+                new.write(pem)
+        else:
+            der += b64decode(line.strip())
+            pem += line
+
+    new.close()
+    os.rename(config['keyrings']['ssl'] + '.tmp', config['keyrings']['ssl'])
+    old.close()
