@@ -3,3 +3,4 @@ requests
 chardet
 python-debian
 schroot
+firehose
