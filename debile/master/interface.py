@@ -25,6 +25,7 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
 from debile.master.messaging import emit
 from debile.master.keyrings import import_pgp, import_ssl
 
+from debian.debian_support import Version
 from datetime import datetime
 import shutil
 
@@ -215,6 +216,14 @@ class DebileMasterInterface(object):
         )
 
         for job in jobs:
+            versions = NAMESPACE.session.query(Source.version).filter(
+                Source.group_suite == job.source.group_suite,
+                Source.name == job.source.name
+            )
+            max_version = max([x[0] for x in versions], key=Version)
+            if job.version != max_version:
+                continue
+
             shutil.rmtree(job.files_path)
 
             job.failed = None
@@ -240,6 +249,14 @@ class DebileMasterInterface(object):
         )
 
         for job in jobs:
+            versions = NAMESPACE.session.query(Source.version).filter(
+                Source.group_suite == job.source.group_suite,
+                Source.name == job.source.name
+            )
+            max_version = max([x[0] for x in versions], key=Version)
+            if job.version != max_version:
+                continue
+
             shutil.rmtree(job.files_path)
 
             job.failed = None
