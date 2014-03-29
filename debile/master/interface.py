@@ -180,6 +180,20 @@ class DebileMasterInterface(object):
         clean_ssl_keyring()
 
     @user_method
+    def disable_builder(self, name):
+        builder = NAMESPACE.session.query(Builder).filter_by(name=name).first()
+
+        if not builder:
+            raise ValueError("No builder with name %s." % name)
+
+        builder.pgp = "0000000000000000DEADBEEF0000000000000000"
+        builder.ssl = "0000000000000000DEADBEEF0000000000000000"
+
+        NAMESPACE.session.add(builder)
+        NAMESPACE.session.commit()
+        clean_ssl_keyring()
+
+    @user_method
     def create_user(self, name, email, pgp, ssl):
         if NAMESPACE.session.query(Person).filter_by(email=email).first():
             raise ValueError("User already exists.")
@@ -195,14 +209,28 @@ class DebileMasterInterface(object):
         return p.debilize()
 
     @user_method
-    def update_user_keys(self, name, pgp, ssl):
+    def update_user_keys(self, email, pgp, ssl):
         user = NAMESPACE.session.query(Person).filter_by(email=email).first()
 
         if not user:
             raise ValueError("No user with email %s." % email)
 
         user.pgp = import_pgp(pgp)
-        user.ssl = import_ssl(ssl, name)
+        user.ssl = import_ssl(ssl, user.name, user.email)
+
+        NAMESPACE.session.add(user)
+        NAMESPACE.session.commit()
+        clean_ssl_keyring()
+
+    @user_method
+    def disable_user(self, email):
+        user = NAMESPACE.session.query(Builder).filter_by(email=email).first()
+
+        if not user:
+            raise ValueError("No user with email %s." % email)
+
+        user.pgp = "0000000000000000DEADBEEF0000000000000000"
+        user.ssl = "0000000000000000DEADBEEF0000000000000000"
 
         NAMESPACE.session.add(user)
         NAMESPACE.session.commit()

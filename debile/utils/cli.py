@@ -72,6 +72,16 @@ def _update_slave_keys(name, pgp, ssl):
     print(proxy.update_builder_keys(name, pgp, ssl))
 
 
+def _disable_slave(name):
+    """
+        Prevent a slave from being able to authenticate with the master:
+            debile-remote disable-slave <name>
+    """
+
+    proxy = get_proxy(config)
+    print(proxy.disable_builder(name))
+
+
 def _create_user(name, email, pgp, ssl):
     """
     Create a user:
@@ -120,6 +130,16 @@ def _update_user_keys(email, pgp, ssl):
     print(proxy.update_user_keys(email, pgp, ssl))
 
 
+def _disable_user(email):
+    """
+        Prevent a user from being able to authenticate with the master:
+            debile-remote disable-user <email>
+    """
+
+    proxy = get_proxy(config)
+    print(proxy.disable_user(email))
+
+
 def _rerun_job(job_id):
     """
     Re-runs a specified job:
@@ -159,8 +179,10 @@ def _help():
 COMMANDS = {
     "create-slave": _create_slave,
     "update-slave-keys": _update_slave_keys,
+    "disable-slave": _disable_slave,
     "create-user": _create_user,
     "update-user-keys": _update_user_keys,
+    "disable-user": _disable_user,
     "rerun-job": _rerun_job,
     "rerun-check": _rerun_check,
     "retry-failed": _retry_failed,

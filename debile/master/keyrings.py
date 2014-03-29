@@ -103,6 +103,7 @@ def import_ssl(certdata, cn=None, email=None):
 
     return fingerprint
 
+
 def clean_ssl_keyring(session):
     old = open(config['keyrings']['ssl'], 'r+')
     fcntl.lockf(old, fcntl.LOCK_EX)
