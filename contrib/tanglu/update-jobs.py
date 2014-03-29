@@ -89,7 +89,7 @@ class ArchiveDebileBridge:
         session.add(source)
 
         # Drop any old jobs that are still pending.
-        jobs = session.query(Job).filter(
+        jobs = session.query(Job).join(Job.source).filter(
             Source.group_suite == source.group_suite,
             Source.name == source.name,
         )
