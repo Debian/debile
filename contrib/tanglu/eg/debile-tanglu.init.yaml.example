@@ -1,5 +1,10 @@
 ---
 Users:  # Users of Debile
+    - name: Debian Archive Kit
+      email: dak@ftp-master.tanglu.org
+      pgp: 0000000000000000DEADBEEF0000000000000000
+      ssl: 4314BF93F9F32DAC98D2AAFF62619536F4B858AA
+
     - name: Matthias Klumpp
       email: mak@debian.org
       pgp: D33A3F0CA16B0ACC51A60738494C8A5FBF4DECEB
@@ -10,21 +15,36 @@ Users:  # Users of Debile
       pgp: 32623A6F42F5DA4B0DBD5B2BCDBBA39E78415AD2
       ssl: 0000000000000000DEADBEEF0000000000000000
 
-    - name: Debian Archive Kit
-      email: dak@ftp-master.tanglu.org
+    - name: Daniel Nicoletti
+      email: dantti12@gmail.com
+      pgp: 0000000000000000DEADBEEF0000000000000000
+      ssl: 0000000000000000DEADBEEF0000000000000000
+
+    - name: Philip Muškovac
+      email: yofel@kubuntu.org
       pgp: 0000000000000000DEADBEEF0000000000000000
       ssl: 0000000000000000DEADBEEF0000000000000000
 
 Builders:  # Machines that can build
-    - name: helium.buildd.tanglu.org
-      maintainer: mak@debian.org
-      pgp: 367D333376945BAE75CB466779A21745EC78A01D
-      ssl: 0000000000000000DEADBEEF0000000000000000
+    - name: hydrogen
+      maintainer: dantti12@gmail.com
+      pgp: A7E53D8099BDFB202862F6D3C098C8CAEBE2B0B0
+      ssl: A71D1F14CF9E4B70DA340E736B60ED1DC1CA342F
 
-    - name: caesium.buildd.tanglu.org
+    - name: helium
+      maintainer: yofel@kubuntu.org
+      pgp: 367D333376945BAE75CB466779A21745EC78A01D
+      ssl: D0C5A9FFCCB01F41987EAF7CEE1BF193EECD2728
+
+    - name: platinum
+      maintainer: mak@debian.org
+      pgp: 03E18B20AC83877BF5D73893C8EB53012DB00180
+      ssl: 5FCCF42ABAC8B0FC10C323EF93A5951F987D2DA3
+
+    - name: caesium
       maintainer: jon@severinsson.net
       pgp: 517884F17B4964C46EEE3D56FFF33867C01E4D5A
-      ssl: 9B625D4D2B2C6913216B0DB3251141B32DA8E82F
+      ssl: F9FED76E3915AB25437FDC1983A8FCDCE9BA8DC9
 
 Suites:
     - name: aequorea-updates
