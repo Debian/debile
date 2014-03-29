@@ -72,6 +72,36 @@ def _create_user(name, email, pgp, ssl):
     print(proxy.create_user(name, email, pgp, ssl))
 
 
+def _rerun_job(job_id):
+    """
+    Re-runs a specified job:
+        debile-remote rerun-job <job-id>
+    """
+
+    proxy = get_proxy(config)
+    print(proxy.rerun_job(job_id))
+
+
+def _rerun_check(check_id):
+    """
+    Re-runs all jobs for a specified check:
+        debile-remote rerun-check <check-id>
+    """
+
+    proxy = get_proxy(config)
+    print(proxy.rerun_check(check_id))
+
+
+def _retry_failed():
+    """
+    Re-tries all failed build jobs:
+        debile-remote retry-failed
+    """
+
+    proxy = get_proxy(config)
+    print(proxy.retry_failed())
+
+
 def _help():
     print("Commands:")
     for command in COMMANDS:
@@ -81,6 +111,9 @@ def _help():
 COMMANDS = {
     "create-slave": _create_slave,
     "create-user": _create_user,
+    "rerun-job": _rerun_job,
+    "rerun-check": _rerun_check,
+    "retry-failed": _retry_failed,
 }
 
 

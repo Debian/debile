@@ -26,6 +26,7 @@ from debile.master.messaging import emit
 from debile.master.keyrings import import_pgp, import_ssl
 
 from datetime import datetime
+import shutil
 
 
 class DebileMasterInterface(object):
@@ -145,6 +146,8 @@ class DebileMasterInterface(object):
     def get_job(self, job_id):
         return NAMESPACE.session.query(Job).get(job_id).debilize()
 
+    # Creating builders/users
+
     @user_method
     def create_builder(self, name, pgp, ssl):
         if NAMESPACE.session.query(Builder).filter_by(name=name).first():
@@ -175,3 +178,75 @@ class DebileMasterInterface(object):
 
         emit('create', 'user', p.debilize())
         return p.debilize()
+
+    # Re-run jobs
+
+    @user_method
+    def rerun_job(self, job_id):
+        job = NAMESPACE.session.query(Job).get(job_id)
+
+        if not job:
+            raise ValueError("No job with id %s." % job_id)
+
+        # Using "== False" to exclude both None and True
+        if job.check.build and job.failed == False:
+            raise ValueError("Can not re-run a successfull build job.")
+
+        shutil.rmtree(job.files_path)
+
+        job.failed = None
+        job.builder = None
+        job.assigned_at = None
+        job.finished_at = None
+        NAMESPACE.session.add(job)
+        NAMESPACE.session.commit()
+
+        return job.debilize()
+
+    @user_method
+    def rerun_check(self, check_id):
+        check = NAMESPACE.session.query(Check).get(check_id)
+
+        if check.build:
+            raise ValueError("Can not re-run a build check.")
+
+        jobs = NAMESPACE.session.query(Job).filter(
+            Job.check == check
+        )
+
+        for job in jobs:
+            shutil.rmtree(job.files_path)
+
+            job.failed = None
+            job.builder = None
+            job.assigned_at = None
+            job.finished_at = None
+            NAMESPACE.session.add(job)
+            NAMESPACE.session.commit()
+
+        return jobs.count()
+
+    @user_method
+    def retry_failed(self):
+        check_ids = [
+            x.id for x in NAMESPACE.session.query(Check).filter(
+                Check.build == True
+            ).all()
+        ]
+
+        jobs = NAMESPACE.session.query(Job).filter(
+            Job.failed == True,
+            Job.check_id.in_(check_ids),
+        )
+
+        for job in jobs:
+            shutil.rmtree(job.files_path)
+
+            job.failed = None
+            job.builder = None
+            job.assigned_at = None
+            job.finished_at = None
+            NAMESPACE.session.add(job)
+            NAMESPACE.session.commit()
+
+        return jobs.count()
