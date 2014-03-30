@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright (c) 2012-2013 Paul Tagliamonte <paultag@debian.org>
 # Copyright (c) 2013 Leo Cavaille <leo@cavaille.net>
 #
@@ -90,15 +92,8 @@ def sbuild(package, suite, arch, affinity, analysis):
 
     ensure_chroot_sanity(chroot_name)
 
-    dsc = os.path.basename(package)
-    if not dsc.endswith('.dsc'):
+    if not package.endswith('.dsc'):
         raise ValueError("WTF")
-
-    source, dsc = dsc.split("_", 1)
-    version, _ = dsc.rsplit(".", 1)
-    local = None
-    if "-" in version:
-        version, local = version.rsplit("-", 1)
 
     out, err, ret = run_command([
         "sbuild",
@@ -111,8 +106,23 @@ def sbuild(package, suite, arch, affinity, analysis):
         package,
     ])
 
-    ftbfs = ret != 0
-    return analysis, out, ftbfs, glob.glob("*changes")
+    statusline = None
+    summary = False
+    for line in out.splitlines():
+        if line == u"│ Summary                                                                      │":
+            summary = True
+        if summary and line.startswith("Status: "):
+            statusline = line
+            break
+
+    if not statusline or statusline == "Status: failed":
+        raise Exception("sbuild failed to run")
+
+    ftbfs = ret != 0 or statusline != "Status: successful"
+    base, _ = os.path.basename(package).rsplit(".", 1)
+    changes = glob.glob("{base}_*.changes".format(base=base))
+
+    return (analysis, out, ftbfs, changes)
 
 
 def version():

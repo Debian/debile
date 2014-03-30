@@ -27,29 +27,7 @@ def run(dsc, package, job, firehose):
     firehose, out, ftbfs, changes, = \
         sbuild(dsc, job['suite'], job['arch'], job['affinity'], firehose)
 
-    # ['python-schroot_0.3-1.debian.tar.gz',
-    # 'python3-schroot_0.3-1_all.deb',
-    # 'python-schroot_0.3-1.dsc',
-    # 'python-schroot_0.3-1_amd64.build',
-    # 'python-schroot-0.3',
-    # 'python-schroot_0.3-1_all.deb',
-    # 'python-schroot_0.3.orig.tar.gz',
-    # 'python-schroot_0.3-1_amd64.changes',
-    # 'python-schroot_0.3-1_amd64-20131009-2159.build']
-
-    version = package['version']
-    if ":" in version:
-        _, version = version.split(":", 1)
-        # epoch. boggle.
-
-    changes = "{source}_{version}*.changes".format(
-        source=package['name'],
-        version=version,
-    )
-
-    changes = list(glob.glob(changes))
-
-    if changes == [] and not ftbfs:
+    if not changes and not ftbfs:
         print(out)
         print(changes)
         print(list(glob.glob("*")))
