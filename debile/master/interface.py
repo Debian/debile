@@ -20,8 +20,7 @@
 
 from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Binary, Job,
-                               JobDependencies)
+                               Group, GroupSuite, Source, Binary, Job)
 from debile.master.messaging import emit
 from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 
@@ -56,43 +55,21 @@ class DebileMasterInterface(object):
 
     @builder_method
     def get_next_job(self, suites, components, arches, checks):
-        NAMESPACE.machine.last_ping = datetime.utcnow();
+        NAMESPACE.machine.last_ping = datetime.utcnow()
         NAMESPACE.session.add(NAMESPACE.machine)
         NAMESPACE.session.commit()
 
-        suite_ids = [
-            x.id for x in NAMESPACE.session.query(Suite).filter(
-                Suite.name.in_(suites)
-            ).all()
-        ]
-        component_ids = [
-            x.id for x in NAMESPACE.session.query(Component).filter(
-                Component.name.in_(components)
-            ).all()
-        ]
-        arch_ids = [
-            x.id for x in NAMESPACE.session.query(Arch).filter(
-                Arch.name.in_(arches)
-            ).all()
-        ]
-        check_ids = [
-            x.id for x in NAMESPACE.session.query(Check).filter(
-                Check.name.in_(checks)
-            ).all()
-        ]
-
-        job = NAMESPACE.session.query(Job).filter(
+        job = NAMESPACE.session.query(Job).join(Job.source).join(Job.check).filter(
+            ~Job.depedencies.any(),
             Job.externally_blocked == False,
             Job.assigned_at == None,
             Job.finished_at == None,
-            GroupSuite.suite_id.in_(suite_ids),
-            Source.component_id.in_(component_ids),
-            Job.arch_id.in_(arch_ids),
-            Job.affinity_id.in_(arch_ids),
-            Job.check_id.in_(check_ids),
-        ).outerjoin(Job.depedencies).filter(
-            JobDependencies.id == None
-        ).outerjoin(Job.check).outerjoin(Job.source).order_by(
+            GroupSuite.suite.has(Suite.name.in_(suites)),
+            Source.component.has(Component.name.in_(components)),
+            Job.arch.has(Arch.namein_(arches)),
+            Job.affinity.has(Arch.namein_(arches)),
+            Job.check.has(Check.namein_(checks)),
+        ).order_by(
             Check.build.desc(),
             Source.uploaded_at.asc(),
         ).first()
@@ -282,7 +259,7 @@ class DebileMasterInterface(object):
         for job in jobs:
             versions = NAMESPACE.session.query(Source.version).filter(
                 Source.group_suite == job.source.group_suite,
-                Source.name == job.source.name
+                Source.name == job.source.name,
             )
             max_version = max([x[0] for x in versions], key=Version)
             if job.version != max_version:
@@ -301,15 +278,9 @@ class DebileMasterInterface(object):
 
     @user_method
     def retry_failed(self):
-        check_ids = [
-            x.id for x in NAMESPACE.session.query(Check).filter(
-                Check.build == True
-            ).all()
-        ]
-
         jobs = NAMESPACE.session.query(Job).filter(
             Job.failed == True,
-            Job.check_id.in_(check_ids),
+            Job.check.has(Check.build == True),
         )
 
         for job in jobs:

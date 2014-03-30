@@ -104,11 +104,10 @@ class ArchiveDebileBridge:
 
     @staticmethod
     def unblock_debile_jobs(session, source, arches):
-        arch_ids = [x.id for x in session.query(Arch).filter(Arch.name.in_(arches)).all()]
         jobs = session.query(Job).filter(
             Job.source == source,
             Job.externally_blocked == True,
-            Job.arch_id.in_(arch_ids),
+            Job.arch.has(Arch.name.in_(arches)),
         ).all()
 
         if not jobs:
