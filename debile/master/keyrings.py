@@ -74,7 +74,7 @@ def import_ssl(certdata, cn=None, email=None):
     fingerprint = None
     subject = None
     for line in out.split("\n"):
-        data = line.split("=", 2)
+        data = line.split("=", 1)
 
         if data[0] == "SHA1 Fingerprint":
             fingerprint = data[1].replace(':', '')

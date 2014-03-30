@@ -177,7 +177,9 @@ class DebileMasterInterface(object):
 
         NAMESPACE.session.add(builder)
         NAMESPACE.session.commit()
-        clean_ssl_keyring()
+        clean_ssl_keyring(NAMESPACE.session)
+
+        return builder.debilize()
 
     @user_method
     def disable_builder(self, name):
@@ -191,7 +193,9 @@ class DebileMasterInterface(object):
 
         NAMESPACE.session.add(builder)
         NAMESPACE.session.commit()
-        clean_ssl_keyring()
+        clean_ssl_keyring(NAMESPACE.session)
+
+        return builder.debilize()
 
     @user_method
     def create_user(self, name, email, pgp, ssl):
@@ -220,7 +224,9 @@ class DebileMasterInterface(object):
 
         NAMESPACE.session.add(user)
         NAMESPACE.session.commit()
-        clean_ssl_keyring()
+        clean_ssl_keyring(NAMESPACE.session)
+
+        return user.debilize()
 
     @user_method
     def disable_user(self, email):
@@ -234,7 +240,9 @@ class DebileMasterInterface(object):
 
         NAMESPACE.session.add(user)
         NAMESPACE.session.commit()
-        clean_ssl_keyring()
+        clean_ssl_keyring(NAMESPACE.session)
+
+        return user.debilize()
 
     # Re-run jobs
 
