@@ -66,9 +66,9 @@ class DebileMasterInterface(object):
             Job.finished_at == None,
             GroupSuite.suite.has(Suite.name.in_(suites)),
             Source.component.has(Component.name.in_(components)),
-            Job.arch.has(Arch.namein_(arches)),
-            Job.affinity.has(Arch.namein_(arches)),
-            Job.check.has(Check.namein_(checks)),
+            Job.arch.has(Arch.name.in_(arches)),
+            Job.affinity.has(Arch.name.in_(arches)),
+            Job.check.has(Check.name.in_(checks)),
         ).order_by(
             Check.build.desc(),
             Source.uploaded_at.asc(),
