@@ -20,8 +20,6 @@
 
 from debile.utils import run_command
 
-import re
-
 
 def arch_matches(arch, alias):
     """
@@ -33,7 +31,7 @@ def arch_matches(arch, alias):
         return True
 
     if arch == 'all' or arch == 'source':
-        # These psedu-arches does not match any wildcards or aliases
+        # These pseudo-arches does not match any wildcards or aliases
         return False
 
     if alias == 'any':
@@ -43,13 +41,13 @@ def arch_matches(arch, alias):
     if alias == 'linux-any':
         # GNU/Linux arches are named <cpuabi>
         # Other Linux arches are named <libc>-linux-<cpuabi>
-        return '-linux-' in arch or not '-' in arch
+        return not '-' in arch or 'linux' in arch.split('-')
 
     if alias.endswith('-any'):
         # Non-Linux GNU/<os> arches are named <os>-<cpuabi>
         # Other non-Linux arches are named <libc>-<os>-<cpuabi>
-        osname, abiarch = alias.rsplit('-', 1)
-        return re.match('(^|-)' + osname + '-', arch)
+        osname, _ = alias.split('-', 1)
+        return osname in arch.split('-')
 
     if not "-" in arch and not "-" in alias:
         return False
