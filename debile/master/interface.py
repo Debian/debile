@@ -234,7 +234,8 @@ class DebileMasterInterface(object):
         if job.check.build and job.failed == False:
             raise ValueError("Can not re-run a successfull build job.")
 
-        shutil.rmtree(job.files_path)
+        if os.access(job.files_path, os.F_OK):
+            shutil.rmtree(job.files_path)
 
         job.failed = None
         job.builder = None
@@ -265,7 +266,8 @@ class DebileMasterInterface(object):
             if job.version != max_version:
                 continue
 
-            shutil.rmtree(job.files_path)
+            if os.access(job.files_path, os.F_OK):
+                shutil.rmtree(job.files_path)
 
             job.failed = None
             job.builder = None
@@ -292,7 +294,8 @@ class DebileMasterInterface(object):
             if job.version != max_version:
                 continue
 
-            shutil.rmtree(job.files_path)
+            if os.access(job.files_path, os.F_OK):
+                shutil.rmtree(job.files_path)
 
             job.failed = None
             job.builder = None
