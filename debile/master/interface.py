@@ -27,6 +27,7 @@ from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 from debian.debian_support import Version
 from datetime import datetime
 import shutil
+import os
 
 
 class DebileMasterInterface(object):
