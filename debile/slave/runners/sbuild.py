@@ -31,6 +31,7 @@ from io import StringIO
 import glob
 import re
 import os
+import sys
 
 
 STATS = re.compile("Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space")
@@ -106,19 +107,39 @@ def sbuild(package, suite, arch, affinity, analysis):
         package,
     ])
 
-    statusline = None
     summary = False
+    status = None
+    failstage = None
     for line in out.splitlines():
         if line == u"│ Summary                                                                      │":
             summary = True
         if summary and line.startswith("Status: "):
-            statusline = line
-            break
+            status = line.replace("Status: ", "")
+        if summary and line.startswith("Fail-Stage: "):
+            failstage = line.replace("Fail-Stage: ", "")
 
-    if not statusline or statusline == "Status: failed":
+    if (not summary or
+            ((status == "failed" or
+              status == "skipped") and
+             (failstage == "abort" or
+              failstage == "init" or
+              failstage == "create-session" or
+              failstage == "create-build-dir" or
+              failstage == "lock-session" or
+              failstage == "apt-get-clean" or
+              failstage == "apt-get-update" or
+              failstage == "apt-get-dist-upgrade" or
+              failstage == "apt-get-upgrade" or
+              failstage == "arch-check" or
+              failstage == "check-space" or
+              failstage == "chroot-arch"))):
+        #sys.stdout.write(out.encode('utf-8'))
+        sys.stdout.write("Summary: \"%s\" Status: \"%s\" Fail-Stage \"%s\" " %
+                         (summary, status, failstage))
+        sys.stdout.flush()
         raise Exception("sbuild failed to run")
 
-    ftbfs = ret != 0 or statusline != "Status: successful"
+    ftbfs = ret != 0 or status != "successful"
     base, _ = os.path.basename(package).rsplit(".", 1)
     changes = glob.glob("{base}_*.changes".format(base=base))
 
