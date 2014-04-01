@@ -4,11 +4,11 @@
 On your newly installed Debian Wheezy machine, install the buildd dependencies:
 
  apt-get install sudo devscripts dpkg-dev eatmydata sbuild schroot lintian dput-ng \
-		python-dput python-debian python-requests python-yaml python-schroot python-sqlalchemy python-virtualenv
+    python-dput python-debian python-requests python-yaml python-schroot/jessie python-sqlalchemy/jessie python-virtualenv
 
 Then install the Tanglu Archive Keyring and the Tanglu debootstrap:
  wget http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.59tanglu1_all.deb \
-		http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
+    http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
  dpkg -i debootstrap_*tanglu*_all.deb tanglu-archive-keyring_*_all.deb
 
 === 2. Set up buildd user ===
@@ -18,7 +18,7 @@ Create new buildd user:
 NOTE: The user name and HOME path are currently hardcoded in some scripts, so please don't change them.
 
 === 3. Create base environments ===
-Create the sbuild base environments using the following commands.
+Create the sbuild base environments by following these instructions as root.
 These instructions must be followed twice, once for amd64 and once for i386, to be able to build packages for both architectures.
 
  :: i386 builder:
@@ -27,33 +27,68 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
  :: amd64 builder:
    export STABLE=aequorea DEVEL=bartholomea ARCH=amd64
 
- sudo sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/var/lib/sbuild/${STABLE}-${ARCH}.tar.gz ${STABLE} `mktemp -d` http://archive.tanglu.org/tanglu
- sudo sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/var/lib/sbuild/${DEVEL}-${ARCH}.tar.gz ${DEVEL} `mktemp -d` http://archive.tanglu.org/tanglu
- sudo cp /var/lib/sbuild/${DEVEL}-${ARCH}.tar.gz /var/lib/sbuild/staging-${ARCH}.tar.gz
+ :: /srv/buildd is on btrfs:
+   mkdir -p /srv/buildd/chroots /srv/buildd/snapshots
+   btrfs subvolume create /srv/buildd/chroots/${STABLE}-${ARCH}
+   btrfs subvolume create /srv/buildd/chroots/${DEVEL}-${ARCH}
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" ${STABLE} /srv/buildd/chroots/${STABLE}-${ARCH} http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" ${DEVEL} /srv/buildd/chroots/${DEVEL}-${ARCH} http://archive.tanglu.org/tanglu
+   btrfs subvolume snapshot /srv/buildd/chroots/${DEVEL}-${ARCH} /srv/buildd/chroots/staging-${ARCH}
 
- sudo mv /etc/schroot/chroot.d/${STABLE}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${STABLE}-${ARCH}
- sudo cp /etc/schroot/chroot.d/${STABLE}-${ARCH} /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
- sudo mv /etc/schroot/chroot.d/${DEVEL}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${DEVEL}-${ARCH}
- sudo cp /etc/schroot/chroot.d/${DEVEL}-${ARCH} /etc/schroot/chroot.d/staging-${ARCH}
+ :: /srv/buildd is *not* on btrfs:
+   mkdir -p /srv/buildd/chroots
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/srv/buildd/chroots/${STABLE}-${ARCH}.tar.gz ${STABLE} `mktemp -d` http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz ${DEVEL} `mktemp -d` http://archive.tanglu.org/tanglu
+   cp /srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz /srv/buildd/chroots/staging-${ARCH}.tar.gz
 
- sudo sed -e "s/${STABLE}-${ARCH}-sbuild/${STABLE}-${ARCH}/g" -i /etc/schroot/chroot.d/${STABLE}-${ARCH}
- sudo sed -e "s/${STABLE}-${ARCH}-sbuild/${STABLE}-updates-${ARCH}/g" -i /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
- sudo sed -e "s/${DEVEL}-${ARCH}-sbuild/${DEVEL}-${ARCH}/g" -i /etc/schroot/chroot.d/${DEVEL}-${ARCH}
- sudo sed -e "s/${DEVEL}-${ARCH}-sbuild/staging-${ARCH}/g" -e "s/${DEVEL}/staging/g" -i /etc/schroot/chroot.d/staging-${ARCH}
+ :: all builders:
+   mv /etc/schroot/chroot.d/${STABLE}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${STABLE}-${ARCH}
+   mv /etc/schroot/chroot.d/${DEVEL}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${DEVEL}-${ARCH}
+   cp /etc/schroot/chroot.d/${DEVEL}-${ARCH} /etc/schroot/chroot.d/staging-${ARCH}
 
-Then log into the newly created stable environment:
- sudo sbuild-shell ${STABLE}-${ARCH}
-And run these commands:
- echo "deb http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
- echo "deb-src http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
- exit
+   sed -e "s,${STABLE}-${ARCH}-sbuild,${STABLE}-${ARCH},g" -i /etc/schroot/chroot.d/${STABLE}-${ARCH}
+   sed -e "s,${DEVEL}-${ARCH}-sbuild,${DEVEL}-${ARCH},g" -i /etc/schroot/chroot.d/${DEVEL}-${ARCH}
+   sed -e "s,${DEVEL}-${ARCH}-sbuild,staging-${ARCH},g" -e "s,${DEVEL},staging,g" -i /etc/schroot/chroot.d/staging-${ARCH}
 
-Then log into the newly created staging environment:
- sudo sbuild-shell staging-${ARCH}
-And run these commands:
- echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
- echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
- exit
+ :: /srv/buildd is on btrfs:
+   for SUITE in ${STABLE} ${DEVEL} staging; do
+       sed -E -e 's,^type=directory$,type=btrfs-snapshot,' -e 's,^directory=(.+)$,btrfs-source-subvolume=\1\nbtrfs-snapshot-directory=/srv/buildd/snapshots,' -i /etc/schroot/chroot.d/${SUITE}-${ARCH}
+       echo force-unsafe-io >/srv/buildd/chroots/${SUITE}-${ARCH}/etc/dpkg/dpkg.cfg.d/90sbuild
+   done
+
+   echo "deb http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free"     >>/srv/buildd/chroots/${STABLE}-${ARCH}/etc/apt/sources.list
+   echo "deb-src http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/srv/buildd/chroots/${STABLE}-${ARCH}/etc/apt/sources.list
+   echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free"     >>/srv/buildd/chroots/staging-${ARCH}/etc/apt/sources.list
+   echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/srv/buildd/chroots/staging-${ARCH}/etc/apt/sources.list
+
+ :: /srv/buildd is *not* on btrfs:
+   # Log into the newly created stable environment:
+   sbuild-shell ${STABLE}-${ARCH}
+   # And run these commands:
+   echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
+   echo "deb http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
+   echo "deb-src http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
+   exit
+
+   # Log into the newly created devel environment:
+   sbuild-shell ${STABLE}-${ARCH}
+   # And run these commands:
+   echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
+   exit
+
+   # Log into the newly created staging environment:
+   sbuild-shell staging-${ARCH}
+   # And run these commands:
+   echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
+   echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
+   echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
+   exit
+
+ :: all builders:
+   sbuild-update --update --upgrade --clean ${STABLE}-${ARCH} ${DEVEL}-${ARCH} staging-${ARCH}
+
+   cp /etc/schroot/chroot.d/${STABLE}-${ARCH} /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
+   sed -E -e "s/^\[${STABLE}-${ARCH}\]\$/[${STABLE}-updates-${ARCH}]/" -i /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
 
 === 4. Generate builder keys ===
 Note: The rng-tools and urandom may help if you don't have enough entropy
