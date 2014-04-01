@@ -3,60 +3,88 @@
 === 1. Install dependencies ===
 On your newly installed Debian Wheezy machine, install the buildd dependencies:
 
- apt-get install sudo devscripts dpkg-dev eatmydata sbuild python-dput dput-ng python-debian \
-				python-schroot python-requests python-virtualenv python-sqlalchemy
+ apt-get install sudo devscripts dpkg-dev eatmydata sbuild schroot lintian dput-ng \
+		python-dput python-debian python-requests python-yaml python-schroot python-sqlalchemy python-virtualenv
 
 Then install the Tanglu Archive Keyring and the Tanglu debootstrap:
-wget:
-http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.48tanglu2.1_all.deb
-http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
-(install local packages using dpkg)
+ wget http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.59tanglu1_all.deb \
+		http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
+ dpkg -i debootstrap_*tanglu*_all.deb tanglu-archive-keyring_*_all.deb
 
 === 2. Set up buildd user ===
 Create new buildd user:
  adduser --home=/srv/buildd --ingroup sbuild buildd
-Give it sudo permission by creating /etc/sudoers.d/buildd with content:
- buildd ALL=NOPASSWD: /usr/sbin/cowbuilder, /usr/sbin/chroot
 
 NOTE: The user name and HOME path are currently hardcoded in some scripts, so please don't change them.
 
 === 3. Create base environments ===
-Create sbuild base environments (for the bartholomea curent development branch) using one of the following commands:
+Create the sbuild base environments using the following commands.
+These instructions must be followed twice, once for amd64 and once for i386, to be able to build packages for both architectures.
+
  :: i386 builder:
-   sbuild-createchroot --arch=i386 --make-sbuild-tarball=/var/lib/sbuild/staging-i386.tar.gz bartholomea `mktemp -d` http://archive.tanglu.org/tanglu
+   export STABLE=aequorea DEVEL=bartholomea ARCH=i386
 
  :: amd64 builder:
-   sbuild-createchroot --arch=amd64 --make-sbuild-tarball=/var/lib/sbuild/staging-amd64.tar.gz bartholomea `mktemp -d` http://archive.tanglu.org/tanglu
+   export STABLE=aequorea DEVEL=bartholomea ARCH=amd64
 
-The builders must have one amd64 and one i386 environment to be able to build packages for both architectures.
+ sudo sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/var/lib/sbuild/${STABLE}-${ARCH}.tar.gz ${STABLE} `mktemp -d` http://archive.tanglu.org/tanglu
+ sudo sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/var/lib/sbuild/${DEVEL}-${ARCH}.tar.gz ${DEVEL} `mktemp -d` http://archive.tanglu.org/tanglu
+ sudo cp /var/lib/sbuild/${DEVEL}-${ARCH}.tar.gz /var/lib/sbuild/staging-${ARCH}.tar.gz
 
-Move the file /etc/schroot/chroot.d/bartholomea-* to /etc/schroot/chroot.d/staging-<arch>, where <arch> is the architecture of
-this environment.
-Then open the file and rename the header block to "staging-<arch>" as well. You should als fix the "description" field of that file.
+ sudo mv /etc/schroot/chroot.d/${STABLE}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${STABLE}-${ARCH}
+ sudo cp /etc/schroot/chroot.d/${STABLE}-${ARCH} /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
+ sudo mv /etc/schroot/chroot.d/${DEVEL}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${DEVEL}-${ARCH}
+ sudo cp /etc/schroot/chroot.d/${DEVEL}-${ARCH} /etc/schroot/chroot.d/staging-${ARCH}
 
-Then log into the newly created environment:
- sbuild-shell staging-<arch>
-(replace arch with the desired architecture)
-then open /etc/apt/sources.list and add the following lines:
- deb http://archive.tanglu.org/tanglu staging main contrib non-free
- #deb-src http://archive.tanglu.org/tanglu staging main contrib non-free
-Then exit the environment.
-Change to the buildd user and execute:
+ sudo sed -e "s/${STABLE}-${ARCH}-sbuild/${STABLE}-${ARCH}/g" -i /etc/schroot/chroot.d/${STABLE}-${ARCH}
+ sudo sed -e "s/${STABLE}-${ARCH}-sbuild/${STABLE}-updates-${ARCH}/g" -i /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
+ sudo sed -e "s/${DEVEL}-${ARCH}-sbuild/${DEVEL}-${ARCH}/g" -i /etc/schroot/chroot.d/${DEVEL}-${ARCH}
+ sudo sed -e "s/${DEVEL}-${ARCH}-sbuild/staging-${ARCH}/g" -e "s/${DEVEL}/staging/g" -i /etc/schroot/chroot.d/staging-${ARCH}
+
+Then log into the newly created stable environment:
+ sudo sbuild-shell ${STABLE}-${ARCH}
+And run these commands:
+ echo "deb http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
+ echo "deb-src http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
+ exit
+
+Then log into the newly created staging environment:
+ sudo sbuild-shell staging-${ARCH}
+And run these commands:
+ echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
+ echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
+ exit
+
+=== 4. Generate builder keys ===
+Note: The rng-tools and urandom may help if you don't have enough entropy
+(use with care and inform yourself about what these tools do before using them!).
+
+Login as the buidd user:
+ sudo -u buildd -i
+
+Create a local apt key for sbuild:
  sbuild-update --keygen
-Sbuild should now be set up.
 
-=== 4. Generate builder key ===
-Login as buildd (su buildd)
-Use gpg --gen-key to create a new key. Select RSA(4) and a length of 4096 bit.
+Create a package signing pgp key:
+ gpg --gen-key
+
+Select RSA(4) and a length of 4096 bit.
 You got the name of an element as buildd name.
-The name for the key is: "<arch> <element> Buildd", e.g. "amd64 Helium Buildd"
-If your buildd is able to perform builds for both Tanglu architectures, please omit the <arch> part.
-Set an email address in form of <arch>-<name>@buildd.tanglu.org, e.g. i386-beryllium@buildd.tanglu.org for the key.
-(For multi-arch builders, the keyname would be "Tanglu Helium Buildd" here, and the email address "beryllium@buildd.tanglu.org")
+The name should be: "Tanglu <element> Buildd", e.g. "Tanglu Helium Buildd".
+The email address should be "<element>@buildd.tanglu.org", e.g. "helium@buildd.tanglu.org".
 Set expiration date to 1-3 years, don't use a passphrase.
 
-The rng-tools and urandom may help if you don't have enough entropy (use with care and inform yourself about what these tools do
-before using them!).
+Export the pgp public key:
+ sudo -u buildd -i gpg --armor --export "<element>@buildd.tanglu.org" >/srv/buildd/<element>.pgp
+
+Create a debile xmlrpc ssl key and cert:
+ openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -keyout /srv/buildd/<element>.key -out /srv/buildd/<element>.crt && chmod go-rwx /srv/buildd/*.key
+
+File out the information.
+The organization should be "Tanglu Project".
+The unit name should be "Package Build Service".
+The common name should be: "<element>.buildd.tanglu.org", e.g. "helium.buildd.tanglu.org".
+The email address should be "<element>@buildd.tanglu.org", e.g. "helium@buildd.tanglu.org".
 
 === 6. Install buildd software ===
 Clone the Tanglu debile software:
@@ -76,6 +104,8 @@ Then run:
 Please keep the Git clone up-to-date and install new software versions from time to time.
 
 === 7. Configure buildd software ===
+Copy the tanglu-buildd certificate to /srv/buildd/tanglu-buildd.crt
+Set $resolve_alternatives to 1 in /etc/sbuild/sbuild.conf
 Create /etc/debile/slave.yaml using the template below.
 Change the file to match your builder specifications.
 You will have to set GPGKEY_FINGERPRINT to the full fingerpint of the GPG-key you created
@@ -83,11 +113,11 @@ for this builder.
 ### FILE STARTS ###
 ---
 xmlrpc:
-    user: "%helium.buildd.tanglu.org"
     host: buildd.tanglu.org
     port: 22017
-    keyfile: /srv/buildd/helium.key
-    certfile: /srv/buildd/helium.crt
+    keyfile: /srv/buildd/<element>.key
+    certfile: /srv/buildd/<element>.crt
+    ca_certs: /srv/buildd/tanglu-buildd.crt
 
 gpg: GPGKEY_FINGERPRINT
 
@@ -100,54 +130,58 @@ checks:
 
 arches:
     - amd64
+    - i386
     - all
 
 suites:
     - staging
+    - bartholomea
+    - aequorea
+    - aequorea-updates
 
 components:
     - main
     - contrib
     - non-free
 ### EOF ###
-Set user to <builder>.buildd.tanglu.org, where builder is the name of your builder. The name must be prefixed with
-a percentage sign.
-Then, you can generate the key and cert defined above, using OpenSSL:
- $ openssl req -x509 -nodes -newkey rsa:3072 -sha256 -keyout testslave.key -out testslave.crt
-(it's a good idea to use the name of your builder for the key name)
-File out the information. The "Organization" is "Tanglu Project", "Unit Name" is "Package Build Service".
-Use the "<builder>.buildd.tanglu.org" string as FQDN (of course with "<builder>" replaced with the builder's name)
-
-You will also add the tanglu-buildd certificate to the database of trusted certificates.
-To do that, copy tanglu-buildd.crt to /usr/local/share/ca-certificates/, then run
- update-ca-certificates
-as root.
-
-It is also very important that you set
- $resolve_alternatives = 1;
-in /etc/sbuild/sbuild.conf, so we can resolve alternative build-dependencies in Tanglu.
 
 === 8. Configure dput-ng ===
 Create /etc/dput.d/profiles/tanglu.json with the following data:
 ### BEGIN FILE ###
 {
+    "allow_dcut": false,
+    "allowed-distribution": {},
+    "codenames": null,
+    "hooks": [
+        "checksum",
+        "gpg"
+    ]
+}
+### EOF ###
+
+Create /etc/dput.d/metas/tanglu.json with the following data:
+### BEGIN FILE ###
+{
     "fqdn": "ftp-master.tanglu.org",
     "incoming": "~/incoming/",
     "login": "anonymous",
-    "meta": "boring",
+    "meta": "tanglu",
     "method": "ftp"
 }
 ### EOF ###
 
 === 9. Create initscript for debile-slave ===
-TODO
+copy debian/debile-slave.init to /etc/init.d/debile-slave
+add ". /srv/buildd/debile-git/ENV/bin/activate" after "export PATH=..."
+change "DEBILE=..." to "DEBILE=/srv/buildd/debile-git/ENV/bin/$BASE"
+change "DEBILE_USER=..." to "DEBILE_USER=buildd"
 
 === 10. Register the buildd ===
 Tell the build-master admin (currently Matthias Klumpp <mak@debian.org>) about the new buildd and give him or the build admin team access
 to the machine.
 In the process, some generic settings will be checked and we will perform a testbuild, then add the machine to the buildd pool and register it's key
 with the archive kit.
-Don't forget to send your SSL certificate generated in step 7 with your mail, so we can add it to the build master's keyring and allow your slave to connect.
+Don't forget to send your PGP public key and SSL certificate generated in step 6 with your mail, so we can add it to the build master's keyring and allow your slave to connect.
 
 And you're done!
 
