@@ -28,8 +28,8 @@ from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
 from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
-                               GroupSuite, Source, Binary, Job, create_source,
-                               create_jobs)
+                               GroupSuite, Source, Job,
+                               create_source, create_jobs)
 from debile.master.changes import Changes, ChangesFileException
 
 
@@ -190,7 +190,7 @@ def accept_binary_changes(session, changes, builder):
     if builder != job.builder:
         return reject_changes(session, changes, "wrong-builder")
 
-    binary = Binary.from_job(job)
+    binary = job.new_binary()
     session.add(binary)
 
     ## OK. Let's make sure we can add this.
@@ -199,9 +199,6 @@ def accept_binary_changes(session, changes, builder):
         repo.add_changes(changes)
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
-
-    job.changes_uploaded(session, binary)
-    session.add(job)
 
     emit('accept', 'binary', binary.debilize())
 

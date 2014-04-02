@@ -29,8 +29,7 @@ from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Maintainer, Binary,
-                               Job, JobDependencies, Result,
-                               create_source, create_jobs)
+                               Job, Result, create_source, create_jobs)
 
 from rapidumolib.pkginfo import PackageBuildInfoRetriever
 from rapidumolib.config import RapidumoConfig
@@ -110,9 +109,9 @@ class ArchiveDebileBridge:
     def create_debile_binaries(session, source, installed_arches):
         for job in source.jobs:
             if job.check.build and not job.built_binary and job.arch.name in installed_arches:
-                binary = Binary.from_job(job)
+                binary = job.new_binary()
                 session.add(binary)
-                job.changes_uploaded(session, binary)
+                emit('accept', 'binary', binary.debilize())
 
     @staticmethod
     def unblock_debile_jobs(session, source, arches):

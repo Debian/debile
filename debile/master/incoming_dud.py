@@ -28,7 +28,7 @@ from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
 from debile.master.dud import Dud, DudFileException
 from debile.master.utils import session
 from debile.master.messaging import emit
-from debile.master.orm import (Builder, Job, Result)
+from debile.master.orm import Builder, Job
 
 
 def process_directory(path):
@@ -104,13 +104,10 @@ def accept_dud(session, dud, builder):
     fire, _ = idify(fire)
     fire = uniquify(session, fire)
 
-    result = Result.from_job(job)
+    result = job.new_result()
     result.failed = failed
     result.firehose = fire
     session.add(result)
-
-    job.dud_uploaded(session, result)
-    session.add(job)
 
     try:
         repo = FileRepo()

@@ -463,16 +463,18 @@ class Binary(Base):
 
     uploaded_at = Column(DateTime, nullable=False)
 
-    @staticmethod
-    def from_job(job):
-        return Binary(build_job=job, source=job.source, arch=job.arch,
-                      uploaded_at=datetime.utcnow())
-
     def __str__(self):
         return "%s (%s)" % (self.name, self.version)
 
     def __repr__(self):
         return "<Binary: %s/%s (%s)>" % (self.name, self.version, self.id)
+
+
+# Many-to-Many relationship
+job_dependencies = (
+    Table('job_dependencies', Base.metadata,
+          Column('blocked_job_id', Integer, ForeignKey('jobs.id')),
+          Column('blocking_job_id', Integer, ForeignKey('jobs.id'))))
 
 
 class Job(Base):
@@ -545,25 +547,37 @@ class Job(Base):
     finished_at = Column(DateTime, nullable=True, default=None)
     failed = Column(Boolean, nullable=True, default=None)
 
+    depedencies = relationship(
+        "Job", backref='blocking',
+        secondary=job_dependencies,
+        primaryjoin=(id == job_dependencies.c.blocking_job_id),
+        secondaryjoin=(id == job_dependencies.c.blocked_job_id),
+    )
+
     # Called when the .changes for a build job is processed
-    def changes_uploaded(self, session, binary):
+    def new_binary(self):
         if not self.check.build:
-            raise ValueError("changes_uploaded() are for build jobs only!")
-        for jd in self.blocking:
-            if (jd.blocked_job.check.binary and
-                    jd.blocked_job.source == self.source and
-                    jd.blocked_job.arch == self.arch):
-                jd.blocked_job.binary = binary
-            session.delete(jd)
+            raise ValueError("add_binary() are for build jobs only!")
+        binary = Binary(build_job=self, source=self.source, arch=self.arch,
+                        uploaded_at=datetime.utcnow())
+        for job in self.blocking:
+            if (job.check.binary and
+                    job.source == self.source and
+                    job.arch == self.arch):
+                job.binary = binary
+            job.depedencies.remove(self)
+        return binary
 
     # Called when a .dud for any job is processed
-    def dud_uploaded(self, session, result):
+    def new_result(self):
+        result = Result(job=self, uploaded_at=datetime.utcnow())
         self.failed = result.failed
-        # Only delete the dependency if the job was sucessfull and (if this is
-        # a build job) the .changes has already been processed.
+        # Only delete the dependency if the job was sucessfull, and
+        # not if it is a build job (that is handled by add_binary().
         if not result.failed and not self.check.build:
-            for jd in self.blocking:
-                session.delete(jd)
+            for job in self.blocking:
+                job.depedencies.remove(self)
+        return result
 
     @property
     def files_path(self):
@@ -588,28 +602,6 @@ class Job(Base):
 
     def __repr__(self):
         return "<Job: %s %s (%s)>" % (self.source, self.name, self.id)
-
-
-class JobDependencies(Base):
-    __tablename__ = 'job_dependencies'
-    _debile_objs = {
-        "id": "id",
-        "blocked_job_id": "blocked_job_id",
-        "blocking_job_id": "blocking_job_id",
-    }
-    debilize = _debilize
-
-    id = Column(Integer, primary_key=True)
-
-    # The job that can not run until
-    blocked_job_id = Column(Integer, ForeignKey('jobs.id'))
-    blocked_job = relationship("Job", foreign_keys=[blocked_job_id],
-                               backref='depedencies')
-
-    # this job is done
-    blocking_job_id = Column(Integer, ForeignKey('jobs.id'))
-    blocking_job = relationship("Job", foreign_keys=[blocking_job_id],
-                                backref='blocking')
 
 
 class Result(Base):
@@ -670,10 +662,6 @@ class Result(Base):
 
     failed = Column(Boolean)
     uploaded_at = Column(DateTime, nullable=False)
-
-    @staticmethod
-    def from_job(job):
-        return Result(job=job, uploaded_at=datetime.utcnow())
 
 
 def create_source(dsc, group_suite, component, uploader):
@@ -782,9 +770,7 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
                     source=source, binary=binary)
             source.jobs.append(j)
 
-            jds = [JobDependencies(blocked_job=j, blocking_job=x)
-                   for x in deps]
-            for dep in jds:
+            for dep in deps:
                 j.depedencies.append(dep)
 
 
