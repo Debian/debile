@@ -753,6 +753,10 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
                 builds[arch] = j
                 source.jobs.append(j)
 
+    for arch, job in builds.iteritems():
+        if arch != aall and aall in builds:
+            job.depedencies.append(builds[aall])
+
     for check in source.group_suite.get_binary_checks():
         for arch in source.arches:
             jobaffinity = affinity if arch == aall else arch
