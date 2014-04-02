@@ -35,11 +35,12 @@ def find_debs(archive, suite, component, arch, source, version):
         dsc = Dsc(filename=url)
 
     components = [component]
-    for line in dsc['Package-List']:
-        if "/" in line['section']:
-            component, _ = line['section'].split("/")
-            if component not in components:
-                components.append(component)
+    if 'Package-List' in dsc:
+        for line in dsc['Package-List']:
+            if "/" in line['section']:
+                component, _ = line['section'].split("/")
+                if component not in components:
+                    components.append(component)
 
     filenames = []
     for component in components:
