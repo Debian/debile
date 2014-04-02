@@ -248,8 +248,8 @@ class DebileMasterInterface(object):
         return job.debilize()
 
     @user_method
-    def rerun_check(self, check_id):
-        check = NAMESPACE.session.query(Check).get(check_id)
+    def rerun_check(self, name):
+        check = NAMESPACE.session.query(Check).filter_by(name=name).one()
 
         if check.build:
             raise ValueError("Can not re-run a build check.")

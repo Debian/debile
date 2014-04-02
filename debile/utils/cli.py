@@ -150,14 +150,14 @@ def _rerun_job(job_id):
     print(proxy.rerun_job(job_id))
 
 
-def _rerun_check(check_id):
+def _rerun_check(name):
     """
     Re-runs all jobs for a specified check:
-        debile-remote rerun-check <check-id>
+        debile-remote rerun-check <check-name>
     """
 
     proxy = get_proxy(config)
-    print(proxy.rerun_check(check_id))
+    print(proxy.rerun_check(name))
 
 
 def _retry_failed():
