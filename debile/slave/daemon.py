@@ -94,8 +94,6 @@ def checkout(job, package):
                            src['name'], src['version'])
             elif package['type'] == "binary":
                 arch = job['arch']
-                if arch == 'all':
-                    arch = 'amd64'  # XXX: THIS IS A HACK. FIX THIS.
                 yield bget(archive, src['suite'], src['component'],
                            arch, src['name'], src['version'])
             else:
