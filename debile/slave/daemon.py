@@ -136,10 +136,9 @@ def iterate():
         if job is None:
             raise IDidNothingError("No more jobs")
 
-        group = proxy.get_group(job['group_id'])
-        source = proxy.get_source(job['source_id'])
-        binary = (proxy.get_binary(job['binary_id'])
-                  if job['binary_id'] else None)
+        group = job['group_obj']
+        source = job['source_obj']
+        binary = job['binary_obj']
 
         package = {
             "name": source['name'],

@@ -40,20 +40,26 @@ Base = declarative_base(metadata=metadata)
 
 def _debilize(self):
     def getthing(obj, name):
+        if obj is None:
+            return None
         if "." in name:
             local, remote = name.split(".", 1)
             foo = getattr(obj, local)
-            if foo is None:
-                return foo
             return getthing(foo, remote)
         if name == "__str__":
             return str(obj)
+        if name == "__debilize__":
+            return _debilize(obj)
+        if name == "__list__":
+            return [_debilize(x) for x in obj]
         return getattr(obj, name)
+
+    if self is None:
+        return None
 
     ret = {}
     for attribute, path in self._debile_objs.items():
         ret[attribute] = getthing(self, path)
-
     return ret
 
 
@@ -336,12 +342,16 @@ class Source(Base):
         "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
-        "group_id": "group_suite.group_id",
-        "uploader_name": "uploader.name",
-        "uploader_email": "uploader.email",
+        "uploader": "uploader.__debilize__",
         "uploaded_at": "uploaded_at",
+        "group_id": "group.id",
+        "maintainers": "maintainers.__list__",
     }
-    debilize = _debilize
+
+    def debilize(self):
+        obj = _debilize(self)
+        obj['group_obj'] = _debilize(self.group)
+        return obj
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
@@ -383,7 +393,6 @@ class Maintainer(Base):
         "email": "email",
         "comaintainer": "comaintainer",
         "original_maintainer": "original_maintainer",
-        "source_id": "source_id",
     }
     debilize = _debilize
 
@@ -409,17 +418,23 @@ class Binary(Base):
     __tablename__ = 'binaries'
     _debile_objs = {
         "id": "id",
-        "name": "source.name",
-        "version": "source.version",
+        "name": "name",
+        "version": "version",
         "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
         "arch": "arch.name",
-        "group_id": "group_suite.group_id",
-        "source_id": "source_id",
+        "builder": "build_job_id.builder.__debilize__",
         "uploaded_at": "uploaded_at",
+        "group_id": "group.id",
+        "source_id": "source.id",
     }
-    debilize = _debilize
+
+    def debilize(self):
+        obj = _debilize(self)
+        obj['group_obj'] = _debilize(self.group)
+        obj['source_obj'] = _debilize(self.source)
+        return obj
 
     id = Column(Integer, primary_key=True)
 
@@ -489,15 +504,21 @@ class Job(Base):
         "component": "component.name",
         "arch": "arch.name",
         "affinity": "affinity.name",
-        "group_id": "group_suite.group_id",
-        "source_id": "source_id",
-        "binary_id": "binary_id",
-        "builder": "builder.name",
+        "builder": "builder.__debilize__",
         "assigned_at": "assigned_at",
         "finished_at": "finished_at",
         "failed": "failed",
+        "group_id": "group.id",
+        "source_id": "source.id",
+        "binary_id": "binary.id",
     }
-    debilize = _debilize
+
+    def debilize(self):
+        obj = _debilize(self)
+        obj['group_obj'] = _debilize(self.group)
+        obj['source_obj'] = _debilize(self.source)
+        obj['binary_obj'] = _debilize(self.binary)
+        return obj
 
     id = Column(Integer, primary_key=True)
 
@@ -611,21 +632,26 @@ class Result(Base):
     __tablename__ = 'results'
     _debile_objs = {
         "id": "id",
-        "source": "source.__str__",
-        "job": "job.name",
+        "job": "job.__str__",
         "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
         "arch": "arch.name",
-        "group_id": "group_suite.group_id",
-        "source_id": "job.source_id",
-        "binary_id": "job.binary_id",
-        "job_id": "job_id",
-        "firehose_id": "firehose_id",
-        "failed": "failed",
         "uploaded_at": "uploaded_at",
+        "failed": "failed",
+        "group_id": "group.id",
+        "source_id": "source.id",
+        "binary_id": "binary.id",
+        "job_id": "job.id",
     }
-    debilize = _debilize
+
+    def debilize(self):
+        obj = _debilize(self)
+        obj['group_obj'] = _debilize(self.group)
+        obj['source_obj'] = _debilize(self.source)
+        obj['binary_obj'] = _debilize(self.binary)
+        obj['job_obj'] = _debilize(self.job)
+        return obj
 
     id = Column(Integer, primary_key=True)
 
@@ -663,8 +689,8 @@ class Result(Base):
     firehose_id = Column(String, ForeignKey('analysis.id'))
     firehose = relationship(Analysis)
 
-    failed = Column(Boolean)
     uploaded_at = Column(DateTime, nullable=False)
+    failed = Column(Boolean)
 
 
 def create_source(dsc, group_suite, component, uploader):
