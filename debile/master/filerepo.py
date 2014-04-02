@@ -33,12 +33,13 @@ class FilesAlreadyRegistered(FilesException):
 
 class FileRepo(object):
     def add_dud(self, path, dud):
+        if os.path.isdir(path):
+            raise FilesAlreadyRegistered()
         os.makedirs(path)
 
         for fp in [dud.get_filename()] + dud.get_files():
             # copy-then-remove instead of move to get the debile user
             # to own the file.
             shutil.copy2(fp, path)
-            os.remove(fp)
             os.chmod("%s/%s" % (path, os.path.basename(fp)),
                      config['filerepo_chmod_mode'])

@@ -26,8 +26,6 @@ from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 
 from debian.debian_support import Version
 from datetime import datetime
-import shutil
-import os
 
 
 class DebileMasterInterface(object):
@@ -235,9 +233,6 @@ class DebileMasterInterface(object):
         if job.check.build and job.failed == False:
             raise ValueError("Can not re-run a successfull build job.")
 
-        if os.access(job.files_path, os.F_OK):
-            shutil.rmtree(job.files_path)
-
         job.failed = None
         job.builder = None
         job.assigned_at = None
@@ -267,9 +262,6 @@ class DebileMasterInterface(object):
             if job.source.version != max_version:
                 continue
 
-            if os.access(job.files_path, os.F_OK):
-                shutil.rmtree(job.files_path)
-
             job.failed = None
             job.builder = None
             job.assigned_at = None
@@ -292,9 +284,6 @@ class DebileMasterInterface(object):
             max_version = max([x[0] for x in versions], key=Version)
             if job.source.version != max_version:
                 continue
-
-            if os.access(job.files_path, os.F_OK):
-                shutil.rmtree(job.files_path)
 
             job.failed = None
             job.builder = None

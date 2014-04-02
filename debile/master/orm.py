@@ -344,6 +344,10 @@ class Source(Base):
         "component": "component.name",
         "uploader": "uploader.__debilize__",
         "uploaded_at": "uploaded_at",
+        "directory": "directory",
+        "dsc_filename": "dsc_filename",
+        "dsc_path": "dsc_path",
+        "dsc_url": "dsc_url",
         "group_id": "group.id",
         "maintainers": "maintainers.__list__",
     }
@@ -354,6 +358,7 @@ class Source(Base):
         return obj
 
     id = Column(Integer, primary_key=True)
+
     name = Column(String(255))
     version = Column(String(255))
 
@@ -377,6 +382,25 @@ class Source(Base):
     uploader = relationship("Person", foreign_keys=[uploader_id])
 
     uploaded_at = Column(DateTime, nullable=False)
+
+    directory = Column(String(255))
+    dsc_filename = Column(String(255))
+
+    @property
+    def dsc_path(self):
+        return "{root}/{directory}/{filename}".format(
+            root=self.group.repo_path,
+            directory=self.directory,
+            filename=self.dsc_filename,
+        )
+
+    @property
+    def dsc_url(self):
+        return "{root}/{directory}/{filename}".format(
+            root=self.group.repo_url,
+            directory=self.directory,
+            filename=self.dsc_filename,
+        )
 
     def __str__(self):
         return "%s (%s)" % (self.name, self.version)
@@ -428,6 +452,7 @@ class Binary(Base):
         "uploaded_at": "uploaded_at",
         "group_id": "group.id",
         "source_id": "source.id",
+        "debs": "debs.__list__",
     }
 
     def debilize(self):
@@ -483,6 +508,63 @@ class Binary(Base):
 
     def __repr__(self):
         return "<Binary: %s/%s (%s)>" % (self.name, self.version, self.id)
+
+
+class Deb(Base):
+    __tablename__ = 'debs'
+    _debile_objs = {
+        "id": "id",
+        "directory": "directory",
+        "filename": "filename",
+        "path": "path",
+        "url": "url",
+    }
+    debilize = _debilize
+
+    id = Column(Integer, primary_key=True)
+
+    directory = Column(String(255))
+    filename = Column(String(255))
+
+    binary_id = Column(Integer, ForeignKey('binaries.id'))
+    binary = relationship("Binary", backref="debs",
+                          foreign_keys=[binary_id])
+
+    @hybrid_property
+    def group_suite(self):
+        return self.binary.group_suite
+
+    @hybrid_property
+    def group(self):
+        return self.binary.group
+
+    @hybrid_property
+    def suite(self):
+        return self.binary.suite
+
+    @hybrid_property
+    def component(self):
+        return self.binary.component
+
+    @hybrid_property
+    def arch(self):
+        return self.binary.arch
+
+    @property
+    def path(self):
+        return "{root}/{directory}/{filename}".format(
+            root=self.group.repo_path,
+            directory=self.directory,
+            filename=self.filename,
+        )
+
+    @property
+    def url(self):
+        return "{root}/{directory}/{filename}".format(
+            root=self.group.repo_url,
+            directory=self.directory,
+            filename=self.filename,
+        )
 
 
 # Many-to-Many relationship
@@ -603,24 +685,6 @@ class Job(Base):
                 job.depedencies.remove(self)
         return result
 
-    @property
-    def files_path(self):
-        return "{root}/{source}/{version}/{id}".format(
-            root=self.group.files_path,
-            source=self.source.name,
-            version=self.source.version,
-            id=self.id
-        )
-
-    @property
-    def files_url(self):
-        return "{root}/{source}/{version}/{id}".format(
-            root=self.group.files_url,
-            source=self.source.name,
-            version=self.source.version,
-            id=self.id
-        )
-
     def __str__(self):
         return "%s %s" % (self.source, self.name)
 
@@ -639,6 +703,9 @@ class Result(Base):
         "arch": "arch.name",
         "uploaded_at": "uploaded_at",
         "failed": "failed",
+        "directory": "directory",
+        "path": "path",
+        "url": "url",
         "group_id": "group.id",
         "source_id": "source.id",
         "binary_id": "binary.id",
@@ -656,7 +723,8 @@ class Result(Base):
     id = Column(Integer, primary_key=True)
 
     job_id = Column(Integer, ForeignKey('jobs.id'))
-    job = relationship("Job", foreign_keys=[job_id])
+    job = relationship("Job", backref="results",
+                       foreign_keys=[job_id])
 
     @hybrid_property
     def source(self):
@@ -691,6 +759,30 @@ class Result(Base):
 
     uploaded_at = Column(DateTime, nullable=False)
     failed = Column(Boolean)
+
+    @property
+    def directory(self):
+        return "/{source}_{version}/{check}_{arch}/{id}".format(
+            source=self.source.name,
+            version=self.source.version,
+            check=self.job.check.name,
+            arch=self.job.arch.name,
+            id=self.id
+        )
+
+    @property
+    def path(self):
+        return "{root}/{directory}".format(
+            root=self.group.files_path,
+            directory=self.directory,
+        )
+
+    @property
+    def url(self):
+        return "{root}/{directory}".format(
+            root=self.group.files_url,
+            directory=self.directory,
+        )
 
 
 def create_source(dsc, group_suite, component, uploader):

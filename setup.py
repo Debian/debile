@@ -19,8 +19,6 @@ flavors = {
         'debile', 'debile.utils'
     ], {
         'console_scripts': [
-            'aget = debile.utils.aget:main',
-            'bget = debile.utils.bget:main',
             'debile-remote = debile.utils.cli:main',
         ],
     }),  # Default config

@@ -19,6 +19,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import re
 import fnmatch
 
 from debian.debian_support import version_compare
@@ -28,7 +29,7 @@ from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
 from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
-                               GroupSuite, Source, Job,
+                               GroupSuite, Source, Deb, Job,
                                create_source, create_jobs)
 from debile.master.changes import Changes, ChangesFileException
 
@@ -155,6 +156,7 @@ def accept_source_changes(session, changes, user):
     # OK. We have a changes in order. Let's roll.
     repo = Repo(group_suite.group.repo_path)
     repo.add_changes(changes)
+    (source.directory, source.dsc_filename) = repo.find_dsc(source)
 
     emit('accept', 'source', source.debilize())
 
@@ -192,6 +194,15 @@ def accept_binary_changes(session, changes, builder):
 
     binary = job.new_binary()
     session.add(binary)
+
+    PATH = re.compile("^/pool/.*/")
+    for entry in changes.get('Files'):
+        directory = source.directory
+        if '/' in entry['section']:
+            component, section = entry['section'].split('/', 1)
+            directory = PATH.sub("/pool/%s/" % component, directory)
+        deb = Deb(binary=binary, directory=directory, filename=entry['name'])
+        session.add(deb)
 
     ## OK. Let's make sure we can add this.
     try:

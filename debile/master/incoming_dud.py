@@ -111,9 +111,12 @@ def accept_dud(session, dud, builder):
 
     try:
         repo = FileRepo()
-        repo.add_dud(job.files_path, dud)
+        repo.add_dud(result.path, dud)
     except FilesAlreadyRegistered:
         return reject_dud(session, dud, "dud-files-already-registered")
 
     emit('receive', 'result', result.debilize())
-    #  repo.add_dud removes the files
+
+    # OK. It's safely in the database and repo. Let's cleanup.
+    for fp in [dud.get_filename()] + dud.get_files():
+        os.unlink(fp)

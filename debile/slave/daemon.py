@@ -23,9 +23,8 @@ from debile.slave.commands import PLUGINS, load_module
 from contextlib import contextmanager
 from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
+from debile.utils.commands import safe_run
 from debile.utils.xmlrpc import get_proxy
-from debile.utils.aget import aget
-from debile.utils.bget import bget
 from debile.utils.deb822 import Changes
 from dput.exceptions import DputError, DcutError
 
@@ -87,15 +86,15 @@ def create_firehose(package, version_getter):
 def checkout(package):
     with tdir() as path:
         with cd(path):
-            src = package['source']
-            archive = package['group']['repo_url']
             if package['type'] == "source":
-                yield aget(archive, src['suite'], src['component'],
-                           src['name'], src['version'])
+                safe_run(["dget", "-u", "-d", package['source']['dsc_url']])
+                yield package['source']['dsc_filename']
             elif package['type'] == "binary":
-                arch = package['arch']
-                yield bget(archive, src['suite'], src['component'],
-                           arch, src['name'], src['version'])
+                files = []
+                for deb in package['binary']['debs']:
+                    files += [deb['filename']]
+                    safe_run(["dget", "-u", "-d", deb['url']])
+                yield files
             else:
                 raise Exception
 
@@ -159,7 +158,8 @@ def iterate():
             firehose, log, failed, changes = run(
                 target, package, job, firehose)
 
-            prefix = "%s" % (str(job['id']))
+            _, _, v = source['version'].rpartition(":")
+            prefix = "%s_%s_%s.%d" % (source['name'], v, job['arch'], job['id'])
 
             dudf = "{prefix}.dud".format(prefix=prefix)
             dud = Changes()

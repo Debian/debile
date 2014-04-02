@@ -19,6 +19,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.utils.commands import run_command
+from debian.deb822 import Sources
+from gzip import GzipFile
 
 
 class RepoException(Exception):
@@ -68,3 +70,21 @@ class Repo(object):
 
     def clearvanished(self):
         raise NotImplemented()
+
+    def find_dsc(self, source):
+        sources = "{root}/dists/{suite}/{component}/source/Sources.gz".format(
+            root=self.root,
+            suite=source.suite.name,
+            component=source.component.name
+        )
+
+        for entry in Sources.iter_paragraphs(GzipFile(filename=sources)):
+            if entry['Package'] == source.name and entry['Version'] == source.version:
+                dsc = None
+                for line in entry['Files']:
+                    if line['name'].endswith(".dsc"):
+                        dsc = line['name']
+                        break
+                return (entry['Directory'], dsc)
+
+        raise Exception("Package not found in Sources.gz")

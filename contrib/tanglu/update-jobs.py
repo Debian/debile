@@ -28,8 +28,8 @@ from debile.utils.deb822 import Dsc
 from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Maintainer, Binary,
-                               Job, Result, create_source, create_jobs)
+                               Group, GroupSuite, Source, Binary, Job, Deb,
+                               create_source, create_jobs)
 
 from rapidumolib.pkginfo import PackageBuildInfoRetriever
 from rapidumolib.config import RapidumoConfig
@@ -60,16 +60,22 @@ class ArchiveDebileBridge:
         self._suite = suite
 
     @staticmethod
-    def create_debile_source(session, group, suite, component_name, installed_arches, dsc_fname):
+    def create_debile_source(session, pkg):
         user = session.query(Person).filter_by(email="dak@ftp-master.tanglu.org").one()
 
         group_suite = session.query(GroupSuite).filter(
-            Group.name == group,
-            Suite.name == suite,
+            Group.name == "default",
+            Suite.name == pkg.suite,
         ).one()
         component = session.query(Component).filter(
-            Component.name == component_name
+            Component.name == pkg.component
         ).one()
+
+        dsc_fname = "{root}/{directory}/{filename}".format(
+            root=REPO_DIR,
+            directory=pkg.directory,
+            filename=pkg.dsc,
+        )
 
         dsc = Dsc(open(dsc_fname))
         if 'Build-Architecture-Indep' in dsc:
@@ -82,12 +88,20 @@ class ArchiveDebileBridge:
             valid_affinities = "any"
 
         source = create_source(dsc, group_suite, component, user)
+        source.directory = pkg.directory
+        source.dsc_filename = pkg.dsc
         session.add(source)
 
-        for aname in installed_arches:
+        for aname in pkg.installed_archs:
             arch = session.query(Arch).filter_by(name=aname).one()
             binary = Binary(source=source, arch=arch, uploaded_at=source.uploaded_at)
-            source.binaries.append(binary)
+            session.add(binary)
+
+            for name, arch, filename in pkg.binaries:
+                if arch == binary.arch.name:
+                    directory, _, filename = filename.rpartition('/')
+                    deb = Deb(binary=binary, directory=directory, filename=filename)
+                    session.add(deb)
 
         create_jobs(source, valid_affinities, externally_blocked=True)
 
@@ -106,11 +120,18 @@ class ArchiveDebileBridge:
         return source
 
     @staticmethod
-    def create_debile_binaries(session, source, installed_arches):
+    def create_debile_binaries(session, source, pkg):
         for job in source.jobs:
-            if job.check.build and not job.built_binary and job.arch.name in installed_arches:
+            if job.check.build and not job.built_binary and job.arch.name in pkg.installed_archs:
                 binary = job.new_binary()
                 session.add(binary)
+
+                for name, arch, filename in pkg.binaries:
+                    if arch == binary.arch.name:
+                        directory, _, filename = filename.rpartition('/')
+                        deb = Deb(binary=binary, directory=directory, filename=filename)
+                        session.add(deb)
+
                 emit('accept', 'binary', binary.debilize())
 
     @staticmethod
@@ -133,27 +154,28 @@ class ArchiveDebileBridge:
               (source.name, source.version, str(arches)))
 
     def _get_package_depwait_report(self, pkg, arch):
-        for nbpkg in self.bcheck_data[arch]:
+        for nbpkg in self.bcheck_data[pkg.component][arch]:
             if (nbpkg['package'] == ('src%3a'+pkg.pkgname)) and (nbpkg['version'] == pkg.version):
                 if nbpkg['status'] == 'broken':
                     return yaml.dump(nbpkg['reasons'])
         return None
 
-    def sync_packages(self, component):
-        pkg_list = self._pkginfo.get_packages_for(self._suite, component)
-        pkg_dict = self._pkginfo.package_list_to_dict(pkg_list)
+    def sync_packages(self):
+        pkg_dict = self._pkginfo.get_packages(self._suite)
 
         self.bcheck_data = {}
         bcheck = BuildCheck(self._suite)
-        for arch in self._supported_archs:
-            yaml_data = bcheck.get_package_states_yaml(component, arch)
-            report_data = yaml.safe_load(yaml_data)['report']
-            if not report_data:
-                report_data = list()
-            self.bcheck_data[arch] = report_data
-            yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, self._suite, component, arch), "w")
-            yaml_file.write(yaml_data)
-            yaml_file.close()
+        for component in self._archive_components:
+            self.bcheck_data[component] = {}
+            for arch in self._supported_archs:
+                yaml_data = bcheck.get_package_states_yaml(component, arch)
+                report_data = yaml.safe_load(yaml_data)['report']
+                if not report_data:
+                    report_data = list()
+                self.bcheck_data[component][arch] = report_data
+                yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, self._suite, component, arch), "w")
+                yaml_file.write(yaml_data)
+                yaml_file.close()
 
         for pkg in pkg_dict.values():
             try:
@@ -166,14 +188,12 @@ class ArchiveDebileBridge:
                     ).first()
 
                     if not source:
-                        dsc = os.path.join(REPO_DIR, pkg.directory, pkg.dsc)
-                        source = ArchiveDebileBridge.create_debile_source(s, "default", pkg.suite, component, pkg.installed_archs, dsc)
+                        source = ArchiveDebileBridge.create_debile_source(s, pkg)
+                    else:
+                        ArchiveDebileBridge.create_debile_binaries(s, source, pkg)
 
                     unblock_arches = [arch for arch in self._supported_archs
                                       if not self._get_package_depwait_report(pkg, arch)]
-
-                    if pkg.installed_archs:
-                        ArchiveDebileBridge.create_debile_binaries(s, source, pkg.installed_archs)
 
                     if unblock_arches:
                         ArchiveDebileBridge.unblock_debile_jobs(s, source, unblock_arches)
@@ -181,10 +201,6 @@ class ArchiveDebileBridge:
             except Exception as ex:
                 print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
                 continue
-
-    def sync_packages_all(self):
-        for comp in self._archive_components:
-            self.sync_packages(comp)
 
 
 def main():
@@ -201,7 +217,7 @@ def main():
     if options.update:
         sync = ArchiveDebileBridge("staging")
         #sync.scheduleBuilds = options.build
-        sync.sync_packages_all()
+        sync.sync_packages()
     else:
         print("Run with -h for a list of available command-line options!")
 
