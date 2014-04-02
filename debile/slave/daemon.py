@@ -84,7 +84,7 @@ def create_firehose(package, version_getter):
 
 
 @contextmanager
-def checkout(job, package):
+def checkout(package):
     with tdir() as path:
         with cd(path):
             src = package['source']
@@ -93,7 +93,7 @@ def checkout(job, package):
                 yield aget(archive, src['suite'], src['component'],
                            src['name'], src['version'])
             elif package['type'] == "binary":
-                arch = job['arch']
+                arch = package['arch']
                 yield bget(archive, src['suite'], src['component'],
                            arch, src['name'], src['version'])
             else:
@@ -145,7 +145,7 @@ def iterate():
             "name": source['name'],
             "version": source['version'],
             "type": "source" if binary is None else "binary",
-            "arch": "all" if binary is None else binary['arch'],
+            "arch": job['arch'],
             "suite": source['suite'],
             "component": source['component'],
             "group": group,
@@ -153,17 +153,9 @@ def iterate():
             "binary": binary,
         }
 
-        with checkout(job, package) as check:
+        with checkout(package) as target:
             run, version = load_module(job['check'])
             firehose = create_firehose(package, version)
-
-            type_ = package['type']
-            if type_ == "source":
-                target = check  # Only get one.
-            elif type_ == "binary":
-                target = check  # tons and tons
-            else:
-                raise Exception("Unknown type")
 
             firehose, log, failed, changes = run(
                 target, package, job, firehose)
@@ -177,7 +169,7 @@ def iterate():
             dud['Version'] = package['source']['version']
             dud['Architecture'] = package['arch']
             dud['X-Debile-Failed'] = "Yes" if failed else "No"
-            if type_ == 'binary':
+            if package['type'] == 'binary':
                 dud['Binary'] = package['binary']['name']
 
             job['failed'] = failed
