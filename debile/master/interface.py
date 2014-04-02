@@ -277,8 +277,6 @@ class DebileMasterInterface(object):
             NAMESPACE.session.add(job)
             NAMESPACE.session.commit()
 
-        return jobs.count()
-
     @user_method
     def retry_failed(self):
         jobs = NAMESPACE.session.query(Job).filter(
@@ -304,5 +302,3 @@ class DebileMasterInterface(object):
             job.finished_at = None
             NAMESPACE.session.add(job)
             NAMESPACE.session.commit()
-
-        return jobs.count()
