@@ -545,25 +545,21 @@ class Job(Base):
 
     # Called when the .changes for a build job is processed
     def changes_uploaded(self, session, binary):
+        if not self.check.build:
+            raise ValueError("changes_uploaded() are for build jobs only!")
         for jd in self.blocking:
             if (jd.blocked_job.check.binary and
                     jd.blocked_job.source == self.source and
                     jd.blocked_job.arch == self.arch):
                 jd.blocked_job.binary = binary
-            # Only delete the dependency if the .dud from the successfull build
-            # has already been processed.
-            # Using "== False" to exclude both None and True
-            if self.failed == False:
-                session.delete(jd)
+            session.delete(jd)
 
     # Called when a .dud for any job is processed
     def dud_uploaded(self, session, result):
         self.failed = result.failed
         # Only delete the dependency if the job was sucessfull and (if this is
         # a build job) the .changes has already been processed.
-        if not result.failed and \
-                (not self.check.build or
-                 self.built_binary is not None):
+        if not result.failed and not self.check.build:
             for jd in self.blocking:
                 session.delete(jd)
 
@@ -717,8 +713,7 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, valid_affinities,
-                installed_arches=[], externally_blocked=False):
+def create_jobs(source, valid_affinities, externally_blocked=False):
     """
     Create jobs for Source `source`, using the an architecture matching
     `valid_affinities` for any arch "all" jobs.
@@ -744,6 +739,12 @@ def create_jobs(source, valid_affinities,
         valid_arches
     )
 
+    builds = {}
+    binaries = {}
+
+    for binary in source.binaries:
+        binaries[binary.arch] = binary
+
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
                 check=check, arch=aall, affinity=affinity,
@@ -752,19 +753,11 @@ def create_jobs(source, valid_affinities,
                 finished_at=None, failed=None)
         source.jobs.append(j)
 
-    builds = {}
-    binaries = {}
-
     for check in source.group_suite.get_build_checks():
         for arch in source.arches:
             jobaffinity = affinity if arch == aall else arch
 
-            if arch.name in installed_arches:
-                b = Binary(source=source, arch=arch,
-                           uploaded_at=source.uploaded_at)
-                binaries[arch] = b
-                source.binaries.append(b)
-            else:
+            if arch not in binaries:
                 j = Job(name="%s [%s]" % (check.name, arch.name),
                         check=check, arch=arch, affinity=jobaffinity,
                         source=source, binary=None,
@@ -784,9 +777,7 @@ def create_jobs(source, valid_affinities,
             if aall in builds and aall != arch:
                 deps.append(builds[aall])
 
-            binary = None
-            if arch in binaries:
-                binary = binaries[arch]
+            binary = binaries.get(arch, None)
 
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch, affinity=jobaffinity,

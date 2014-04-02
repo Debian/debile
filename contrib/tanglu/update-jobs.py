@@ -83,10 +83,14 @@ class ArchiveDebileBridge:
             valid_affinities = "any"
 
         source = create_source(dsc, group_suite, component, user)
-        create_jobs(source, valid_affinities,
-                    installed_arches=installed_arches,
-                    externally_blocked=True)
         session.add(source)
+
+        for aname in installed_arches:
+            arch = session.query(Arch).filter_by(name=aname).one()
+            binary = Binary(source=source, arch=arch, uploaded_at=source.uploaded_at)
+            source.binaries.append(binary)
+
+        create_jobs(source, valid_affinities, externally_blocked=True)
 
         # Drop any old jobs that are still pending.
         jobs = session.query(Job).join(Job.source).filter(
@@ -101,6 +105,14 @@ class ArchiveDebileBridge:
         emit('accept', 'source', source.debilize())
 
         return source
+
+    @staticmethod
+    def create_debile_binaries(session, source, installed_arches):
+        for job in source.jobs:
+            if job.check.build and not job.built_binary and job.arch.name in installed_arches:
+                binary = Binary.from_job(job)
+                session.add(binary)
+                job.changes_uploaded(session, binary)
 
     @staticmethod
     def unblock_debile_jobs(session, source, arches):
@@ -160,6 +172,9 @@ class ArchiveDebileBridge:
 
                     unblock_arches = [arch for arch in self._supported_archs
                                       if not self._get_package_depwait_report(pkg, arch)]
+
+                    if pkg.installed_archs:
+                        ArchiveDebileBridge.create_debile_binaries(s, source, pkg.installed_archs)
 
                     if unblock_arches:
                         ArchiveDebileBridge.unblock_debile_jobs(s, source, unblock_arches)
