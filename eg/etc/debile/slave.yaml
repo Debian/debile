@@ -19,7 +19,6 @@ components:
 
 arches:
     - amd64
-    - all
 
 checks:
     - lintian

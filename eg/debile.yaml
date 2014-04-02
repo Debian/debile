@@ -32,7 +32,6 @@ Components:
     - name: non-free
 
 Arches:
-    - name: all
     - name: amd64
     - name: i386
 
@@ -57,7 +56,6 @@ Groups:
                 - main
                 - contrib
             arches:
-                - all
                 - amd64
                 - i386
             checks:

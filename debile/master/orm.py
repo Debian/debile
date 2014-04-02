@@ -500,7 +500,10 @@ class Job(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
+
+    @hybrid_property
+    def name(self):
+        return self.check.name + " [" + self.arch.name + "]"
 
     # This is a hack for Tanglu, so we can use dose for depwait calculations
     # instead using the as-of-now unimplemented debile depwait support.
@@ -709,19 +712,24 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
     `valid_affinities` for any arch "all" jobs.
     """
 
-    aall = None
+    arch_source = None
+    arch_all = None
     for arch in source.group_suite.arches:
+        if arch.name == "source":
+            arch_source = arch
         if arch.name == "all":
-            aall = arch
-            break
-    else:
-        raise ValueError("Can't find arch:all in the suite arches.")
+            arch_all = arch
+
+    if not arch_source or not arch_all:
+        raise ValueError("Missing arch:all or arch:source in the group_suite.")
 
     # Sources building arch-dependent packages should build any
     # arch-independent packages on an architecture it is building
     # arch-dependent packages on.
-    valid_arches = [x for x in source.arches if x.name != "all"] or \
-                   [x for x in source.group_suite.arches if x.name != "all"]
+    valid_arches = (
+        [x for x in source.arches if x.name not in ["source", "all"]] or
+        [x for x in source.group_suite.arches if x.name not in ["source", "all"]]
+    )
 
     affinity = get_preferred_affinity(
         debile.master.core.config["affinity_preference"],
@@ -736,41 +744,38 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
         binaries[binary.arch] = binary
 
     for check in source.group_suite.get_source_checks():
-        j = Job(name="%s [%s]" % (check.name, "source"),
-                check=check, arch=aall, affinity=affinity,
+        j = Job(check=check, arch=arch_source, affinity=affinity,
                 source=source, binary=None)
         source.jobs.append(j)
 
     for check in source.group_suite.get_build_checks():
         for arch in source.arches:
-            jobaffinity = affinity if arch == aall else arch
+            jobaffinity = affinity if arch == arch_all else arch
 
             if arch not in binaries:
-                j = Job(name="%s [%s]" % (check.name, arch.name),
-                        check=check, arch=arch, affinity=jobaffinity,
+                j = Job(check=check, arch=arch, affinity=jobaffinity,
                         source=source, binary=None,
                         externally_blocked=externally_blocked)
                 builds[arch] = j
                 source.jobs.append(j)
 
     for arch, job in builds.iteritems():
-        if arch != aall and aall in builds:
-            job.depedencies.append(builds[aall])
+        if arch != arch_all and arch_all in builds:
+            job.depedencies.append(builds[arch_all])
 
     for check in source.group_suite.get_binary_checks():
         for arch in source.arches:
-            jobaffinity = affinity if arch == aall else arch
+            jobaffinity = affinity if arch == arch_all else arch
 
             deps = []
             if arch in builds:
                 deps.append(builds[arch])
-            if aall in builds and aall != arch:
-                deps.append(builds[aall])
+            if arch_all in builds and arch_all != arch:
+                deps.append(builds[arch_all])
 
             binary = binaries.get(arch, None)
 
-            j = Job(name="%s [%s]" % (check.name, arch.name),
-                    check=check, arch=arch, affinity=jobaffinity,
+            j = Job(check=check, arch=arch, affinity=jobaffinity,
                     source=source, binary=binary)
             source.jobs.append(j)
 

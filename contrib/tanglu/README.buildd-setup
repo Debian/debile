@@ -166,7 +166,6 @@ checks:
 arches:
     - amd64
     - i386
-    - all
 
 suites:
     - staging

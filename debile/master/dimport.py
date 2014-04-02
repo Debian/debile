@@ -59,6 +59,9 @@ def import_dict(obj):
         for component in components:
             s.add(Component(**component))
 
+        for arch in ["source", "all"]:
+            s.add(Arch(name=arch))
+
         for arch in arches:
             s.add(Arch(name=arch['name']))
 
@@ -83,7 +86,7 @@ def import_dict(obj):
                     ).one()
                     gs.components.append(component)
 
-                for arch in suite.pop('arches'):
+                for arch in ["source", "all"] + suite.pop('arches'):
                     arch = s.query(Arch).filter_by(name=arch).one()
                     gs.arches.append(arch)
 
