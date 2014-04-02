@@ -264,7 +264,7 @@ class DebileMasterInterface(object):
                 Source.name == job.source.name,
             )
             max_version = max([x[0] for x in versions], key=Version)
-            if job.version != max_version:
+            if job.source.version != max_version:
                 continue
 
             if os.access(job.files_path, os.F_OK):
@@ -292,7 +292,7 @@ class DebileMasterInterface(object):
                 Source.name == job.source.name
             )
             max_version = max([x[0] for x in versions], key=Version)
-            if job.version != max_version:
+            if job.source.version != max_version:
                 continue
 
             if os.access(job.files_path, os.F_OK):
