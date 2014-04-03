@@ -173,6 +173,7 @@ class Arch(Base):
 
 class Check(Base):
     __tablename__ = 'checks'
+    __table_args__ = (UniqueConstraint('name'),)
     _debile_objs = {
         "id": "id",
         "name": "name",
