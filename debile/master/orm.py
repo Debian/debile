@@ -461,7 +461,7 @@ class Binary(Base):
     def component(self):
         return self.source.component
 
-    uploaded_at = Column(DateTime)
+    uploaded_at = Column(DateTime, nullable=False)
 
     @staticmethod
     def from_job(job):
@@ -537,12 +537,13 @@ class Job(Base):
     binary = relationship("Binary", backref="jobs",
                           foreign_keys=[binary_id])
 
-    builder_id = Column(Integer, ForeignKey('builders.id'), nullable=True)
+    builder_id = Column(Integer, ForeignKey('builders.id'),
+                        nullable=True, default=None)
     builder = relationship("Builder", foreign_keys=[builder_id])
 
-    assigned_at = Column(DateTime, nullable=True)
-    finished_at = Column(DateTime, nullable=True)
-    failed = Column(Boolean, nullable=True)
+    assigned_at = Column(DateTime, nullable=True, default=None)
+    finished_at = Column(DateTime, nullable=True, default=None)
+    failed = Column(Boolean, nullable=True, default=None)
 
     # Called when the .changes for a build job is processed
     def changes_uploaded(self, session, binary):
@@ -668,7 +669,7 @@ class Result(Base):
     firehose = relationship(Analysis)
 
     failed = Column(Boolean)
-    uploaded_at = Column(DateTime, nullable=True)
+    uploaded_at = Column(DateTime, nullable=False)
 
     @staticmethod
     def from_job(job):
@@ -749,9 +750,7 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
     for check in source.group_suite.get_source_checks():
         j = Job(name="%s [%s]" % (check.name, "source"),
                 check=check, arch=aall, affinity=affinity,
-                source=source, binary=None,
-                builder=None, assigned_at=None,
-                finished_at=None, failed=None)
+                source=source, binary=None)
         source.jobs.append(j)
 
     for check in source.group_suite.get_build_checks():
@@ -762,9 +761,7 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
                 j = Job(name="%s [%s]" % (check.name, arch.name),
                         check=check, arch=arch, affinity=jobaffinity,
                         source=source, binary=None,
-                        externally_blocked=externally_blocked,
-                        builder=None, assigned_at=None,
-                        finished_at=None, failed=None)
+                        externally_blocked=externally_blocked)
                 builds[arch] = j
                 source.jobs.append(j)
 
@@ -782,9 +779,7 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
 
             j = Job(name="%s [%s]" % (check.name, arch.name),
                     check=check, arch=arch, affinity=jobaffinity,
-                    source=source, binary=binary,
-                    builder=None, assigned_at=None,
-                    finished_at=None, failed=None)
+                    source=source, binary=binary)
             source.jobs.append(j)
 
             jds = [JobDependencies(blocked_job=j, blocking_job=x)
