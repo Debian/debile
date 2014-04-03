@@ -21,7 +21,6 @@ Depends:
  python-debian,
  python-requests,
  python-yaml,
- adduser,
 Description: set of core débile builder routines
  This package contains the core utils and libraries used by both the
  client and server modules. This contains routines for handling `dud` files,
@@ -35,6 +34,9 @@ Depends:
  ${misc:Depends},
  ${python:Depends},
  python-debile (= ${binary:Version}),
+ python-dput (>= 1.7~),
+ python-firehose,
+ adduser,
 Recommends:
  dpkg-dev,
 # For dpkg-source
@@ -52,7 +54,6 @@ Recommends:
  python-lxml,
  python-yaml,
 # for dud file uploading
- python-dput (>= 1.7~),
  dput-ng,
 Description: slave for the débile package builder system
  The débile client/server software is designed to help moderate to

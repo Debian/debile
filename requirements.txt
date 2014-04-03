@@ -1,7 +1,4 @@
+python-debian
+chardet
 pyyaml
 requests
-sqlalchemy >= 0.8.4
-chardet
-python-debian
-firehose
--e git://git.upsilon.cc/firewoes.git#egg=firewoes
