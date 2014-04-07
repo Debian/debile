@@ -75,7 +75,7 @@ ${GPG_COMMAND} ${GPG_FLAGS} --armor --export-secret-key ${GPG_FINGERPRINT} > key
 
 echo -n " ok. creating slave remotely."
 
-#debile-remote create-slave ${SLAVE_NAME} key.pub ${SLAVE_NAME}.crt
+debile-remote create-slave ${SLAVE_NAME} key.pub ${SLAVE_NAME}.crt
 
 RET=$?
 if [ ${RET} -ne 0 ]; then
