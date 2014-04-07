@@ -16,5 +16,20 @@ function do-import {
     tar -zxf ${TARFILE} $1 -O | gpg --import --status-fd 1
 }
 
+function copy-ssl-cred {
+    WORKDIR=$(mktemp -d)
+    pushd ${WORKDIR} >/dev/null
+    tar -zxf ${TARFILE}
+    if test ! -f *.crt -o  ! -f  *.key; then
+        echo "Cannot find .crt or .key file";
+        exit 1
+    fi
+    cp -f *.crt *.key /etc/debile/
+    popd >/dev/null
+    rm -rf ${WORKDIR}
+
+}
+
 do-import key.pub
 do-import key.priv
+copy-ssl-cred

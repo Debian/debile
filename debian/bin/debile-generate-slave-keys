@@ -31,9 +31,8 @@ function get-fingerprint {
     echo ${GPG_FINGERPRINT}
 }
 
-function generate-password {
-    cat /usr/share/dict/words | grep -v "'" | shuf | head -n 6 \
-        | tr '\n' '-' | sed 's/-$//g' && echo
+function generate-ssl {
+    openssl req -x509 -nodes -newkey rsa:3072 -sha256 -keyout ${SLAVE_NAME}.key -out ${SLAVE_NAME}.crt -subj '/CN=debile.debian.net/O=Debian/C=NA'
 }
 
 
@@ -56,19 +55,19 @@ fi
 
 GPG_FINGERPRINT=`get-fingerprint`
 # Right, OK. We've got a fingerprint.
-SLAVE_PASSWORD=$(generate-password)
 
 echo ""
 echo "   The slave has a username of ${SLAVE_NAME}"
-echo "   The slave has a password of ${SLAVE_PASSWORD}"
+echo "   The slave has a SSL ${SLAVE_NAME}.crt"
 echo "   The slave has a OpenPGP key ${GPG_FINGERPRINT}"
 echo ""
 
 WORKDIR=$(mktemp -d)
 pushd ${WORKDIR} >/dev/null
 
+generate-ssl
+
 echo "${SLAVE_NAME}" > name
-echo "${SLAVE_PASSWORD}" > password
 echo "${GPG_FINGERPRINT}" > fingerprint
 
 ${GPG_COMMAND} ${GPG_FLAGS} --armor --export ${GPG_FINGERPRINT} > key.pub
@@ -76,7 +75,7 @@ ${GPG_COMMAND} ${GPG_FLAGS} --armor --export-secret-key ${GPG_FINGERPRINT} > key
 
 echo -n " ok. creating slave remotely."
 
-debile-remote create-slave ${SLAVE_NAME} ${SLAVE_PASSWORD} key.pub
+#debile-remote create-slave ${SLAVE_NAME} key.pub ${SLAVE_NAME}.crt
 
 RET=$?
 if [ ${RET} -ne 0 ]; then
