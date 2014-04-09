@@ -113,13 +113,7 @@ Export the pgp public key:
  sudo -u buildd -i gpg --armor --export "<element>@buildd.tanglu.org" >/srv/buildd/<element>.pgp
 
 Create a debile xmlrpc ssl key and cert:
- openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -keyout /srv/buildd/<element>.key -out /srv/buildd/<element>.crt && chmod go-rwx /srv/buildd/*.key
-
-File out the information.
-The organization should be "Tanglu Project".
-The unit name should be "Package Build Service".
-The common name should be: "<element>.buildd.tanglu.org", e.g. "helium.buildd.tanglu.org".
-The email address should be "<element>@buildd.tanglu.org", e.g. "helium@buildd.tanglu.org".
+ openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -subj "/C=ORG/O=Tanglu Project/OU=Package Build Service/CN=<element>.buildd.tanglu.org/emailAddress=<element>@buildd.tanglu.org" -keyout /srv/buildd/<element>.key -out /srv/buildd/<element>.crt && chmod go-rwx /srv/buildd/*.key
 
 === 6. Install buildd software ===
 Clone the Tanglu debile software:
