@@ -448,7 +448,7 @@ class Binary(Base):
         "suite": "suite.name",
         "component": "component.name",
         "arch": "arch.name",
-        "builder": "build_job_id.builder.__debilize__",
+        "builder": "build_job.builder.__debilize__",
         "uploaded_at": "uploaded_at",
         "group_id": "group.id",
         "source_id": "source.id",
