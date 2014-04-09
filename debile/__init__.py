@@ -19,4 +19,4 @@
 # DEALINGS IN THE SOFTWARE.
 
 __appname__ = "debile"
-__version__ = "1.0"
+__version__ = "1.3.1"
