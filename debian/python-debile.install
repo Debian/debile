@@ -1,2 +1,1 @@
-debian/bin/debile-generate-slave-keys    usr/share/python-debile/
 eg/etc/debile/user.yaml                  etc/debile/
