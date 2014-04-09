@@ -7,7 +7,7 @@
 # If we're running as !(root), exit 1.
 #
 # Ohkay, a few jobs. We need to digest the .tar.gz and write the values
-# we care about too /etc/debile/slave.yaml
+# we care about to /etc/debile/slave.yaml
 #
 # After that's all sorted, we'll su over to Debian-debile-unpriv and import
 # our OpenPGP keys
@@ -21,12 +21,12 @@ from contextlib import contextmanager
 from debile.utils.commands import run_command
 
 DEBILE_USER = "Debian-debile-unpriv"
-
+DEFAULT_DEBILE_CONF = "/etc/debile/"
 
 @contextmanager
 def editconf(where=None):
     if where is None:
-        where = "/etc/debile/slave.yaml"
+        where = DEFAULT_DEBILE_CONF + "slave.yaml"
         with open(where, 'r') as fd:
             info = yaml.load(fd)
             yield info
@@ -51,12 +51,11 @@ def cg(tarfile):
 with tarfile.open(sys.argv[1], "r:gz") as tf:
     get = cg(tf)
     name = get("name")
-    password = get("password")
     key = get("fingerprint")
     kname = "%" + (name)
 
     with editconf() as config:
         config['gpg'] = key
         r = config['xmlrpc']
-        r['password'] = password
-        r['user'] = kname
+        r['keyfile'] = DEFAULT_DEBILE_CONF + name + ".key"
+        r['certfile'] = DEFAULT_DEBILE_CONF + name + ".cert"
