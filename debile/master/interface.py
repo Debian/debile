@@ -229,8 +229,8 @@ class DebileMasterInterface(object):
         if not job:
             raise ValueError("No job with id %s." % job_id)
 
-        # Using "== False" to exclude both None and True
-        if job.check.build and job.failed == False:
+        # Using "job.failed is False", not "not job.failed", to not match None.
+        if job.check.build and job.failed is False:
             raise ValueError("Can not re-run a successfull build job.")
 
         job.failed = None
@@ -272,7 +272,7 @@ class DebileMasterInterface(object):
     @user_method
     def retry_failed(self):
         jobs = NAMESPACE.session.query(Job).filter(
-            Job.failed == True,
+            Job.failed.is_(True),
             Job.check.has(Check.build == True),
         )
 

@@ -675,9 +675,10 @@ class Job(Base):
         return binary
 
     # Called when a .dud for any job is processed
-    def new_result(self):
+    def new_result(self, failed):
         result = Result(job=self, uploaded_at=datetime.utcnow())
-        self.failed = result.failed
+        result.failed = failed
+        self.failed = failed
         # Only delete the dependency if the job was sucessfull, and
         # not if it is a build job (that is handled by add_binary().
         if not result.failed and not self.check.build:

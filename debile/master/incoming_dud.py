@@ -104,8 +104,7 @@ def accept_dud(session, dud, builder):
     fire, _ = idify(fire)
     fire = uniquify(session, fire)
 
-    result = job.new_result()
-    result.failed = failed
+    result = job.new_result(failed)
     result.firehose = fire
     session.add(result)
 
