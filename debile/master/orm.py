@@ -27,7 +27,7 @@ from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
@@ -482,7 +482,7 @@ class Binary(Base):
                                               name='fk_build_job_id',
                                               use_alter=True),
                           nullable=True, default=None)
-    build_job = relationship("Job", backref="built_binary",
+    build_job = relationship("Job", backref=backref("built_binary", uselist=False),
                              foreign_keys=[build_job_id])
 
     @hybrid_property
