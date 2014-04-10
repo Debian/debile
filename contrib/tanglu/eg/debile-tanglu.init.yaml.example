@@ -13,7 +13,7 @@ Users:  # Users of Debile
     - name: Jon Severinsson
       email: jon@severinsson.net
       pgp: 32623A6F42F5DA4B0DBD5B2BCDBBA39E78415AD2
-      ssl: 0000000000000000DEADBEEF0000000000000000
+      ssl: F69CB54E3B47916BD6DC65244C06969F06AC469F
 
     - name: Daniel Nicoletti
       email: dantti12@gmail.com
@@ -48,7 +48,6 @@ Builders:  # Machines that can build
 
 Suites:
     - name: aequorea-updates
-    - name: bartholomea
     - name: staging
 
 Components:
@@ -74,6 +73,19 @@ Checks:
 Groups:
     - name: default
       maintainer: mak@debian.org
+
+      suites:
+          - suite: aequorea-updates
+            components:
+                - main
+                - contrib
+                - non-free
+            arches:
+                - amd64
+                - i386
+            checks:
+                - build
+                - lintian
 
       suites:
           - suite: staging
