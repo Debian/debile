@@ -25,7 +25,7 @@ import xmlrpclib
 import httplib
 import socket
 import ssl
-
+import os.path
 
 def get_host_list(cert):
     if 'subjectAltName' in cert:
@@ -49,6 +49,15 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
         strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
         source_address=None
     ):
+        if not os.path.isfile(cert_file):
+            raise Exception("Could not find/access " + cert_file)
+
+        if not os.path.isfile(key_file):
+            raise Exception("Could not find/access " + key_file)
+
+        if not os.path.isfile(ca_certs):
+            raise Exception("Could not find/access " + ca_certs)
+
         httplib.HTTPSConnection.__init__(
             self, host=host, port=port,
             key_file=key_file, cert_file=cert_file,
