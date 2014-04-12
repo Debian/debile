@@ -148,13 +148,13 @@ class ArchiveDebileBridge:
 
         base_suite = self._conf.get_base_suite(suite)
         components = self._conf.get_supported_components(base_suite).split(" ")
-        archs = self._conf.get_supported_archs(base_suite).split(" ")
-        archs.append("all")
+        supported_archs = self._conf.get_supported_archs(base_suite).split(" ")
+        supported_archs.append("all")
 
         bcheck_data = {}
         for component in components:
             bcheck_data[component] = {}
-            for arch in archs:
+            for arch in supported_archs:
                 yaml_data = self._bcheck.get_package_states_yaml(suite, component, arch)
                 report_data = yaml.safe_load(yaml_data)['report']
                 if not report_data:
@@ -179,7 +179,7 @@ class ArchiveDebileBridge:
                     else:
                         self.create_debile_binaries(s, source, pkg)
 
-                    unblock_arches = [arch for arch in self._supported_archs
+                    unblock_arches = [arch for arch in supported_archs
                                       if not self._get_package_depwait_report(bcheck_data, pkg, arch)]
 
                     if unblock_arches:
