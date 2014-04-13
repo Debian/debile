@@ -48,7 +48,7 @@ class ArchiveDebileBridge:
     def create_debile_source(self, session, pkg):
         user = session.query(Person).filter_by(email="dak@ftp-master.tanglu.org").one()
 
-        group_suite = session.query(GroupSuite).filter(
+        group_suite = session.query(GroupSuite).join(GroupSuite.group).join(GroupSuite.suite).filter(
             Group.name == "default",
             Suite.name == pkg.suite,
         ).one()
