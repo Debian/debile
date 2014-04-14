@@ -32,3 +32,9 @@ All topics are under:
     |
     `-- result
         |-- receive
+
+Run tests
+=========
+
+$ apt-get install python-nose
+$ nosetests
