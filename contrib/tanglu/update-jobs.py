@@ -45,11 +45,10 @@ class ArchiveDebileBridge:
         self._pkginfo = PackageBuildInfoRetriever(self._conf)
         self._bcheck = BuildCheck(self._conf)
 
-    @staticmethod
-    def create_debile_source(session, pkg):
+    def create_debile_source(self, session, pkg):
         user = session.query(Person).filter_by(email="dak@ftp-master.tanglu.org").one()
 
-        group_suite = session.query(GroupSuite).filter(
+        group_suite = session.query(GroupSuite).join(GroupSuite.group).join(GroupSuite.suite).filter(
             Group.name == "default",
             Suite.name == pkg.suite,
         ).one()
@@ -105,8 +104,7 @@ class ArchiveDebileBridge:
 
         return source
 
-    @staticmethod
-    def create_debile_binaries(session, source, pkg):
+    def create_debile_binaries(self, session, source, pkg):
         for job in source.jobs:
             if job.check.build and not job.built_binary and job.arch.name in pkg.installed_archs:
                 binary = job.new_binary()
@@ -120,8 +118,7 @@ class ArchiveDebileBridge:
 
                 emit('accept', 'binary', binary.debilize())
 
-    @staticmethod
-    def unblock_debile_jobs(session, source, arches):
+    def unblock_debile_jobs(self, session, source, arches):
         jobs = session.query(Job).filter(
             Job.source == source,
             Job.externally_blocked == True,
@@ -151,13 +148,13 @@ class ArchiveDebileBridge:
 
         base_suite = self._conf.get_base_suite(suite)
         components = self._conf.get_supported_components(base_suite).split(" ")
-        archs = self._conf.get_supported_archs(base_suite).split(" ")
-        archs.append("all")
+        supported_archs = self._conf.get_supported_archs(base_suite).split(" ")
+        supported_archs.append("all")
 
         bcheck_data = {}
         for component in components:
             bcheck_data[component] = {}
-            for arch in archs:
+            for arch in supported_archs:
                 yaml_data = self._bcheck.get_package_states_yaml(suite, component, arch)
                 report_data = yaml.safe_load(yaml_data)['report']
                 if not report_data:
@@ -178,15 +175,15 @@ class ArchiveDebileBridge:
                     ).first()
 
                     if not source:
-                        source = ArchiveDebileBridge.create_debile_source(s, pkg)
+                        source = self.create_debile_source(s, pkg)
                     else:
-                        ArchiveDebileBridge.create_debile_binaries(s, source, pkg)
+                        self.create_debile_binaries(s, source, pkg)
 
-                    unblock_arches = [arch for arch in self._supported_archs
+                    unblock_arches = [arch for arch in supported_archs
                                       if not self._get_package_depwait_report(bcheck_data, pkg, arch)]
 
                     if unblock_arches:
-                        ArchiveDebileBridge.unblock_debile_jobs(s, source, unblock_arches)
+                        self.unblock_debile_jobs(s, source, unblock_arches)
 
             except Exception as ex:
                 print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))

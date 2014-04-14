@@ -102,7 +102,7 @@ def accept_source_changes(session, changes, user):
     suite = changes['Distribution']
 
     try:
-        group_suite = session.query(GroupSuite).filter(
+        group_suite = session.query(GroupSuite).join(GroupSuite.group).join(GroupSuite.suite).filter(
             Group.name == group,
             Suite.name == suite,
         ).one()
