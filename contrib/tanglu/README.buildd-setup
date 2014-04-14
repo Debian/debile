@@ -136,7 +136,15 @@ Please keep the Git clone up-to-date and install new software versions from time
 
 === 7. Configure buildd software ===
 Copy the tanglu-buildd certificate to /srv/buildd/tanglu-buildd.crt
-Set $resolve_alternatives to 1 in /etc/sbuild/sbuild.conf
+Modify /etc/sbuild/sbuild.conf to contain:
+$resolve_alternatives = 1;
+$build_environment = {
+    'DEB_BUILD_OPTIONS' => 'parallel=5'
+};
+
+Note: Change 'parallel=4' to suite your machine, "num physical cpu cores + 1" or "num logical cpu cores - 1" is usually a suitable value.
+Also be aware that many jobs ignore this setting, and only uses a single core, so if you have a powerful machine with plenty of RAM/HDD, please consider runing multiple debile-slave instances with a lower "parallel=" setting instead.
+
 Create /etc/debile/slave.yaml using the template below.
 Change the file to match your builder specifications.
 You will have to set GPGKEY_FINGERPRINT to the full fingerpint of the GPG-key you created

@@ -103,7 +103,6 @@ def sbuild(package, suite, arch, affinity, analysis):
         "--chroot={chroot_name}".format(chroot_name=chroot_name),
         ("--arch-all" if arch == 'all' else '--no-arch-all'),
         "-v",
-        "-j", "8",
         package,
     ])
 
