@@ -20,8 +20,13 @@
 
 
 def init():
-    from debile.master.orm import init_db
-    return init_db()
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Debile master database initialization")
+    parser.add_argument("file", action="store",
+                        help="Yaml file with initial database.")
+
+    from debile.master.dimport import main
+    main(parser.parse_args())
 
 
 def process_incoming():
@@ -36,12 +41,6 @@ def process_incoming():
 
     from debile.master.incoming import main
     main(parser.parse_args())
-
-
-def import_db():
-    from debile.master.dimport import import_from_yaml
-    import sys
-    return import_from_yaml(*sys.argv[1:])
 
 
 def server():

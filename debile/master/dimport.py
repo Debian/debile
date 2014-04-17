@@ -23,14 +23,12 @@ from datetime import datetime
 
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite)
+                               Group, GroupSuite, Base)
 
 
-def import_from_yaml(whence):
-    return import_dict(yaml.safe_load(open(whence, 'r')))
+def main(args):
+    obj = yaml.safe_load(open(args.file, 'r'))
 
-
-def import_dict(obj):
     users = obj.pop("Users", [])
     builders = obj.pop("Builders", [])
     suites = obj.pop("Suites", [])
@@ -44,6 +42,8 @@ def import_dict(obj):
             print "Igorning key %s" % (key)
 
     with session() as s:
+        Base.metadata.create_all(s.bind)
+
         for user in users:
             s.add(Person(**user))
 
