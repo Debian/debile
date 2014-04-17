@@ -23,15 +23,16 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
+from debile.utils.log import start_logging
 from debile.master.core import config
 from debile.master.utils import make_session
 from debile.master.orm import Person, Builder
 
-from logging.handlers import SysLogHandler
 import SocketServer
 import threading
 import hashlib
 import logging
+import logging.handlers
 import ssl
 
 NAMESPACE = threading.local()
@@ -141,23 +142,10 @@ def serve(server, port, keyfile, certfile, ca_certs):
     server.serve_forever()
 
 
-def main():
+def main(args):
+    start_logging(args)
+
     xml = config["xmlrpc"]
     keyrings = config["keyrings"]
-
-    logger = logging.getLogger('debile')
-    logger.setLevel(logging.DEBUG)
-    syslog = SysLogHandler(address='/dev/log')
-    formatter = logging.Formatter(
-        '[debile-master] %(levelname)7s - %(message)s'
-    )
-    syslog.setFormatter(formatter)
-    logger.addHandler(syslog)
-
-    logger.info("Booting debile-masterd daemon")
     serve(xml["addr"], xml["port"], xml["keyfile"],
           xml["certfile"], keyrings["ssl"])
-
-
-if __name__ == "__main__":
-    main()

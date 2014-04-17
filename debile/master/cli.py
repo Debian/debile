@@ -51,7 +51,13 @@ def import_db():
     return import_from_yaml(*sys.argv[1:])
 
 
-def serve():
+def server():
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Debile master daemon")
+    parser.add_argument("-s", "--syslog", action="store_true", dest="syslog",
+                        help="Log to syslog instead of stderr.")
+    parser.add_argument("-d", "--debug", action="store_true", dest="debug",
+                        help="Enable debug messages to stderr.")
+
     from debile.master.server import main
-    import sys
-    return main(*sys.argv[1:])
+    main(parser.parse_args())

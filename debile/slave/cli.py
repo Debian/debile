@@ -20,6 +20,12 @@
 
 
 def daemon():
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Debile build slave")
+    parser.add_argument("-s", "--syslog", action="store_true", dest="syslog",
+                        help="Log to syslog instead of stderr.")
+    parser.add_argument("-d", "--debug", action="store_true", dest="debug",
+                        help="Enable debug messages to stderr.")
+
     from debile.slave.daemon import main
-    import sys
-    return main(*sys.argv[1:])
+    main(parser.parse_args())

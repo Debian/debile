@@ -24,6 +24,7 @@ from contextlib import contextmanager
 from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
 from debile.utils.commands import safe_run
+from debile.utils.log import start_logging
 from debile.utils.xmlrpc import get_proxy
 from debile.utils.deb822 import Changes
 from dput.exceptions import DputError, DcutError
@@ -32,7 +33,6 @@ from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
 import logging
-# from logging.handlers import SysLogHandler
 import time
 
 proxy = get_proxy(config)
@@ -107,16 +107,16 @@ def workon(suites, components, arches, capabilities):
         yield
     else:
         logger.info(
-            "Acquired job id=%s (%s) for %s/%s",
+            "Acquired job id=%s (%s %s) for %s",
             job['id'],
+            job['source'],
             job['name'],
             job['suite'],
-            job['arch']
         )
         try:
             yield job
         except:
-            logger.warn("Forfeiting the job because of internal exception")
+            logger.warn("Forfeiting the job because of internal exception", exc_info=True)
             proxy.forfeit_job(job['id'])
             raise
         else:
@@ -192,37 +192,25 @@ def iterate():
             upload(dudf, job, package)
 
 
-def main():
-    logging.basicConfig(
-        format='%(asctime)s - %(levelname)8s - [debile-slave] %(message)s',
-        level=logging.DEBUG
-    )
+def main(args):
+    start_logging(args)
 
-    #logger = logging.getLogger('debile')
-    #logger.setLevel(logging.DEBUG)
-    #syslog = SysLogHandler(address='/dev/log')
-    #formatter = logging.Formatter(
-    #                '[debile-slave] %(levelname)7s - %(message)s')
-    #syslog.setFormatter(formatter)
-    #logger.addHandler(syslog)
-    #logger.info("Booting debile-slave daemon")
+    # Reset the logging config in python-dput and use the global config instead
+    dputlog = logging.getLogger('dput')
+    dputlog.propagate = True
+    dputlog.setLevel(logging.NOTSET)
+    while len(dputlog.handlers) > 0:
+        dputlog.removeHandler(dputlog.handlers[-1])
 
-    logger = logging
-    logger.info("Booting debile-slave daemon")
+    logger = logging.getLogger('debile')
 
     while True:
         try:
             logger.debug("Checking for new jobs")
             iterate()
         except IDidNothingError:
-            logger.debug("Nothing to do for now, sleeping 30s")
+            logger.info("Nothing to do for now, sleeping 30s")
             time.sleep(30)
-        except (DputError, DcutError, Exception) as e:
-            logger.warning(
-                "Er, we got a fatal error: %s. Restarting in a minute" % (
-                    str(e)))
-
-            import traceback
-            logger.warning(traceback.format_exc())
-
+        except (DputError, DcutError, Exception):
+            logger.warning("A fatal error occured, restarting in a minute", exc_info=True)
             time.sleep(60)

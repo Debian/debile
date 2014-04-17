@@ -20,7 +20,7 @@ BASE=$(basename $0)
 
 DEBILE=/usr/bin/$BASE
 DEBILE_PIDFILE=/var/run/$BASE.pid
-DEBILE_OPTS=
+DEBILE_OPTS=--syslog
 DEBILE_LOGFILE=/var/log/$BASE.log
 DEBILE_USER="Debian-debile-unpriv"
 DEBILE_DESC="Debile Slave"
