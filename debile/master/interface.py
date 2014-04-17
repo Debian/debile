@@ -18,7 +18,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.master.server import user_method, builder_method, NAMESPACE
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Binary, Job)
 from debile.master.messaging import emit
@@ -26,6 +25,27 @@ from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 
 from debian.debian_support import Version
 from datetime import datetime
+
+import threading
+
+
+NAMESPACE = threading.local()
+
+
+def builder_method(fn):
+    def _(*args, **kwargs):
+        if not NAMESPACE.builder:
+            raise Exception("You can't do that")
+        return fn(*args, **kwargs)
+    return _
+
+
+def user_method(fn):
+    def _(*args, **kwargs):
+        if not NAMESPACE.user:
+            raise Exception("You can't do that")
+        return fn(*args, **kwargs)
+    return _
 
 
 class DebileMasterInterface(object):
@@ -55,8 +75,6 @@ class DebileMasterInterface(object):
     @builder_method
     def get_next_job(self, suites, components, arches, checks):
         NAMESPACE.machine.last_ping = datetime.utcnow()
-        NAMESPACE.session.add(NAMESPACE.machine)
-        NAMESPACE.session.commit()
 
         job = NAMESPACE.session.query(Job).join(Job.source).join(Job.check).filter(
             ~Job.depedencies.any(),
@@ -78,8 +96,6 @@ class DebileMasterInterface(object):
 
         job.assigned_at = datetime.utcnow()
         job.builder = NAMESPACE.machine
-        NAMESPACE.session.add(job)
-        NAMESPACE.session.commit()
 
         emit('start', 'job', job.debilize())
 
@@ -90,9 +106,6 @@ class DebileMasterInterface(object):
         job = NAMESPACE.session.query(Job).get(job_id)
         job.finished_at = datetime.utcnow()
 
-        NAMESPACE.session.add(job)
-        NAMESPACE.session.commit()
-
         emit('complete', 'job', job.debilize())
 
         return True
@@ -102,8 +115,6 @@ class DebileMasterInterface(object):
         job = NAMESPACE.session.query(Job).get(job_id)
         job.assigned_at = None
         job.builder = None
-        NAMESPACE.session.add(job)
-        NAMESPACE.session.commit()
 
         emit('abort', 'job', job.debilize())
 
@@ -136,7 +147,6 @@ class DebileMasterInterface(object):
         b = Builder(name=name, maintainer=NAMESPACE.user, pgp=pgp, ssl=ssl,
                     last_ping=datetime.utcnow())
         NAMESPACE.session.add(b)
-        NAMESPACE.session.commit()
 
         emit('create', 'slave', b.debilize())
         return b.debilize()
@@ -151,8 +161,6 @@ class DebileMasterInterface(object):
         builder.pgp = import_pgp(pgp)
         builder.ssl = import_ssl(ssl, name)
 
-        NAMESPACE.session.add(builder)
-        NAMESPACE.session.commit()
         clean_ssl_keyring(NAMESPACE.session)
 
         return builder.debilize()
@@ -167,8 +175,6 @@ class DebileMasterInterface(object):
         builder.pgp = "0000000000000000DEADBEEF0000000000000000"
         builder.ssl = "0000000000000000DEADBEEF0000000000000000"
 
-        NAMESPACE.session.add(builder)
-        NAMESPACE.session.commit()
         clean_ssl_keyring(NAMESPACE.session)
 
         return builder.debilize()
@@ -183,7 +189,6 @@ class DebileMasterInterface(object):
 
         p = Person(name=name, email=email, pgp=pgp, ssl=ssl)
         NAMESPACE.session.add(p)
-        NAMESPACE.session.commit()
 
         emit('create', 'user', p.debilize())
         return p.debilize()
@@ -198,8 +203,6 @@ class DebileMasterInterface(object):
         user.pgp = import_pgp(pgp)
         user.ssl = import_ssl(ssl, user.name, user.email)
 
-        NAMESPACE.session.add(user)
-        NAMESPACE.session.commit()
         clean_ssl_keyring(NAMESPACE.session)
 
         return user.debilize()
@@ -214,8 +217,6 @@ class DebileMasterInterface(object):
         user.pgp = "0000000000000000DEADBEEF0000000000000000"
         user.ssl = "0000000000000000DEADBEEF0000000000000000"
 
-        NAMESPACE.session.add(user)
-        NAMESPACE.session.commit()
         clean_ssl_keyring(NAMESPACE.session)
 
         return user.debilize()
@@ -236,8 +237,6 @@ class DebileMasterInterface(object):
         job.builder = None
         job.assigned_at = None
         job.finished_at = None
-        NAMESPACE.session.add(job)
-        NAMESPACE.session.commit()
 
         return job.debilize()
 
@@ -265,8 +264,6 @@ class DebileMasterInterface(object):
             job.builder = None
             job.assigned_at = None
             job.finished_at = None
-            NAMESPACE.session.add(job)
-            NAMESPACE.session.commit()
 
     @user_method
     def retry_failed(self):
@@ -288,5 +285,3 @@ class DebileMasterInterface(object):
             job.builder = None
             job.assigned_at = None
             job.finished_at = None
-            NAMESPACE.session.add(job)
-            NAMESPACE.session.commit()

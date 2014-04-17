@@ -25,59 +25,19 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 from debile.utils.log import start_logging
 from debile.master.core import config
-from debile.master.utils import make_session
+from debile.master.utils import session
 from debile.master.orm import Person, Builder
+from debile.master.interface import NAMESPACE, DebileMasterInterface
 
 import SocketServer
-import threading
 import hashlib
 import logging
 import logging.handlers
 import ssl
 
-NAMESPACE = threading.local()
-
-
-def get_builder():
-    if NAMESPACE.machine is None:
-        raise KeyError("What the shit, doing something you can't do")
-    return NAMESPACE.machine
-
-
-def builder_method(fn):
-    def _(*args, **kwargs):
-        try:
-            get_builder()
-            return fn(*args, **kwargs)
-        except KeyError:
-            raise Exception("You can't do that")
-    return _
-
-
-def get_user():
-    if NAMESPACE.user is None:
-        raise KeyError("What the shit, doing something you can't do")
-    return NAMESPACE.user
-
-
-def user_method(fn):
-    def _(*args, **kwargs):
-        try:
-            get_user()
-            return fn(*args, **kwargs)
-        except KeyError:
-            raise Exception("You can't do that")
-    return _
-
 
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
-
-        NAMESPACE.machine = None
-        NAMESPACE.user = None
-        if not hasattr(NAMESPACE, 'session'):
-            NAMESPACE.session = make_session()
-
         cert = self.connection.getpeercert(True)
         fingerprint = hashlib.sha1(cert).hexdigest().upper()
 
@@ -97,6 +57,16 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
             else:
                 self.send_error(401, 'Authentication failed')
         return False
+
+    def handle_one_request(self):
+        try:
+            with session() as s:
+                NAMESPACE.session = s
+                return SimpleXMLRPCRequestHandler.handle_one_request(self)
+        finally:
+            NAMESPACE.session = None
+            NAMESPACE.machine = None
+            NAMESPACE.user = None
 
 
 class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
@@ -128,10 +98,6 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
 
 
 def serve(server, port, keyfile, certfile, ca_certs):
-    # Don't move the stuff below above; it would cause a circular
-    # import; since it needs some of our kruft. I know it's bad form
-    # but I'm tired of it.
-    from debile.master.interface import DebileMasterInterface
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
     server = SecureXMLRPCServer((server, port), keyfile, certfile, ca_certs,
