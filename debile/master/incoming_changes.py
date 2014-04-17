@@ -24,15 +24,15 @@ import re
 from debian.debian_support import version_compare
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
+from debile.master.utils import emit
+from debile.master.changes import Changes, ChangesFileException
 from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
-from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
                                GroupSuite, Source, Deb, Job,
                                create_source, create_jobs)
-from debile.master.changes import Changes, ChangesFileException
 
 
-def process_changes(session, path):
+def process_changes(config, session, path):
     changes = Changes(path)
     try:
         changes.validate()
@@ -48,7 +48,7 @@ def process_changes(session, path):
         return reject_changes(session, changes, "invalid-group")
 
     try:
-        fingerprint = changes.validate_signature()
+        fingerprint = changes.validate_signature(config['keyrings']['pgp'])
     except ChangesFileException:
         return reject_changes(session, changes, "invalid-signature")
 
@@ -58,7 +58,7 @@ def process_changes(session, path):
             user = session.query(Person).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-user")
-        return accept_source_changes(session, changes, user)
+        return accept_source_changes(config, session, changes, user)
 
     #### Binary Uploads
     if changes.is_binary_only_upload():
@@ -66,7 +66,7 @@ def process_changes(session, path):
             builder = session.query(Builder).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-builder")
-        return accept_binary_changes(session, changes, builder)
+        return accept_binary_changes(config, session, changes, builder)
 
     return reject_changes(session, changes, "mixed-upload")
 
@@ -86,7 +86,7 @@ def reject_changes(session, changes, tag):
     # Note this in the log.
 
 
-def accept_source_changes(session, changes, user):
+def accept_source_changes(config, session, changes, user):
     group = changes.get('X-Lucy-Group', "default")
     suite = changes['Distribution']
 
@@ -130,7 +130,7 @@ def accept_source_changes(session, changes, user):
         valid_affinities = "any"
 
     source = create_source(dsc, group_suite, component, user)
-    create_jobs(source, valid_affinities)
+    create_jobs(source, config["affinity_preference"], valid_affinities)
     session.add(source)
 
     # Drop any old jobs that are still pending.
@@ -154,7 +154,7 @@ def accept_source_changes(session, changes, user):
         os.unlink(fp)
 
 
-def accept_binary_changes(session, changes, builder):
+def accept_binary_changes(config, session, changes, builder):
     # OK. We'll relate this back to a build job.
     job = changes.get('X-Debile-Job', None)
     if job is None:

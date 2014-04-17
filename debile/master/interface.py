@@ -20,8 +20,8 @@
 
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Binary, Job)
-from debile.master.messaging import emit
 from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
+from debile.master.utils import emit
 
 from debian.debian_support import Version
 from datetime import datetime
@@ -77,6 +77,10 @@ class DebileMasterInterface(object):
     """
 
     shutdown_request = False
+
+    def __init__(self, ssl_keyring, pgp_keyring):
+        self.ssl_keyring = ssl_keyring
+        self.pgp_keyring = pgp_keyring
 
     # Simple stuff.
 
@@ -172,8 +176,8 @@ class DebileMasterInterface(object):
         if NAMESPACE.session.query(Builder).filter_by(name=name).first():
             raise ValueError("Slave already exists.")
 
-        pgp = import_pgp(pgp)
-        ssl = import_ssl(ssl, name)
+        pgp = import_pgp(self.pgp_keyring, pgp)
+        ssl = import_ssl(self.ssl_keyring, ssl, name)
 
         b = Builder(name=name, maintainer=NAMESPACE.user, pgp=pgp, ssl=ssl,
                     last_ping=datetime.utcnow())
@@ -189,10 +193,10 @@ class DebileMasterInterface(object):
         if not builder:
             raise ValueError("No builder with name %s." % name)
 
-        builder.pgp = import_pgp(pgp)
-        builder.ssl = import_ssl(ssl, builder.name)
+        builder.pgp = import_pgp(self.pgp_keyring, pgp)
+        builder.ssl = import_ssl(self.ssl_keyring, ssl, builder.name)
 
-        clean_ssl_keyring(NAMESPACE.session)
+        clean_ssl_keyring(self.ssl_keyring, NAMESPACE.session)
 
         return builder.debilize()
 
@@ -206,7 +210,7 @@ class DebileMasterInterface(object):
         builder.pgp = "0000000000000000DEADBEEF0000000000000000"
         builder.ssl = "0000000000000000DEADBEEF0000000000000000"
 
-        clean_ssl_keyring(NAMESPACE.session)
+        clean_ssl_keyring(self.ssl_keyring, NAMESPACE.session)
 
         return builder.debilize()
 
@@ -215,8 +219,8 @@ class DebileMasterInterface(object):
         if NAMESPACE.session.query(Person).filter_by(email=email).first():
             raise ValueError("User already exists.")
 
-        pgp = import_pgp(pgp)
-        ssl = import_ssl(ssl, name, email)
+        pgp = import_pgp(self.pgp_keyring, pgp)
+        ssl = import_ssl(self.ssl_keyring, ssl, name, email)
 
         p = Person(name=name, email=email, pgp=pgp, ssl=ssl)
         NAMESPACE.session.add(p)
@@ -231,10 +235,10 @@ class DebileMasterInterface(object):
         if not user:
             raise ValueError("No user with email %s." % email)
 
-        user.pgp = import_pgp(pgp)
-        user.ssl = import_ssl(ssl, user.name, user.email)
+        user.pgp = import_pgp(self.pgp_keyring, pgp)
+        user.ssl = import_ssl(self.ssl_keyring, ssl, user.name, user.email)
 
-        clean_ssl_keyring(NAMESPACE.session)
+        clean_ssl_keyring(self.ssl_keyring, NAMESPACE.session)
 
         return user.debilize()
 
@@ -248,7 +252,7 @@ class DebileMasterInterface(object):
         user.pgp = "0000000000000000DEADBEEF0000000000000000"
         user.ssl = "0000000000000000DEADBEEF0000000000000000"
 
-        clean_ssl_keyring(NAMESPACE.session)
+        clean_ssl_keyring(self.ssl_keyring, NAMESPACE.session)
 
         return user.debilize()
 

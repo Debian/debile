@@ -26,7 +26,7 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Base)
 
 
-def main(args):
+def main(args, config):
     obj = yaml.safe_load(open(args.file, 'r'))
 
     users = obj.pop("Users", [])

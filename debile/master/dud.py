@@ -32,7 +32,6 @@
 #   OTHER DEALINGS IN THE SOFTWARE.
 # -*- coding: utf-8 -*-
 
-from debile.master.core import config
 from debile.utils.commands import run_command
 from debile.utils import deb822
 import firehose.model
@@ -135,19 +134,19 @@ class Dud(object):
         """
         return self._data.get(key, default)
 
-    def validate(self, check_hash="md5", check_signature=True):
+    def validate(self, check_hash="md5", keyring=None):
         self.validate_checksums(check_hash)
-        if check_signature:
-            self.validate_signature(check_signature)
+        if keyring:
+            self.validate_signature(keyring)
 
-    def validate_signature(self, check_signature=True):
+    def validate_signature(self, keyring):
         """
         Validate the GPG signature of a .changes file.
         """
 
         (gpg_output, gpg_output_stderr, exit_status) = run_command([
             "gpg", "--batch", "--status-fd", "1",
-            "--no-default-keyring", "--keyring", config['keyrings']['pgp'],
+            "--no-default-keyring", "--keyring", keyring,
             "--verify", self.get_dud_file(),
         ])
 

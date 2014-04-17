@@ -40,7 +40,6 @@ __author__ = 'Jonny Lamb'
 __copyright__ = 'Copyright © 2008 Jonny Lamb, Copyright © 2010 Jan Dittberner'
 __license__ = 'MIT'
 
-from debile.master.core import config
 from debile.utils.commands import run_command
 from debile.utils import deb822
 import hashlib
@@ -229,16 +228,16 @@ class Changes(object):
         else:
             return ['main', section]
 
-    def validate(self, check_hash="md5", check_signature=True):
+    def validate(self, check_hash="md5", keyring=None):
         """
         See :meth:`validate_checksums` for ``check_hash``, and
-        :meth:`validate_signature` if ``check_signature`` is True.
+        :meth:`validate_signature` if a ``keyring`` is specified.
         """
         self.validate_checksums(check_hash)
-        if check_signature:
-            self.validate_signature(check_signature)
+        if keyring:
+            self.validate_signature(keyring)
 
-    def validate_signature(self, check_signature=True):
+    def validate_signature(self, keyring):
         """
         Validate the GPG signature of a .changes file.
 
@@ -248,7 +247,7 @@ class Changes(object):
 
         (gpg_output, gpg_output_stderr, exit_status) = run_command([
             "gpg", "--batch", "--status-fd", "1",
-            "--no-default-keyring", "--keyring", config['keyrings']['pgp'],
+            "--no-default-keyring", "--keyring", keyring,
             "--verify", self.get_changes_file()
         ])
 

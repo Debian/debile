@@ -20,7 +20,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.utils.commands import run_command
-from debile.master.core import config
 from debile.master.orm import Person, Builder
 
 from base64 import b64decode
@@ -29,7 +28,7 @@ import fcntl
 import os
 
 
-def import_pgp(keydata):
+def import_pgp(keyring, keydata):
     """
     keydata should be public key data to be imported to the keyring.
     The return value will be the sha1 fingerprint of the public key added.
@@ -37,7 +36,7 @@ def import_pgp(keydata):
 
     out, err, ret = run_command([
         "gpg", "--batch", "--status-fd", "1"
-        "--no-default-keyring", "--keyring", config['keyrings']['pgp'],
+        "--no-default-keyring", "--keyring", keyring,
         "--import"
     ], input=keydata)
 
@@ -56,7 +55,7 @@ def import_pgp(keydata):
     return fingerprint
 
 
-def import_ssl(certdata, cn=None, email=None):
+def import_ssl(keyring, certdata, cn=None, email=None):
     """
     certdata should be pem-formated certificate data to be added to the
     keyring. The return value will be the sha1 fingerprint of the certificate
@@ -91,7 +90,7 @@ def import_ssl(certdata, cn=None, email=None):
         raise ValueError("Incorrect subject of ssl certificate.")
 
     # Add the valid pem-formated certificate to the keyring.
-    keyring = open(config['keyrings']['ssl'], 'a')
+    keyring = open(keyring, 'a')
     fcntl.lockf(keyring, fcntl.LOCK_EX)
     keyring.write(certdata)
     keyring.close()
@@ -99,11 +98,11 @@ def import_ssl(certdata, cn=None, email=None):
     return fingerprint
 
 
-def clean_ssl_keyring(session):
-    old = open(config['keyrings']['ssl'], 'r+')
+def clean_ssl_keyring(keyring, session):
+    old = open(keyring, 'r+')
     fcntl.lockf(old, fcntl.LOCK_EX)
 
-    new = open(config['keyrings']['ssl'] + '.tmp', 'w')
+    new = open(keyring + '.tmp', 'w')
     fcntl.lockf(new, fcntl.LOCK_EX)
 
     for line in old:
@@ -122,5 +121,5 @@ def clean_ssl_keyring(session):
             pem += line
 
     new.close()
-    os.rename(config['keyrings']['ssl'] + '.tmp', config['keyrings']['ssl'])
+    os.rename(keyring + '.tmp', keyring)
     old.close()

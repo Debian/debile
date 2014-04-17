@@ -19,7 +19,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.slave.core import config
 from debile.utils.commands import run_command
 import dput
 
@@ -80,12 +79,7 @@ def jobize(path, job):
     return obj
 
 
-def prepare_binary_for_upload(changes, job):
-    jobize(changes, job)
-    gpg = config.get('gpg', None)
-    if gpg is None:
-        raise Exception("No GPG in config YAML")
-
+def sign(changes, gpg):
     if changes.endswith(".dud"):
         out, err, ret = run_command(['gpg', '-u', gpg, '--clearsign', changes])
         if ret != 0:
@@ -104,6 +98,7 @@ def prepare_binary_for_upload(changes, job):
         return
 
 
-def upload(changes, job, package):
-    prepare_binary_for_upload(changes, job)
-    return dput.upload(changes, config['dput']['host'])
+def upload(changes, job, gpg, host):
+    jobize(changes, job)
+    sign(changes, gpg)
+    return dput.upload(changes, host)

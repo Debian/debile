@@ -18,22 +18,21 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
+import os
 import yaml
 
-ROOT = "/etc/debile"
+
+def _find_config_file(name):
+    dirs = [os.getenv('XDG_CONFIG_HOME', os.path.expanduser("~/.config"))]
+    dirs += os.getenv('XDG_CONFIG_DIRS', "/etc/xdg").split(":")
+    dirs += ["/etc"]
+    for dir in dirs:
+        file = "{dir}/debile/{name}".format(dir=dir, name=name)
+        if os.path.isfile(file):
+            return file
+    raise Exception("Could not find %s" % name)
 
 
-def import_from_yaml(whence):
-    return yaml.safe_load(open(whence, 'r'))
-
-
-def load_master_config():
-    return import_from_yaml("{root}/master.yaml".format(root=ROOT))
-
-
-def load_slave_config():
-    return import_from_yaml("{root}/slave.yaml".format(root=ROOT))
-
-
-def load_user_config():
-    return import_from_yaml("{root}/user.yaml".format(root=ROOT))
+def get_config(name, path=None):
+    return yaml.safe_load(open(path or _find_config_file(name), 'r'))

@@ -20,11 +20,9 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.commands import PLUGINS, load_module
-from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
 from debile.utils.commands import safe_run
 from debile.utils.log import start_logging
-from debile.utils.xmlrpc import get_proxy
 from debile.utils.deb822 import Changes
 
 from contextlib import contextmanager
@@ -36,7 +34,6 @@ import logging
 import time
 
 
-proxy = get_proxy(config)
 shutdown_request = False
 
 
@@ -102,7 +99,7 @@ def checkout(package):
 
 
 @contextmanager
-def workon(suites, components, arches, capabilities):
+def workon(proxy, suites, components, arches, capabilities):
     logger = logging.getLogger('debile')
     logger.debug("Checking for new jobs")
 
@@ -134,7 +131,7 @@ def workon(suites, components, arches, capabilities):
         proxy.close_job(job['id'], job['failed'])
 
 
-def run_job(job):
+def run_job(config, job):
     group = job['group_obj']
     source = job['source_obj']
     binary = job['binary_obj']
@@ -188,8 +185,8 @@ def run_job(job):
             dud.dump(fd=fd)
 
         if changes:
-            upload(changes, job, package)
-        upload(dudf, job, package)
+            upload(changes, job, config['gpg'], config['dput']['host'])
+        upload(dudf, job, config['gpg'], config['dput']['host'])
 
 
 def system_exit_handler(signum, frame):
@@ -201,7 +198,7 @@ def shutdown_request_handler(signum, frame):
     shutdown_request = True
 
 
-def main(args):
+def main(args, config, proxy):
     start_logging(args)
 
     # Reset the logging config in python-dput and use the global config instead
@@ -225,8 +222,8 @@ def main(args):
 
     while True:
         try:
-            with workon(suites, components, arches, checks) as job:
-                run_job(job)
+            with workon(proxy, suites, components, arches, checks) as job:
+                run_job(config, job)
             if shutdown_request:
                 raise SystemExit(0)
         except KeyboardInterrupt:

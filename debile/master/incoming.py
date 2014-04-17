@@ -26,13 +26,13 @@ import fnmatch
 import os
 
 
-def main(args):
+def main(args, config):
     abspath = os.path.abspath(args.directory)
     for fp in os.listdir(abspath):
         path = os.path.join(abspath, fp)
         if args.dud and fnmatch.fnmatch(path, "*.dud"):
             with session() as s:
-                process_dud(s, path)
+                process_dud(config, s, path)
         if args.changes and fnmatch.fnmatch(path, "*.changes"):
             with session() as s:
-                process_changes(s, path)
+                process_changes(config, s, path)

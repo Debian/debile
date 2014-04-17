@@ -25,7 +25,6 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from sqlalchemy.sql import exists
 
 from debile.utils.log import start_logging
-from debile.master.core import config
 from debile.master.utils import session
 from debile.master.orm import Person, Builder, Job
 from debile.master.interface import NAMESPACE, DebileMasterInterface
@@ -111,14 +110,15 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
             self.server_activate()
 
 
-def serve(server, port, keyfile, certfile, ca_certs):
+def serve(server, port, keyfile, certfile, ssl_keyring, pgp_keyring):
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
-    server = SecureXMLRPCServer((server, port), keyfile, certfile, ca_certs,
+    server = SecureXMLRPCServer((server, port), keyfile, certfile,
+                                ca_certs=ssl_keyring,
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
     server.register_introspection_functions()
-    server.register_instance(DebileMasterInterface())
+    server.register_instance(DebileMasterInterface(ssl_keyring, pgp_keyring))
     server.serve_forever()
 
 
@@ -131,7 +131,7 @@ def shutdown_request_handler(signum, frame):
     check_shutdown()
 
 
-def main(args):
+def main(args, config):
     start_logging(args)
 
     signal.signal(signal.SIGQUIT, system_exit_handler)
@@ -141,7 +141,6 @@ def main(args):
     signal.signal(signal.SIGHUP,  signal.SIG_IGN)
     signal.signal(signal.SIGUSR1, shutdown_request_handler)
 
-    xml = config["xmlrpc"]
-    keyrings = config["keyrings"]
-    serve(xml["addr"], xml["port"], xml["keyfile"],
-          xml["certfile"], keyrings["ssl"])
+    serve(config['xmlrpc']['addr'], config['xmlrpc']['port'],
+          config['xmlrpc']['keyfile'], config['xmlrpc']['certfile'],
+          config['keyrings']['ssl'], config["keyrings"]['pgp'])

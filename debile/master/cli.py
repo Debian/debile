@@ -19,19 +19,28 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+from argparse import ArgumentParser
+from debile.master.utils import init_master
+
+
 def init():
-    from argparse import ArgumentParser
     parser = ArgumentParser(description="Debile master database initialization")
+    parser.add_argument("--config", action="store", dest="config", default=None,
+                        help="Path to the master.yaml config file.")
     parser.add_argument("file", action="store",
                         help="Yaml file with initial database.")
 
+    args = parser.parse_args()
+    config = init_master(args.config)
+
     from debile.master.dimport import main
-    main(parser.parse_args())
+    main(args, config)
 
 
 def process_incoming():
-    from argparse import ArgumentParser
     parser = ArgumentParser(description="Debile master incoming handling")
+    parser.add_argument("--config", action="store", dest="config", default=None,
+                        help="Path to the master.yaml config file.")
     parser.add_argument("--no-dud", action="store_false", dest="dud",
                         help="Do not process *.dud files.")
     parser.add_argument("--no-changes", action="store_false", dest="changes",
@@ -39,17 +48,24 @@ def process_incoming():
     parser.add_argument("directory", action="store",
                         help="Directry to process.")
 
+    args = parser.parse_args()
+    config = init_master(args.config)
+
     from debile.master.incoming import main
-    main(parser.parse_args())
+    main(args, config)
 
 
 def server():
-    from argparse import ArgumentParser
     parser = ArgumentParser(description="Debile master daemon")
+    parser.add_argument("--config", action="store", dest="config", default=None,
+                        help="Path to the master.yaml config file.")
     parser.add_argument("-s", "--syslog", action="store_true", dest="syslog",
                         help="Log to syslog instead of stderr.")
     parser.add_argument("-d", "--debug", action="store_true", dest="debug",
                         help="Enable debug messages to stderr.")
 
+    args = parser.parse_args()
+    config = init_master(args.config)
+
     from debile.master.server import main
-    main(parser.parse_args())
+    main(args, config)

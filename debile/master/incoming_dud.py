@@ -23,13 +23,13 @@ import os
 from firewoes.lib.hash import idify, uniquify
 from sqlalchemy.orm.exc import NoResultFound
 
-from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
+from debile.master.utils import emit
 from debile.master.dud import Dud, DudFileException
-from debile.master.messaging import emit
+from debile.master.filerepo import FileRepo, FilesAlreadyRegistered
 from debile.master.orm import Builder, Job
 
 
-def process_dud(session, path):
+def process_dud(config, session, path):
     dud = Dud(path)
     jid = dud.get("X-Debile-Job", None)
     if jid is None:
@@ -41,7 +41,7 @@ def process_dud(session, path):
         return reject_dud(session, dud, "invalid-dud-upload")
 
     try:
-        fingerprint = dud.validate_signature()
+        fingerprint = dud.validate_signature(config['keyrings']['pgp'])
     except DudFileException:
         return reject_dud(session, dud, "invalid-signature")
 
@@ -61,7 +61,7 @@ def process_dud(session, path):
     if job.builder != builder:
         return reject_dud(session, dud, "invalid-dud-uploader")
 
-    accept_dud(session, dud, builder)
+    accept_dud(config, session, dud, builder)
 
 
 def reject_dud(session, dud, tag):
@@ -84,7 +84,7 @@ def reject_dud(session, dud, tag):
     # Note this in the log.
 
 
-def accept_dud(session, dud, builder):
+def accept_dud(config, session, dud, builder):
     fire = dud.get_firehose()
     failed = True if dud.get('X-Debile-Failed', None) == "Yes" else False
 
@@ -99,7 +99,7 @@ def accept_dud(session, dud, builder):
 
     try:
         repo = FileRepo()
-        repo.add_dud(result.path, dud)
+        repo.add_dud(result.path, dud, config['filerepo_chmod_mode'])
     except FilesAlreadyRegistered:
         return reject_dud(session, dud, "dud-files-already-registered")
 

@@ -1,13 +1,13 @@
 from debile.master.orm import Group
-import debile.master.core
+from debile.master.utils import init_master
 
-
+config = init_master()
 g = Group(name="foo")
 
 
 def test_repo_info():
-    c = debile.master.core.config['repo']
-    debile.master.core.config['repo'] = {
+    c = config['repo']
+    config['repo'] = {
         "repo_path": "/srv/debile/pool/{name}",
         "repo_url": "http://localhost/debile/pool/{name}",
         "files_path": "/srv/debile/files/{name}",
@@ -19,7 +19,7 @@ def test_repo_info():
         "files_path": "/srv/debile/files/foo",
         "files_url": "http://localhost/debile/files/foo",
     }
-    debile.master.core.config['repo'] = c
+    config['repo'] = c
 
 
 def fnord(group, conf):
@@ -27,17 +27,17 @@ def fnord(group, conf):
 
 
 def test_repo_info():
-    c = debile.master.core.config['repo']
-    debile.master.core.config['repo'] = {
+    c = config['repo']
+    config['repo'] = {
         "custom_resolver": "%s.fnord" % (__name__)
     }
     assert g.get_repo_info() == {"foo": "bar"}
-    debile.master.core.config['repo'] = c
+    config['repo'] = c
 
 
 def test_repo_props():
-    c = debile.master.core.config['repo']
-    debile.master.core.config['repo'] = {
+    config['repo']
+    config['repo'] = {
         "repo_path": "/srv/debile/pool/{name}",
         "repo_url": "http://localhost/debile/pool/{name}",
         "files_path": "/srv/debile/files/{name}",
@@ -49,4 +49,4 @@ def test_repo_props():
     assert g.files_path == "/srv/debile/files/foo"
     assert g.files_url == "http://localhost/debile/files/foo"
 
-    debile.master.core.config['repo'] = c
+    config['repo'] = c

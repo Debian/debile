@@ -18,23 +18,58 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.master.core import config
+from debile.utils.config import get_config
 
 from contextlib import contextmanager
+from importlib import import_module
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-engine = create_engine(config.get('database'))
+config = {}
+Session = sessionmaker()
+fedmsg = None
 
 
-def make_session():
-    return sessionmaker(bind=engine)()
+def _init_config(path):
+    config.update(get_config(name="master.yaml", path=path))
+    return config
+
+
+def _init_sqlalchemy(config):
+    engine = create_engine(config['database'])
+    Session.configure(bind=engine)
+
+
+def _init_fedmsg(config):
+    global fedmsg
+
+    if not 'fedmsg' in config:
+        return
+
+    try:
+        fedmsg = import_module("fedmsg")
+    except:
+        return
+
+    fedmsg.init(
+        topic_prefix=config['fedmsg'].get("prefix", "org.anized"),
+        environment=config['fedmsg'].get("environment", "dev"),
+        sign_messages=config['fedmsg'].get("sign", False),
+        endpoints=config['fedmsg'].get("endpoints", {}),
+    )
+
+
+def init_master(confpath=None):
+    c = _init_config(confpath)
+    _init_sqlalchemy(c)
+    _init_fedmsg(c)
+    return c
 
 
 @contextmanager
 def session():
-    session_ = make_session()
+    session_ = Session()
 
     try:
         yield session_
@@ -44,3 +79,10 @@ def session():
         raise
     finally:
         session_.close()
+
+
+def emit(topic, modname, message):
+    # <topic_prefix>.<env>.<modname>.<topic>
+    modname = "debile.%s" % (modname)
+    if fedmsg:
+        return fedmsg.publish(topic=topic, modname=modname, msg=message)

@@ -19,13 +19,23 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+from debile.utils.config import get_config
+from debile.utils.xmlrpc import get_proxy
+
+
 def daemon():
     from argparse import ArgumentParser
     parser = ArgumentParser(description="Debile build slave")
+    parser.add_argument("--config", action="store", dest="config", default=None,
+                        help="Path to the slave.yaml config file.")
     parser.add_argument("-s", "--syslog", action="store_true", dest="syslog",
                         help="Log to syslog instead of stderr.")
     parser.add_argument("-d", "--debug", action="store_true", dest="debug",
                         help="Enable debug messages to stderr.")
 
+    args = parser.parse_args()
+    config = get_config("slave.yaml", path=args.config)
+    proxy = get_proxy(config)
+
     from debile.slave.daemon import main
-    main(parser.parse_args())
+    main(args, config, proxy)

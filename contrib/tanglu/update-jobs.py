@@ -26,8 +26,7 @@ from apt_pkg import version_compare
 from datetime import datetime, timedelta
 
 from debile.utils.deb822 import Dsc
-from debile.master.utils import session
-from debile.master.messaging import emit
+from debile.master.utils import init_master, session, emit
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Source, Binary, Job, Deb,
                                create_source, create_jobs)
@@ -40,8 +39,9 @@ NEEDSBUILD_EXPORT_DIR = "/srv/dak/export/needsbuild"
 
 
 class ArchiveDebileBridge:
-    def __init__(self):
+    def __init__(self, config):
         self._conf = RapidumoConfig()
+        self._affinity_preference = config["affinity_preference"]
         self._archive_path = "%s/%s" % (self._conf.archive_config['path'], self._conf.distro_name)
         self._pkginfo = PackageBuildInfoRetriever(self._conf)
         self._bcheck = BuildCheck(self._conf)
@@ -89,7 +89,7 @@ class ArchiveDebileBridge:
                     deb = Deb(binary=binary, directory=directory, filename=filename)
                     session.add(deb)
 
-        create_jobs(source, valid_affinities, externally_blocked=True)
+        create_jobs(source, self._affinity_preference, valid_affinities, externally_blocked=True)
 
         # Drop any old jobs that are still pending.
         jobs = session.query(Job).join(Job.source).filter(
@@ -235,9 +235,10 @@ def main():
                       help="syncronize Debile with archive contents")
 
     (options, args) = parser.parse_args()
+    config = init_master()
 
     if options.update:
-        sync = ArchiveDebileBridge()
+        sync = ArchiveDebileBridge(config)
         sync.sync_packages("staging")
         sync.sync_packages("aequorea-updates")
         sync.reschedule_missing_uploads()

@@ -1,6 +1,4 @@
 from debile.master.arches import get_preferred_affinity, get_source_arches
-import debile.master.core
-
 
 class FnordArch(object):
     def __init__(self, name):

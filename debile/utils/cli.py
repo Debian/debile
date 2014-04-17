@@ -19,12 +19,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from debile.utils.config import get_config
 from debile.utils.xmlrpc import get_proxy
-from debile.utils.core import config
 import sys
 
 
-def _create_slave(name, pgp, ssl):
+def _create_slave(proxy, name, pgp, ssl):
     """
         Create a slave:
             debile-remote create-slave <name> <pgp-key> <ssl-cert>
@@ -44,11 +44,10 @@ def _create_slave(name, pgp, ssl):
         print("   %s when trying to open %s" % (str(e), ssl))
         raise
 
-    proxy = get_proxy(config)
     print(proxy.create_builder(name, pgp, ssl))
 
 
-def _update_slave_keys(name, pgp, ssl):
+def _update_slave_keys(proxy, name, pgp, ssl):
     """
         Replace the pgp public key and ssl certificate of a slave:
             debile-remote update-slave-keys <name> <pgp-key> <ssl-cert>
@@ -68,21 +67,19 @@ def _update_slave_keys(name, pgp, ssl):
         print("   %s when trying to open %s" % (str(e), ssl))
         raise
 
-    proxy = get_proxy(config)
     print(proxy.update_builder_keys(name, pgp, ssl))
 
 
-def _disable_slave(name):
+def _disable_slave(proxy, name):
     """
         Prevent a slave from being able to authenticate with the master:
             debile-remote disable-slave <name>
     """
 
-    proxy = get_proxy(config)
     print(proxy.disable_builder(name))
 
 
-def _create_user(name, email, pgp, ssl):
+def _create_user(proxy, name, email, pgp, ssl):
     """
     Create a user:
         debile-remote create-user <name> <email> <pgp-key> <ssl-cert>
@@ -102,11 +99,10 @@ def _create_user(name, email, pgp, ssl):
         print("   %s when trying to open %s" % (str(e), ssl))
         raise
 
-    proxy = get_proxy(config)
     print(proxy.create_user(name, email, pgp, ssl))
 
 
-def _update_user_keys(email, pgp, ssl):
+def _update_user_keys(proxy, email, pgp, ssl):
     """
         Replace the pgp public key and ssl certificate of a user:
             debile-remote update-user-keys <email> <pgp-key> <ssl-cert>
@@ -126,47 +122,42 @@ def _update_user_keys(email, pgp, ssl):
         print("   %s when trying to open %s" % (str(e), ssl))
         raise
 
-    proxy = get_proxy(config)
     print(proxy.update_user_keys(email, pgp, ssl))
 
 
-def _disable_user(email):
+def _disable_user(proxy, email):
     """
         Prevent a user from being able to authenticate with the master:
             debile-remote disable-user <email>
     """
 
-    proxy = get_proxy(config)
     print(proxy.disable_user(email))
 
 
-def _rerun_job(job_id):
+def _rerun_job(proxy, job_id):
     """
     Re-runs a specified job:
         debile-remote rerun-job <job-id>
     """
 
-    proxy = get_proxy(config)
     print(proxy.rerun_job(job_id))
 
 
-def _rerun_check(name):
+def _rerun_check(proxy, name):
     """
     Re-runs all jobs for a specified check:
         debile-remote rerun-check <check-name>
     """
 
-    proxy = get_proxy(config)
     print(proxy.rerun_check(name))
 
 
-def _retry_failed():
+def _retry_failed(proxy):
     """
     Re-tries all failed build jobs:
         debile-remote retry-failed
     """
 
-    proxy = get_proxy(config)
     print(proxy.retry_failed())
 
 
@@ -197,4 +188,7 @@ def main():
     except KeyError:
         return _help()
 
-    return run(*args)
+    config = get_config("user.yaml")
+    proxy = get_proxy(config)
+
+    return run(proxy, *args)

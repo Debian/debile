@@ -31,8 +31,8 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
+from debile.master.utils import config
 from debile.master.arches import (get_preferred_affinity, get_source_arches)
-import debile.master.core
 
 
 Base = declarative_base(metadata=metadata)
@@ -225,7 +225,7 @@ class Group(Base):
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
     def get_repo_info(self):
-        conf = debile.master.core.config.get("repo", None)
+        conf = config.get("repo", None)
         custom_resolver = conf.get("custom_resolver", None)
         if custom_resolver:
             module, func = custom_resolver.rsplit(".", 1)
@@ -825,7 +825,7 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, valid_affinities, externally_blocked=False):
+def create_jobs(source, affinity_preference, valid_affinities, externally_blocked=False):
     """
     Create jobs for Source `source`, using the an architecture matching
     `valid_affinities` for any arch "all" jobs.
@@ -851,7 +851,7 @@ def create_jobs(source, valid_affinities, externally_blocked=False):
     )
 
     affinity = get_preferred_affinity(
-        debile.master.core.config["affinity_preference"],
+        affinity_preference,
         valid_affinities.split(),
         valid_arches
     )

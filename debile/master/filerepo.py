@@ -18,7 +18,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.master.core import config
 import os
 import shutil
 
@@ -32,7 +31,7 @@ class FilesAlreadyRegistered(FilesException):
 
 
 class FileRepo(object):
-    def add_dud(self, path, dud):
+    def add_dud(self, path, dud, mode):
         if os.path.isdir(path):
             raise FilesAlreadyRegistered()
         os.makedirs(path)
@@ -41,5 +40,4 @@ class FileRepo(object):
             # copy-then-remove instead of move to get the debile user
             # to own the file.
             shutil.copy2(fp, path)
-            os.chmod("%s/%s" % (path, os.path.basename(fp)),
-                     config['filerepo_chmod_mode'])
+            os.chmod("%s/%s" % (path, os.path.basename(fp)), mode)
