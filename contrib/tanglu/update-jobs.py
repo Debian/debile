@@ -23,6 +23,7 @@ import apt_pkg
 import yaml
 from optparse import OptionParser
 from apt_pkg import version_compare
+from datetime import datetime, timedelta
 
 from debile.utils.deb822 import Dsc
 from debile.master.utils import session
@@ -167,7 +168,7 @@ class ArchiveDebileBridge:
         for pkg in pkg_dict.values():
             try:
                 with session() as s:
-                    source = s.query(Source).filter(
+                    source = s.query(Source).join(Source.group_suite).join(GroupSuite.group).join(GroupSuite.suite).filter(
                         Source.name == pkg.pkgname,
                         Source.version == pkg.version,
                         Group.name == "default",
@@ -186,8 +187,42 @@ class ArchiveDebileBridge:
                         self.unblock_debile_jobs(s, source, unblock_arches)
 
             except Exception as ex:
-                print("Skipping %s %s due to error: %s" % (pkg.pkgname, pkg.version, str(ex)))
+                print("Skipping %s (%s) in %s due to error: %s" % (pkg.pkgname, pkg.version, pkg.suite, str(ex)))
                 continue
+
+    def reschedule_missing_uploads(self):
+        with session() as s:
+            cutoff = datetime.utcnow() - timedelta(days=1)
+
+            jobs = s.query(Job).filter(
+                Job.failed == None,
+                Job.finished_at != None,
+                Job.finished_at < cutoff,
+            )
+
+            for job in jobs:
+                # Still missing the .dud one day after the builder told debile-master it had finished the job
+                print("Rescheduling %s in %s due to missing *.dud upload" % (str(job), str(job.group_suite)))
+                job.failed = None
+                job.builder = None
+                job.assigned_at = None
+                job.finished_at = None
+
+            jobs = s.query(Job).join(Job.check).filter(
+                Check.build == True,
+                Job.failed == False,
+                Job.built_binary == None,
+                Job.finished_at != None,
+                Job.finished_at < cutoff,
+            )
+
+            for job in jobs:
+                # Still missing the .changes one day after the builder told debile-master it had finished the build job
+                print("Rescheduling %s in %s due to missing *.changes upload" % (str(job), str(job.group_suite)))
+                job.failed = None
+                job.builder = None
+                job.assigned_at = None
+                job.finished_at = None
 
 
 def main():
@@ -205,6 +240,7 @@ def main():
         sync = ArchiveDebileBridge()
         sync.sync_packages("staging")
         sync.sync_packages("aequorea-updates")
+        sync.reschedule_missing_uploads()
     else:
         print("Run with -h for a list of available command-line options!")
 
