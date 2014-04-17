@@ -20,15 +20,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.commands import PLUGINS, load_module
-from contextlib import contextmanager
 from debile.slave.core import config
 from debile.slave.utils import tdir, cd, upload
 from debile.utils.commands import safe_run
 from debile.utils.log import start_logging
 from debile.utils.xmlrpc import get_proxy
 from debile.utils.deb822 import Changes
-from dput.exceptions import DputError, DcutError
 
+from contextlib import contextmanager
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
@@ -38,7 +37,7 @@ import time
 proxy = get_proxy(config)
 
 
-class IDidNothingError(Exception):
+class IDidNothingException(Exception):
     pass
 
 
@@ -102,94 +101,92 @@ def checkout(package):
 @contextmanager
 def workon(suites, components, arches, capabilities):
     logger = logging.getLogger('debile')
+    logger.debug("Checking for new jobs")
+
     job = proxy.get_next_job(suites, components, arches, capabilities)
     if job is None:
-        yield
+        logger.info("Nothing to do for now")
+        raise IDidNothingException
+
+    logger.info(
+        "Acquired job id=%s (%s %s) for %s",
+        job['id'],
+        job['source'],
+        job['name'],
+        job['suite'],
+    )
+
+    try:
+        yield job
+    except (SystemExit, KeyboardInterrupt):
+        logger.info("Forfeiting the job because of shutdown request")
+        proxy.forfeit_job(job['id'])
+        raise
+    except:
+        logger.warn("Forfeiting the job because of internal exception", exc_info=True)
+        proxy.forfeit_job(job['id'])
+        raise
     else:
-        logger.info(
-            "Acquired job id=%s (%s %s) for %s",
-            job['id'],
-            job['source'],
-            job['name'],
-            job['suite'],
-        )
-        try:
-            yield job
-        except:
-            logger.warn("Forfeiting the job because of internal exception", exc_info=True)
-            proxy.forfeit_job(job['id'])
-            raise
-        else:
-            logger.info("Successfully closing the job")
-            proxy.close_job(job['id'], job['failed'])
+        logger.info("Successfully closing the job")
+        proxy.close_job(job['id'], job['failed'])
 
 
-def iterate():
-    arches = config['arches']
-    suites = config['suites']
-    components = config['components']
-    checks = config.get('checks', list(PLUGINS.keys()))
+def run_job(job):
+    group = job['group_obj']
+    source = job['source_obj']
+    binary = job['binary_obj']
 
-    # job is a serialized dictionary from debile-master ORM
-    with workon(suites, components, arches, checks) as job:
-        if job is None:
-            raise IDidNothingError("No more jobs")
+    package = {
+        "name": source['name'],
+        "version": source['version'],
+        "type": "source" if binary is None else "binary",
+        "arch": job['arch'],
+        "suite": source['suite'],
+        "component": source['component'],
+        "group": group,
+        "source": source,
+        "binary": binary,
+    }
 
-        group = job['group_obj']
-        source = job['source_obj']
-        binary = job['binary_obj']
+    with checkout(package) as target:
+        run, version = load_module(job['check'])
+        firehose = create_firehose(package, version)
 
-        package = {
-            "name": source['name'],
-            "version": source['version'],
-            "type": "source" if binary is None else "binary",
-            "arch": job['arch'],
-            "suite": source['suite'],
-            "component": source['component'],
-            "group": group,
-            "source": source,
-            "binary": binary,
-        }
+        firehose, log, failed, changes = run(
+            target, package, job, firehose)
 
-        with checkout(package) as target:
-            run, version = load_module(job['check'])
-            firehose = create_firehose(package, version)
+        _, _, v = source['version'].rpartition(":")
+        prefix = "%s_%s_%s.%d" % (source['name'], v, job['arch'], job['id'])
 
-            firehose, log, failed, changes = run(
-                target, package, job, firehose)
+        dudf = "{prefix}.dud".format(prefix=prefix)
+        dud = Changes()
+        dud['Created-By'] = "Dummy Entry <dummy@example.com>"
+        dud['Source'] = package['source']['name']
+        dud['Version'] = package['source']['version']
+        dud['Architecture'] = package['arch']
+        dud['X-Debile-Failed'] = "Yes" if failed else "No"
+        if package['type'] == 'binary':
+            dud['Binary'] = package['binary']['name']
 
-            _, _, v = source['version'].rpartition(":")
-            prefix = "%s_%s_%s.%d" % (source['name'], v, job['arch'], job['id'])
+        job['failed'] = failed
 
-            dudf = "{prefix}.dud".format(prefix=prefix)
-            dud = Changes()
-            dud['Created-By'] = "Dummy Entry <dummy@example.com>"
-            dud['Source'] = package['source']['name']
-            dud['Version'] = package['source']['version']
-            dud['Architecture'] = package['arch']
-            dud['X-Debile-Failed'] = "Yes" if failed else "No"
-            if package['type'] == 'binary':
-                dud['Binary'] = package['binary']['name']
+        with open('{prefix}.firehose.xml'.format(
+                prefix=prefix), 'wb') as fd:
+            fd.write(firehose.to_xml_bytes())
 
-            job['failed'] = failed
+        dud.add_file('{prefix}.firehose.xml'.format(prefix=prefix))
 
-            with open('{prefix}.firehose.xml'.format(
-                    prefix=prefix), 'wb') as fd:
-                fd.write(firehose.to_xml_bytes())
+        with open('{prefix}.log'.format(prefix=prefix), 'wb') as fd:
+            fd.write(log.encode('utf-8'))
 
-            dud.add_file('{prefix}.firehose.xml'.format(prefix=prefix))
+        dud.add_file('{prefix}.log'.format(prefix=prefix))
 
-            with open('{prefix}.log'.format(prefix=prefix), 'wb') as fd:
-                fd.write(log.encode('utf-8'))
+        with open(dudf, 'w') as fd:
+            dud.dump(fd=fd)
 
-            dud.add_file('{prefix}.log'.format(prefix=prefix))
-
-            with open(dudf, 'w') as fd:
-                dud.dump(fd=fd)
-
-            if changes:
-                upload(changes, job, package)
-            upload(dudf, job, package)
+        if changes:
+            upload(changes, job, package)
+        upload(dudf, job, package)
 
 
 def main(args):
@@ -202,15 +199,18 @@ def main(args):
     while len(dputlog.handlers) > 0:
         dputlog.removeHandler(dputlog.handlers[-1])
 
-    logger = logging.getLogger('debile')
+    suites = config['suites']
+    components = config['components']
+    arches = config['arches']
+    checks = config.get('checks', list(PLUGINS.keys()))
 
     while True:
         try:
-            logger.debug("Checking for new jobs")
-            iterate()
-        except IDidNothingError:
-            logger.info("Nothing to do for now, sleeping 30s")
-            time.sleep(30)
-        except (DputError, DcutError, Exception):
-            logger.warning("A fatal error occured, restarting in a minute", exc_info=True)
+            with workon(suites, components, arches, checks) as job:
+                run_job(job)
+        except KeyboardInterrupt:
+            raise SystemExit(1)
+        except SystemExit:
+            raise
+        except:
             time.sleep(60)
