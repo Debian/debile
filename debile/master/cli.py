@@ -25,24 +25,17 @@ def init():
 
 
 def process_incoming():
-    import debile.master.incoming_changes
-    import debile.master.incoming_dud
-    import sys
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Debile master incoming handling")
+    parser.add_argument("--no-dud", action="store_false", dest="dud",
+                        help="Do not process *.dud files.")
+    parser.add_argument("--no-changes", action="store_false", dest="changes",
+                        help="Do not process *.changes files.")
+    parser.add_argument("directory", action="store",
+                        help="Directry to process.")
 
-    for mod in [debile.master.incoming_changes, debile.master.incoming_dud]:
-        getattr(mod, 'process_directory')(*sys.argv[1:])
-
-
-def process_incoming_changes():
-    from debile.master.incoming_changes import process_directory
-    import sys
-    return process_directory(*sys.argv[1:])
-
-
-def process_incoming_dud():
-    from debile.master.incoming_dud import process_directory
-    import sys
-    return process_directory(*sys.argv[1:])
+    from debile.master.incoming import main
+    main(parser.parse_args())
 
 
 def import_db():

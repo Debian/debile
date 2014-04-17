@@ -20,27 +20,16 @@
 
 import os
 import re
-import fnmatch
 
 from debian.debian_support import version_compare
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
-from debile.master.utils import session
 from debile.master.messaging import emit
 from debile.master.orm import (Person, Builder, Suite, Component, Group,
                                GroupSuite, Source, Deb, Job,
                                create_source, create_jobs)
 from debile.master.changes import Changes, ChangesFileException
-
-
-def process_directory(path):
-    abspath = os.path.abspath(path)
-    for fp in os.listdir(abspath):
-        path = os.path.join(abspath, fp)
-        if fnmatch.fnmatch(path, "*.changes"):
-            with session() as s:
-                process_changes(s, path)
 
 
 def process_changes(session, path):

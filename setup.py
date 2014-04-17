@@ -39,8 +39,6 @@ flavors = {
             'debile-master = debile.master.cli:server',
             'debile-master-init = debile.master.cli:init',
             'debile-incoming = debile.master.cli:process_incoming',
-            'debile-incoming-changes = debile.master.cli:process_incoming_changes',
-            'debile-incoming-dud = debile.master.cli:process_incoming_dud',
             'debile-import = debile.master.cli:import_db',
         ],
     }),  # Master config
