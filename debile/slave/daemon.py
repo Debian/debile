@@ -31,10 +31,13 @@ from contextlib import contextmanager
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
+import signal
 import logging
 import time
 
+
 proxy = get_proxy(config)
+shutdown_request = False
 
 
 class IDidNothingException(Exception):
@@ -189,6 +192,15 @@ def run_job(job):
         upload(dudf, job, package)
 
 
+def system_exit_handler(signum, frame):
+    raise SystemExit(1)
+
+
+def shutdown_request_handler(signum, frame):
+    global shutdown_request
+    shutdown_request = True
+
+
 def main(args):
     start_logging(args)
 
@@ -199,6 +211,13 @@ def main(args):
     while len(dputlog.handlers) > 0:
         dputlog.removeHandler(dputlog.handlers[-1])
 
+    signal.signal(signal.SIGQUIT, system_exit_handler)
+    signal.signal(signal.SIGABRT, system_exit_handler)
+    signal.signal(signal.SIGTERM, system_exit_handler)
+
+    signal.signal(signal.SIGHUP,  signal.SIG_IGN)
+    signal.signal(signal.SIGUSR1, shutdown_request_handler)
+
     suites = config['suites']
     components = config['components']
     arches = config['arches']
@@ -208,9 +227,13 @@ def main(args):
         try:
             with workon(suites, components, arches, checks) as job:
                 run_job(job)
+            if shutdown_request:
+                raise SystemExit(0)
         except KeyboardInterrupt:
             raise SystemExit(1)
         except SystemExit:
             raise
         except:
+            if shutdown_request:
+                raise SystemExit(0)
             time.sleep(60)

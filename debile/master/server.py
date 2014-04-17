@@ -22,18 +22,29 @@
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+from sqlalchemy.sql import exists
 
 from debile.utils.log import start_logging
 from debile.master.core import config
 from debile.master.utils import session
-from debile.master.orm import Person, Builder
+from debile.master.orm import Person, Builder, Job
 from debile.master.interface import NAMESPACE, DebileMasterInterface
 
 import SocketServer
+import signal
 import hashlib
 import logging
 import logging.handlers
 import ssl
+
+
+def check_shutdown():
+    with session() as s:
+        shutdown = not s.query(exists().where(
+            (Job.assigned_at != None) & (Job.finished_at == None))
+        ).scalar()
+        if shutdown:
+            raise SystemExit(0)
 
 
 class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
@@ -62,11 +73,14 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
         try:
             with session() as s:
                 NAMESPACE.session = s
-                return SimpleXMLRPCRequestHandler.handle_one_request(self)
+                SimpleXMLRPCRequestHandler.handle_one_request(self)
         finally:
             NAMESPACE.session = None
             NAMESPACE.machine = None
             NAMESPACE.user = None
+
+        if DebileMasterInterface.shutdown_request:
+            check_shutdown()
 
 
 class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
@@ -108,8 +122,24 @@ def serve(server, port, keyfile, certfile, ca_certs):
     server.serve_forever()
 
 
+def system_exit_handler(signum, frame):
+    raise SystemExit(1)
+
+
+def shutdown_request_handler(signum, frame):
+    DebileMasterInterface.shutdown_request = True
+    check_shutdown()
+
+
 def main(args):
     start_logging(args)
+
+    signal.signal(signal.SIGQUIT, system_exit_handler)
+    signal.signal(signal.SIGABRT, system_exit_handler)
+    signal.signal(signal.SIGTERM, system_exit_handler)
+
+    signal.signal(signal.SIGHUP,  signal.SIG_IGN)
+    signal.signal(signal.SIGUSR1, shutdown_request_handler)
 
     xml = config["xmlrpc"]
     keyrings = config["keyrings"]

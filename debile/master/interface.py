@@ -76,6 +76,8 @@ class DebileMasterInterface(object):
     should likely go here, unless you know what you're doing.
     """
 
+    shutdown_request = False
+
     # Simple stuff.
 
     @builder_method
@@ -97,6 +99,9 @@ class DebileMasterInterface(object):
     @builder_method
     def get_next_job(self, suites, components, arches, checks):
         NAMESPACE.machine.last_ping = datetime.utcnow()
+
+        if self.__class__.shutdown_request:
+            return None
 
         job = NAMESPACE.session.query(Job).join(Job.source).join(Job.check).filter(
             ~Job.depedencies.any(),
