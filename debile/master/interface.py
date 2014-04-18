@@ -229,8 +229,7 @@ class DebileMasterInterface(object):
         if not job:
             raise ValueError("No job with id %s." % job_id)
 
-        # Using "job.failed is False", not "not job.failed", to not match None.
-        if job.check.build and job.failed is False:
+        if job.build_binary:
             raise ValueError("Can not re-run a successfull build job.")
 
         job.failed = None
