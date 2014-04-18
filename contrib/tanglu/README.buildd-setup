@@ -109,13 +109,13 @@ Select RSA(4) and a length of 4096 bit.
 You got the name of an element as buildd name.
 The name should be: "Tanglu <element> Buildd", e.g. "Tanglu Helium Buildd".
 The email address should be "<element>@buildd.tanglu.org", e.g. "helium@buildd.tanglu.org".
-Set expiration date to 1-3 years, don't use a passphrase.
+Set expiration date to 1-5 years, don't use a passphrase.
 
 Export the pgp public key:
- sudo -u buildd -i gpg --armor --export "<element>@buildd.tanglu.org" >/srv/buildd/<element>.pgp
+ gpg --armor --export "<element>@buildd.tanglu.org" >/srv/buildd/<element>.pgp
 
 Create a debile xmlrpc ssl key and cert:
- openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -subj "/C=ORG/O=Tanglu Project/OU=Package Build Service/CN=<element>.buildd.tanglu.org/emailAddress=<element>@buildd.tanglu.org" -keyout /srv/buildd/<element>.key -out /srv/buildd/<element>.crt && chmod go-rwx /srv/buildd/*.key
+ openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -days 7300 -subj "/C=NT/O=Tanglu Project/OU=Package Build Service/CN=<element>/emailAddress=<element>@buildd.tanglu.org" -keyout /srv/buildd/<element>.key -out /srv/buildd/<element>.crt && chmod go-rwx /srv/buildd/*.key
 
 === 6. Install buildd software ===
 Clone the Tanglu debile software:
@@ -142,7 +142,7 @@ $build_environment = {
     'DEB_BUILD_OPTIONS' => 'parallel=5'
 };
 
-Note: Change 'parallel=4' to suite your machine, "num physical cpu cores + 1" or "num logical cpu cores - 1" is usually a suitable value.
+Note: Change 'parallel=5' to suite your machine, "num physical cpu cores + 1" or "num logical cpu cores - 1" is usually a suitable value.
 Also be aware that many jobs ignore this setting, and only uses a single core, so if you have a powerful machine with plenty of RAM/HDD, please consider runing multiple debile-slave instances with a lower "parallel=" setting instead.
 
 Create /etc/debile/slave.yaml using the template below.
