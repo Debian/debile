@@ -229,7 +229,7 @@ class DebileMasterInterface(object):
         if not job:
             raise ValueError("No job with id %s." % job_id)
 
-        if job.build_binary:
+        if job.built_binary:
             raise ValueError("Can not re-run a successfull build job.")
 
         job.failed = None
