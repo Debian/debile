@@ -31,7 +31,6 @@ from io import StringIO
 import glob
 import re
 import os
-import sys
 
 
 STATS = re.compile("Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space")
@@ -133,11 +132,9 @@ def sbuild(package, suite, arch, affinity, analysis):
               failstage == "arch-check" or
               failstage == "check-space" or
               failstage == "chroot-arch"))):
-        #sys.stdout.write(out.encode('utf-8'))
-        sys.stdout.write("Summary: \"%s\" Status: \"%s\" Fail-Stage \"%s\" " %
-                         (summary, status, failstage))
-        sys.stdout.flush()
-        raise Exception("sbuild failed to run")
+        raise Exception("Sbuild failed to run. " +
+                        "Summary: \"%s\" Status: \"%s\" Fail-Stage: \"%s\"" %
+                        (summary, status, failstage))
 
     ftbfs = ret != 0 or status != "successful"
     base, _ = os.path.basename(package).rsplit(".", 1)
