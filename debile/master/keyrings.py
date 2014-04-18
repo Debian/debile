@@ -44,15 +44,14 @@ def import_pgp(keydata):
     fingerprint = None
     for line in out.split("\n"):
         data = line.split()
-        if data[0] != "[GNUPG:]":
+        if not data or data[0] != "[GNUPG:]":
             continue
 
         if data[1] == "IMPORT_OK":
             fingerprint = data[3]
             break
     else:
-        raise ValueError(
-            "And nothing of value was lost (gpg failed to import)")
+        raise ValueError("GPG failed to import pgp public key")
 
     return fingerprint
 
@@ -83,17 +82,13 @@ def import_ssl(certdata, cn=None, email=None):
             subject = data[1].split('/')
 
     if fingerprint is None or subject is None:
-        raise ValueError(
-            "And nothing of value was lost (openssl failed to import)"
-        )
+        raise ValueError("OpensSSL failed to parse ssl certificate.")
 
     # SSLSocket breaks badly on multiple certifiates with the same subject
     # in the keyring, so ensure that it unique to this slave/user.
     if ((cn and not "CN={cn}".format(cn=cn) in subject) or
-            (email and not "emailAddress={email}".format(email=email))):
-        raise ValueError(
-            "And nothing of value was lost (openssl failed to import)"
-        )
+            (email and not "emailAddress={email}".format(email=email) in subject)):
+        raise ValueError("Incorrect subject of ssl certificate.")
 
     # Add the valid pem-formated certificate to the keyring.
     keyring = open(config['keyrings']['ssl'], 'a')

@@ -27,16 +27,33 @@ from debian.debian_support import Version
 from datetime import datetime
 
 import threading
+import logging
 
 
 NAMESPACE = threading.local()
+
+
+def generic_method(fn):
+    def _(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except:
+            logger = logging.getLogger('debile')
+            logger.debug("Caught exception when processing xmlrpc request.", exc_info=True)
+            raise
+    return _
 
 
 def builder_method(fn):
     def _(*args, **kwargs):
         if not NAMESPACE.builder:
             raise Exception("You can't do that")
-        return fn(*args, **kwargs)
+        try:
+            return fn(*args, **kwargs)
+        except:
+            logger = logging.getLogger('debile')
+            logger.debug("Caught exception when processing xmlrpc request.", exc_info=True)
+            raise
     return _
 
 
@@ -44,7 +61,12 @@ def user_method(fn):
     def _(*args, **kwargs):
         if not NAMESPACE.user:
             raise Exception("You can't do that")
-        return fn(*args, **kwargs)
+        try:
+            return fn(*args, **kwargs)
+        except:
+            logger = logging.getLogger('debile')
+            logger.debug("Caught exception when processing xmlrpc request.", exc_info=True)
+            raise
     return _
 
 
@@ -122,15 +144,19 @@ class DebileMasterInterface(object):
 
     # Useful methods below.
 
+    @generic_method
     def get_group(self, group_id):
         return NAMESPACE.session.query(Group).get(group_id).debilize()
 
+    @generic_method
     def get_source(self, source_id):
         return NAMESPACE.session.query(Source).get(source_id).debilize()
 
+    @generic_method
     def get_binary(self, binary_id):
         return NAMESPACE.session.query(Binary).get(binary_id).debilize()
 
+    @generic_method
     def get_job(self, job_id):
         return NAMESPACE.session.query(Job).get(job_id).debilize()
 
@@ -159,7 +185,7 @@ class DebileMasterInterface(object):
             raise ValueError("No builder with name %s." % name)
 
         builder.pgp = import_pgp(pgp)
-        builder.ssl = import_ssl(ssl, name)
+        builder.ssl = import_ssl(ssl, builder.name)
 
         clean_ssl_keyring(NAMESPACE.session)
 
