@@ -13,7 +13,7 @@ Users:  # Users of Debile
     - name: Jon Severinsson
       email: jon@severinsson.net
       pgp: 32623A6F42F5DA4B0DBD5B2BCDBBA39E78415AD2
-      ssl: F69CB54E3B47916BD6DC65244C06969F06AC469F
+      ssl: 746E9DAD20C46D97D3613AE4FBA48E9521139300
 
     - name: Daniel Nicoletti
       email: dantti12@gmail.com
@@ -44,7 +44,7 @@ Builders:  # Machines that can build
     - name: caesium
       maintainer: jon@severinsson.net
       pgp: 517884F17B4964C46EEE3D56FFF33867C01E4D5A
-      ssl: F9FED76E3915AB25437FDC1983A8FCDCE9BA8DC9
+      ssl: BE6CEC446097F26FAE397B296261AE24FD07743D
 
 Suites:
     - name: aequorea-updates
