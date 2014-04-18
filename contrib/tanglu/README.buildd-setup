@@ -3,7 +3,7 @@
 === 1. Install dependencies ===
 On your newly installed Debian Wheezy machine, install the buildd dependencies:
 
- apt-get install sudo devscripts dpkg-dev eatmydata sbuild schroot dput-ng \
+ apt-get install sudo devscripts dpkg-dev eatmydata sbuild/jessie schroot dput-ng \
     python-dput python-debian python-requests python-yaml python-schroot/jessie python-sqlalchemy/jessie python-virtualenv
 
 Then install Tanglu debootstrap, Tanglu lintian and the Tanglu Archive Keyring:

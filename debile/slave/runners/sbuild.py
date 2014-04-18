@@ -96,15 +96,16 @@ def sbuild(package, suite, arch, affinity, analysis):
     if not package.endswith('.dsc'):
         raise ValueError("WTF")
 
-    out, err, ret = run_command([
-        "sbuild",
-        "--dist={suite}".format(suite=suite),
-        "--arch={affinity}".format(affinity=affinity),
-        "--chroot={chroot_name}".format(chroot_name=chroot_name),
-        ("--arch-all" if arch == 'all' else '--no-arch-all'),
-        "-v",
-        package,
-    ])
+    sbuild_cmd = ["sbuild",
+                  "--dist={suite}".format(suite=suite),
+                  "--arch={affinity}".format(affinity=affinity),
+                  "--chroot={chroot_name}".format(chroot_name=chroot_name),
+                  "--verbose"]
+    if arch == 'all':
+        sbuild_cmd += ["-A", "--debbuildopt=-A"]
+    sbuild_cmd += [package]
+
+    out, err, ret = run_command(sbuild_cmd)
 
     summary = False
     status = None

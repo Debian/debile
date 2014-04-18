@@ -47,7 +47,7 @@ Recommends:
  lintian,
  lintian4python,
 # for lintian checks
- sbuild,
+ sbuild (>= 0.64~),
  schroot,
  python-schroot,
 # for sbuild (and others)
