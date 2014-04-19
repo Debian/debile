@@ -663,10 +663,10 @@ class Job(Base):
     # Called when the .changes for a build job is processed
     def new_binary(self):
         if not self.check.build:
-            raise ValueError("add_binary() are for build jobs only!")
+            raise ValueError("add_binary() is for build jobs only!")
         binary = Binary(build_job=self, source=self.source, arch=self.arch,
                         uploaded_at=datetime.utcnow())
-        for job in self.blocking:
+        for job in list(self.blocking):
             if (job.check.binary and
                     job.source == self.source and
                     job.arch == self.arch):
@@ -682,7 +682,7 @@ class Job(Base):
         # Only delete the dependency if the job was sucessfull, and
         # not if it is a build job (that is handled by add_binary().
         if not result.failed and not self.check.build:
-            for job in self.blocking:
+            for job in list(self.blocking):
                 job.depedencies.remove(self)
         return result
 
