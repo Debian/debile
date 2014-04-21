@@ -118,6 +118,14 @@ def accept_source_changes(config, session, changes, user):
     except NoResultFound:
         pass
 
+    oldsources = session.query(Source).filter(
+        Source.group_suite == source.group_suite,
+        Source.name == source.name,
+    )
+    for oldsource in oldsources:
+        if version_compare(oldsource.version, dsc['Version']) > 0:
+            return reject_changes(session, changes, "newer-source-already-in-suite")
+
     component = session.query(Component).filter_by(name="main").one()
 
     if 'Build-Architecture-Indep' in dsc:
@@ -134,13 +142,14 @@ def accept_source_changes(config, session, changes, user):
     session.add(source)
 
     # Drop any old jobs that are still pending.
-    jobs = session.query(Job).join(Job.source).filter(
-        Source.group_suite == source.group_suite,
-        Source.name == source.name,
-    )
-    for job in jobs:
-        if not job.assigned_at and version_compare(source.version, job.source.version) > 0:
-            session.delete(job)
+    for oldsource in oldsources:
+        for job in oldsource.jobs:
+            if (not job.results and not job.built_binary):
+                session.delete(job)
+            elif job.failed is None:
+                job.failed = True
+        if not any(oldsource.jobs):
+            session.delete(oldsource)
 
     # OK. We have a changes in order. Let's roll.
     repo = Repo(group_suite.group.repo_path)

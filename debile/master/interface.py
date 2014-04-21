@@ -112,6 +112,7 @@ class DebileMasterInterface(object):
             Job.externally_blocked == False,
             Job.assigned_at == None,
             Job.finished_at == None,
+            Job.failed.is_(None),
             GroupSuite.suite.has(Suite.name.in_(suites)),
             Source.component.has(Component.name.in_(components)),
             Job.arch.has(Arch.name.in_(["source", "all"] + arches)),
@@ -303,7 +304,7 @@ class DebileMasterInterface(object):
     @user_method
     def retry_failed(self):
         jobs = NAMESPACE.session.query(Job).filter(
-            Job.failed.is_(True),
+            Job.built_binary == None,
             Job.check.has(Check.build == True),
         )
 

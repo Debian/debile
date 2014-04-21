@@ -92,13 +92,20 @@ class ArchiveDebileBridge:
         create_jobs(source, self._affinity_preference, valid_affinities, externally_blocked=True)
 
         # Drop any old jobs that are still pending.
-        jobs = session.query(Job).join(Job.source).filter(
+        oldsources = session.query(Source).filter(
             Source.group_suite == source.group_suite,
             Source.name == source.name,
         )
-        for job in jobs:
-            if not job.assigned_at and version_compare(source.version, job.source.version) > 0:
-                session.delete(job)
+        for oldsource in oldsources:
+            if version_compare(oldsource.version, source.version) > 0:
+                continue
+            for job in oldsource.jobs:
+                if (not job.results and not job.built_binary):
+                    session.delete(job)
+                elif job.failed is None:
+                    job.failed = True
+            if not any(job.check.build for job in oldsource.jobs):
+                session.delete(oldsource)
 
         print("Created source for %s %s" % (source.name, source.version))
         emit('accept', 'source', source.debilize())
@@ -116,6 +123,13 @@ class ArchiveDebileBridge:
                         directory, _, filename = filename.rpartition('/')
                         deb = Deb(binary=binary, directory=directory, filename=filename)
                         session.add(deb)
+
+                if not job.assigned_at or job.failed is True:
+                    # Dak accepted a binary that wasn't built by debile, eg a manual binary upload.
+                    # Remove the now useless build job, to be consistent with create_debile_source behaviour
+                    # (does not create a build job if dak accepted the binary before debile knew about the source)
+                    binary.build_job = None
+                    session.delete(job)
 
                 emit('accept', 'binary', binary.debilize())
 
@@ -195,7 +209,7 @@ class ArchiveDebileBridge:
 
             cutoff = datetime.utcnow() - timedelta(days=1)
             jobs = s.query(Job).filter(
-                Job.failed == None,
+                Job.failed.is_(None),
                 Job.finished_at != None,
                 Job.finished_at < cutoff,
             )
@@ -211,7 +225,7 @@ class ArchiveDebileBridge:
             cutoff = datetime.utcnow() - timedelta(days=7)
             jobs = s.query(Job).join(Job.check).filter(
                 Check.build == True,
-                Job.failed == False,
+                Job.failed.is_(False),
                 Job.built_binary == None,
                 Job.finished_at != None,
                 Job.finished_at < cutoff,
