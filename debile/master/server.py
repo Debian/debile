@@ -103,7 +103,8 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
                      else ssl.CERT_REQUIRED)
         self.socket = ssl.wrap_socket(self.socket,
                                       keyfile=keyfile, certfile=certfile,
-                                      ca_certs=ca_certs, cert_reqs=cert_reqs)
+                                      ca_certs=ca_certs, cert_reqs=cert_reqs,
+                                      ssl_version=ssl.PROTOCOL_TLSv1)
 
         if bind_and_activate:
             self.server_bind()

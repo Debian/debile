@@ -81,7 +81,7 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
         self.sock = ssl.wrap_socket(
             sock, self.key_file, self.cert_file,
             ca_certs=self.ca_certs, cert_reqs=cert_reqs,
-            do_handshake_on_connect=True
+            do_handshake_on_connect=True, ssl_version=ssl.PROTOCOL_TLSv1,
         )
 
         if not validate(self.sock.getpeercert(), self.host):
