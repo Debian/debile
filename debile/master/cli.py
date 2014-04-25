@@ -27,6 +27,8 @@ def init():
     parser = ArgumentParser(description="Debile master database initialization")
     parser.add_argument("--config", action="store", dest="config", default=None,
                         help="Path to the master.yaml config file.")
+    parser.add_argument("--force", action="store_true", dest="force", default=False,
+                        help="Force initialization even if sanity checks fail.")
     parser.add_argument("file", action="store",
                         help="Yaml file with initial database.")
 

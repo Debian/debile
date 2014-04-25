@@ -20,10 +20,13 @@
 
 import yaml
 from datetime import datetime
+from sqlalchemy.sql import exists
 
 from debile.master.utils import session
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
                                Group, GroupSuite, Base)
+
+DEADBEEF = "0000000000000000DEADBEEF0000000000000000"
 
 
 def main(args, config):
@@ -36,10 +39,6 @@ def main(args, config):
     arches = obj.pop("Arches", [])
     checks = obj.pop("Checks", [])
     groups = obj.pop("Groups", [])
-
-    if obj != {}:
-        for key in obj:
-            print "Igorning key %s" % (key)
 
     with session() as s:
         Base.metadata.create_all(s.bind)
@@ -95,3 +94,38 @@ def main(args, config):
                     gs.checks.append(check)
 
                 s.add(gs)
+
+        sane = True
+        for key in obj:
+            print "Unknown key '%s' in yaml file" % key
+            sane = False
+
+        if not s.query(exists().where(Person.id == Person.id)).scalar():
+            print "No users in yaml file"
+            sane = False
+        elif not s.query(exists().where((Person.ssl != None) & (Person.ssl != DEADBEEF))).scalar():
+            print "No enabled users in yaml file" % args.file
+            sane = False
+
+        if not s.query(exists().where(GroupSuite.id == GroupSuite.id)).scalar():
+            print "No group in yaml file"
+            sane = False
+
+        for group in s.query(Group).filter(~Group.group_suite.any()):
+            print "No suites in group '%s' " % group.name
+            sane = False
+
+        for gs in s.query(GroupSuite).filter(~GroupSuite.arches.any(Arch.name != 'source', Arch.name != 'all')):
+            print "No arches in group '%s' suite '%s'" % (gs.group.name, gs.suite.name)
+            sane = False
+
+        for gs in s.query(GroupSuite).filter(~GroupSuite.components.any()):
+            print "No components in group '%s' suite '%s'" % (gs.group.name, gs.suite.name)
+            sane = False
+
+        for gs in s.query(GroupSuite).filter(~GroupSuite.checks.any()):
+            print "No checks in group '%s' suite '%s'" % (gs.group.name, gs.suite.name)
+            sane = False
+
+        if not sane and not args.force:
+            raise Exception("Sanity checks failed, use --force to override")
