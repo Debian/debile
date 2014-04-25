@@ -192,8 +192,8 @@ class ArchiveDebileBridge:
 
     def reschedule_missing_uploads(self):
         with session() as s:
-            cutoff = datetime.utcnow() - timedelta(days=1)
 
+            cutoff = datetime.utcnow() - timedelta(days=1)
             jobs = s.query(Job).filter(
                 Job.failed == None,
                 Job.finished_at != None,
@@ -201,13 +201,14 @@ class ArchiveDebileBridge:
             )
 
             for job in jobs:
-                # Still missing the .dud one day after the builder told debile-master it had finished the job
+                # Still missing the .dud a day after the builder told debile-master it had finished the job
                 print("Rescheduling %s in %s due to missing *.dud upload" % (str(job), str(job.group_suite)))
                 job.failed = None
                 job.builder = None
                 job.assigned_at = None
                 job.finished_at = None
 
+            cutoff = datetime.utcnow() - timedelta(days=7)
             jobs = s.query(Job).join(Job.check).filter(
                 Check.build == True,
                 Job.failed == False,
@@ -217,7 +218,7 @@ class ArchiveDebileBridge:
             )
 
             for job in jobs:
-                # Still missing the .changes one day after the builder told debile-master it had finished the build job
+                # Still missing the .changes a week after the builder told debile-master it had finished the build job
                 print("Rescheduling %s in %s due to missing *.changes upload" % (str(job), str(job.group_suite)))
                 job.failed = None
                 job.builder = None

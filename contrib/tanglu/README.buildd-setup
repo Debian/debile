@@ -55,6 +55,8 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
  :: /srv/buildd is on btrfs:
    for SUITE in ${STABLE} ${DEVEL} staging; do
        sed -E -e 's,^type=directory$,type=btrfs-snapshot,' -e 's,^directory=(.+)$,btrfs-source-subvolume=\1\nbtrfs-snapshot-directory=/srv/buildd/snapshots,' -i /etc/schroot/chroot.d/${SUITE}-${ARCH}
+       rm /srv/buildd/chroots/${SUITE}-${ARCH}/dev/ptmx
+       ln -s pts/ptmx /srv/buildd/chroots/${SUITE}-${ARCH}/dev/ptmx
        echo force-unsafe-io >/srv/buildd/chroots/${SUITE}-${ARCH}/etc/dpkg/dpkg.cfg.d/90sbuild
    done
 
@@ -67,6 +69,8 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
    # Log into the newly created stable environment:
    sbuild-shell ${STABLE}-${ARCH}
    # And run these commands:
+   rm /dev/ptmx
+   ln -s pts/ptmx /dev/ptmx
    echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
    echo "deb http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
    echo "deb-src http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
@@ -75,12 +79,16 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
    # Log into the newly created devel environment:
    sbuild-shell ${STABLE}-${ARCH}
    # And run these commands:
+   rm /dev/ptmx
+   ln -s pts/ptmx /dev/ptmx
    echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
    exit
 
    # Log into the newly created staging environment:
    sbuild-shell staging-${ARCH}
    # And run these commands:
+   rm /dev/ptmx
+   ln -s pts/ptmx /dev/ptmx
    echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
    echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
    echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
