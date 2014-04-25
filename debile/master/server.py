@@ -34,6 +34,7 @@ import signal
 import hashlib
 import logging
 import logging.handlers
+import os.path
 import ssl
 
 
@@ -141,6 +142,16 @@ def main(args, config):
 
     signal.signal(signal.SIGHUP,  signal.SIG_IGN)
     signal.signal(signal.SIGUSR1, shutdown_request_handler)
+
+    logger = logging.getLogger('debile')
+    if not os.path.isfile(config['xmlrpc']['keyfile']):
+        logger.error("Can not find ssl keyfile `{file}'".format(file=config['xmlrpc']['keyfile']))
+    if not os.path.isfile(config['xmlrpc']['certfile']):
+        logger.error("Can not find ssl certfile `{file}'".format(file=config['xmlrpc']['certfile']))
+    if not os.path.isfile(config['keyrings']['ssl']):
+        logger.error("Can not find ssl keyring `{file}'".format(file=config['keyrings']['ssl']))
+    if not os.path.isfile(config['keyrings']['pgp']):
+        logger.info("Can not find pgp keyring `{file}'".format(file=config['keyrings']['pgp']))
 
     serve(config['xmlrpc']['addr'], config['xmlrpc']['port'],
           config['xmlrpc']['keyfile'], config['xmlrpc']['certfile'],
