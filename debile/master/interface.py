@@ -46,7 +46,7 @@ def generic_method(fn):
 
 def builder_method(fn):
     def _(*args, **kwargs):
-        if not NAMESPACE.builder:
+        if not NAMESPACE.machine:
             raise Exception("You can't do that")
         try:
             return fn(*args, **kwargs)
