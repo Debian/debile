@@ -103,7 +103,12 @@ def workon(proxy, suites, components, arches, capabilities):
     logger = logging.getLogger('debile')
     logger.debug("Checking for new jobs")
 
-    job = proxy.get_next_job(suites, components, arches, capabilities)
+    try:
+        job = proxy.get_next_job(suites, components, arches, capabilities)
+    except:
+        logger.error("Error while requesting a job from the master", exc_info=True)
+        raise
+
     if job is None:
         logger.info("Nothing to do for now")
         raise IDidNothingException
