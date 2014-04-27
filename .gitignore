@@ -4,3 +4,5 @@ ENV/
 debile.db
 *debile*egg*
 build/
+debian/bin/
+
