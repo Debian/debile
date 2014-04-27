@@ -18,8 +18,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.master.incomming_dud import process_dud
-from debile.master.incomming_changes import process_changes
+from debile.master.incoming_dud import process_dud
+from debile.master.incoming_changes import process_changes
 from debile.master.utils import session
 
 import fnmatch
