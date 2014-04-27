@@ -50,9 +50,8 @@ def process_dud(config, session, path):
     except NoResultFound:
         return reject_dud(session, dud, "invalid-dud-builder")
 
-    try:
-        job = session.query(Job).get(jid)
-    except NoResultFound:
+    job = session.query(Job).get(jid)
+    if job is None:
         return reject_dud(session, dud, "invalid-dud-job")
 
     if dud.get("X-Debile-Failed", None) is None:
