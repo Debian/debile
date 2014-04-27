@@ -297,7 +297,7 @@ class GroupSuite(Base):
     id = Column(Integer, primary_key=True)
 
     group_id = Column(Integer, ForeignKey('groups.id'))
-    group = relationship("Group", backref="suites",
+    group = relationship("Group", backref="group_suites",
                          foreign_keys=[group_id])
 
     suite_id = Column(Integer, ForeignKey('suites.id'))
