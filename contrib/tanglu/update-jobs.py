@@ -97,7 +97,7 @@ class ArchiveDebileBridge:
             Source.name == source.name,
         )
         for oldsource in oldsources:
-            if version_compare(oldsource.version, source.version) > 0:
+            if version_compare(oldsource.version, source.version) >= 0:
                 continue
             for job in oldsource.jobs:
                 if (not job.results and not job.built_binary):
