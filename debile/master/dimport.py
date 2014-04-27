@@ -97,18 +97,18 @@ def main(args, config):
 
         sane = True
         for key in obj:
-            print "Unknown key '%s' in yaml file" % key
+            print "Unknown key '%s' in yaml file '%s'" % (key, args.file)
             sane = False
 
         if not s.query(exists().where(Person.id == Person.id)).scalar():
-            print "No users in yaml file"
+            print "No users in yaml file '%s'" % args.file
             sane = False
         elif not s.query(exists().where((Person.ssl != None) & (Person.ssl != DEADBEEF))).scalar():
-            print "No enabled users in yaml file '%s' (ssl contains the 'DEADBEEF' string)" % args.file
+            print "No enabled users in yaml file '%s' (user 'ssl' key missing or dummy 'DEADBEEF' string)" % args.file
             sane = False
 
         if not s.query(exists().where(GroupSuite.id == GroupSuite.id)).scalar():
-            print "No group in yaml file"
+            print "No group in yaml file '%s'" % args.file
             sane = False
 
         for group in s.query(Group).filter(~Group.group_suite.any()):
