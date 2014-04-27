@@ -104,7 +104,7 @@ def main(args, config):
             print "No users in yaml file"
             sane = False
         elif not s.query(exists().where((Person.ssl != None) & (Person.ssl != DEADBEEF))).scalar():
-            print "No enabled users in yaml file '%s'" % args.file
+            print "No enabled users in yaml file '%s' (ssl contains the 'DEADBEEF' string)" % args.file
             sane = False
 
         if not s.query(exists().where(GroupSuite.id == GroupSuite.id)).scalar():
