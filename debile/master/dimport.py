@@ -115,7 +115,7 @@ def main(args, config):
             print "No suites in group '%s' " % group.name
             sane = False
 
-        for gs in s.query(GroupSuite).filter(~GroupSuite.arches.any(Arch.name != 'source', Arch.name != 'all')):
+        for gs in s.query(GroupSuite).filter(~GroupSuite.arches.any((Arch.name != 'source') & (Arch.name != 'all'))):
             print "No arches in group '%s' suite '%s'" % (gs.group.name, gs.suite.name)
             sane = False
 
