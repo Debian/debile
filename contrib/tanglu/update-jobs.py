@@ -113,13 +113,10 @@ class ArchiveDebileBridge:
         return source
 
     def create_debile_binaries(self, session, source, pkg):
-        print(repr(source))
         for job in source.jobs:
-            print(repr(job))
             if job.check.build and not job.built_binary and job.arch.name in pkg.installed_archs:
                 binary = job.new_binary()
                 session.add(binary)
-                print(repr(binary))
 
                 for name, arch, filename in pkg.binaries:
                     if arch == binary.arch.name:
