@@ -1,16 +1,23 @@
-install the debile-slave package
-configure /etc/debile/slave.yaml
 
- - set xmrpc.{host,keyfile,certfile} to sane values for the setup above
+Debile slave documentation
+--------------------------
 
- - if you have an OpenPGP for your Debile user already
-   - use debile-remote create-slave on your dev machine (remotely) - you'll
-     need to set /etc/debile/user.yaml correctly. See the master CONFIG file
-     for more information.
-   otherwise:
-   - use /usr/share/python-debile/debile-generate-slave-keys on your dev
-     machine (remotely) - you'll need to set /etc/debile/user.yaml correctly.
-   - copy the generated .tar.gz to the slave
-   - sudo /usr/share/debile-slave/debile-slave-import-{conf,cred} name.tar.gz
 
- - restart the slave daemon
+This file documents how to install a Debile Slave.
+
+
+Install the debile-slave package
+Configure /etc/debile/slave.yaml
+
+- set xmrpc.{host,keyfile,certfile} to sane values for the setup above
+
+If you have an OpenPGP for your Debile user already:
+ - use debile-remote create-slave on your dev machine (remotely) - you'll need to set /etc/debile/user.yaml correctly. See the master CONFIG file for more information.
+
+Otherwise:
+
+ - use /usr/share/python-debile/debile-generate-slave-keys on your dev machine (remotely) - you'll need to set /etc/debile/user.yaml correctly.
+ - copy the generated .tar.gz to the slave
+ - sudo /usr/share/debile-slave/debile-slave-import-{conf,cred} name.tar.gz
+
+- restart the slave daemon
