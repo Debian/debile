@@ -111,7 +111,7 @@ def main(args, config):
             print "No group in yaml file '%s'" % args.file
             sane = False
 
-        for group in s.query(Group).filter(~Group.group_suite.any()):
+        for group in s.query(Group).filter(~Group.group_suites.any()):
             print "No suites in group '%s' " % group.name
             sane = False
 
