@@ -1,110 +1,150 @@
 WIP, needs more love
 
- - Welcome :)
+Welcome :)
+----------
+
      This documentation describes how to install the Debile Master.
 
 
- - Installation:
+Installation
+------------
+
      echo "deb http://debile.anized.org/archive/ rc-buggy main" | sudo tee /etc/apt/sources.list.d/debile.list
      curl http://debile.anized.org/key.asc | sudo apt-key add -
      sudo apt-get update
      sudo apt-get install debile-master
 
 
- - Configuration:
-     sudo mkdir -p /srv/debile/incoming/UploadQueue /srv/debile/files/default /srv/debile/repo/default
-     sudo chown -R Debian-debile:Debian-debile /srv/debile/
-     sudo chmod 0773 /srv/debile/incoming/UploadQueue
+Configuration
+-------------
+
+Create the necessary directories::
+
+     $ sudo mkdir -p /srv/debile/incoming/UploadQueue /srv/debile/files/default /srv/debile/repo/default
+     $ sudo chown -R Debian-debile:Debian-debile /srv/debile/
+     $ sudo chmod 0773 /srv/debile/incoming/UploadQueue
+     $ umask 0077
 
      # Edit /etc/debile/master.yaml
      #  - repo_url: "http://<myhostname>/debile/repo/{name}"
      #  - files_url: "http://<myhostname>/debile/files/{name}"
 
-     # Create:
+Create /etc/cron.d/debile::
 
-:: /etc/cron.d/debile ::
-SHELL=/bin/sh
-PATH=/usr/local/bin:/usr/bin:/bin
-*/5 * * * * Debian-debile debile-incoming-changes /srv/debile/incoming/UploadQueue
-*/5 * * * * Debian-debile debile-incoming-dud /srv/debile/incoming/UploadQueue
+  SHELL=/bin/sh
+  PATH=/usr/local/bin:/usr/bin:/bin
+  */5 * * * * Debian-debile debile-incoming-changes /srv/debile/incoming/UploadQueue
+  */5 * * * * Debian-debile debile-incoming-dud /srv/debile/incoming/UploadQueue
 
-     sudo -u Debian-debile /bin/bash
-     umask 0077
 
-     # To create a self-signed certificate:
+To create a self-signed certificate::
+
      # (you'll also need to copy master.crt to all slaves/users and set ca_certs: in slave.yaml/user.yaml)
-     openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -x509 -keyout /srv/debile/master.key -out /srv/debile/master.crt
+     $ sudo openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=debile.debian.net" -keyout /srv/debile/master.key -out /srv/debile/master.cr
+     # Set the correct permissions:
+     $ sudo chmod go-rwx /srv/debile/*.key && sudo chown Debian-debile:Debian-debile /srv/debile/master.*
 
-     # To create a certificate request for a CA-signed certificate:
+
+Result (finger print)::
+
+   $ openssl x509 -noout -inform pem -sha1 -fingerprint -subject -dates -in /srv/debile/master.crt
+  SHA1 Fingerprint=65:AB:16:03:10:41:EA:D2:70:BE:62:72:EE:72:66:32:47:D5:FD:C6
+  subject= /C=NT/O=Debian/CN=debile.debian.net
+  notBefore=Apr 27 08:05:40 2014 GMT
+  notAfter=Apr 22 08:05:40 2034 GMT
+
+
+To create a certificate request for a CA-signed certificate::
+
      # (you'll also need to concatenate the certificate and CA-chain into /srv/debile/master.crt)
      openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -keyout /srv/debile/master.key -out /srv/debile/master.csr
 
-     # Edit /etc/debile/user.yaml
-       - keyfile: "path_to_key"
-       - certfile: "path_to_cert"
-     With this file, the user controlling debile with debile-remote can be setup. This allows remote administration.
 
-     # Create a /etc/debile/debile.yaml to seed the debile-master database.
-     debile-master-init --config /etc/debile/master.yaml /etc/debile/debile.yaml
+Create users::
 
-     # For each user/slave added to debile.yaml, add the self-signed ssl certificate and the pgp public key to the approriate keyring:
-     cat >>/srv/debile/keyring.pem </path/to/ssl-cert.pem
-     gpg --no-default-keyring --keyring /srv/debile/keyring.pgp --import /path/to/public-key.pgp
+     sudo openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=Sylvestre Ledru/emailAddress=sylvestre@debian.org" -keyout /srv/debile/sylvestre.key -out
+     sudo chmod go-rwx /srv/debile/*.key && sudo chown sylvestre:sylvestre /srv/debile/sylvestre.*
 
-     cd /srv/debile/repo/default
-     mkdir conf logs
-     cd conf
-     # Create:
+Result ::
 
-:: distributions ::
-Origin: Paul Tagliamonte
-Label: Debile
-Suite: unstable
-Codename: unstable
-Version: 1.0
-Architectures: i386 amd64 armhf source
-Components: main
-Description: Debile
-SignWith: 0x2BF6C8EE
-Contents: . .gz .bz2
-Log: archive.log
+  SHA1 Fingerprint=50:57:7F:BE:DF:79:C1:BC:0E:CF:A4:FB:3F:9E:6D:41:41:98:EB:B5
+  subject= /C=NT/O=Debian/CN=Sylvestre Ledru/emailAddress=sylvestre@debian.org
+  notBefore=Apr 27 08:22:37 2014 GMT
+  notAfter=Apr 22 08:22:37 2034 GMT
 
-:: incoming ::
-Name: default
-IncomingDir: incoming
-TempDir: tmp
-Allow: unstable
-Cleanup: on_deny on_error
+Edit /etc/debile/\*.yaml to match the setup above:
 
-:: uploaders ::
-allow * by unsigned
+   With user.yaml, the user controlling debile with debile-remote can be setup. This allows remote administration.
+
+For each user/slave added to debile.yaml, add the self-signed ssl certificate and the pgp public key to the approriate keyring::
+
+  $ touch /srv/debile/keyring.{pgp,pem}
+  $ sudo chown Debian-debile:Debian-debile /srv/debile/keyring.*
+  $ cat /srv/debile/sylvestre.crt | sudo -u Debian-debile tee -a /srv/debile/keyring.pem
+  $ sudo -u Debian-debile gpg --no-default-keyring --keyring /srv/debile/keyring.pgp --recv-keys 8F049AD82C92066C7352D28A7B585B30807C2A87
 
 
- - Anonymous FTP:
-     apt-get install vsftpd
-     edit /etc/vsftpd.conf
+Create a /etc/debile/debile.yaml to seed the debile-master database ::
 
-listen=YES
-anonymous_enable=YES
-anon_root=/srv/debile/incoming/
-anon_umask=027
-write_enable=YES
-anon_upload_enable=YES
-chown_uploads=YES
-chown_username=debile
-chroot_local_user=NO
+  $ sudo -u Debian-debile -i /usr/bin/debile-master-init --config  /etc/debile/master.yaml  /etc/debile/debile.yaml
+  $ sudo service debile-master start
+  $ cd /srv/debile/repo/default
+  $ mkdir conf logs
+  $ cd conf
 
-xferlog_enable=YES
-xferlog_file=/var/log/ftp/vsftpd-debile.log
-vsftpd_log_file=/var/log/ftp/ftp-upload.log
+distributions ::
 
-ftpd_banner=Debile incoming queue
-secure_chroot_dir=/var/run/vsftpd/empty
-pam_service_name=vsftpd
-setproctitle_enable=YES
-dirmessage_enable=NO
-ls_recurse_enable=NO
-connect_from_port_20=NO
-max_clients=100
+              Origin: Paul Tagliamonte
+              Label: Debile
+              Suite: unstable
+              Codename: unstable
+              Version: 1.0
+              Architectures: i386 amd64 armhf source
+              Components: main
+              Description: Debile
+              SignWith: 0x2BF6C8EE
+              Contents: . .gz .bz2
+              Log: archive.log
 
-     restart vsftpd
+incoming ::
+
+         Name: default
+         IncomingDir: incoming
+         TempDir: tmp
+         Allow: unstable
+         Cleanup: on_deny on_error
+
+uploaders ::
+
+          allow * by unsigned
+
+
+Anonymous FTP ::
+
+               apt-get install vsftpd
+
+/etc/vsftpd.conf::
+
+        listen=YES
+        anonymous_enable=YES
+        anon_root=/srv/debile/incoming/
+        anon_umask=027
+        write_enable=YES
+        anon_upload_enable=YES
+        chown_uploads=YES
+        chown_username=debile
+        chroot_local_user=NO
+
+        xferlog_enable=YES
+        xferlog_file=/var/log/ftp/vsftpd-debile.log
+        vsftpd_log_file=/var/log/ftp/ftp-upload.log
+
+        ftpd_banner=Debile incoming queue
+        secure_chroot_dir=/var/run/vsftpd/empty
+        pam_service_name=vsftpd
+        setproctitle_enable=YES
+        dirmessage_enable=NO
+        ls_recurse_enable=NO
+        connect_from_port_20=NO
+        max_clients=100
+
