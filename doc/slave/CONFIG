@@ -5,7 +5,8 @@ configure /etc/debile/slave.yaml
 
  - if you have an OpenPGP for your Debile user already
    - use debile-remote create-slave on your dev machine (remotely) - you'll
-     need to set /etc/debile/user.yaml correctly.
+     need to set /etc/debile/user.yaml correctly. See the master CONFIG file
+     for more information.
    otherwise:
    - use /usr/share/python-debile/debile-generate-slave-keys on your dev
      machine (remotely) - you'll need to set /etc/debile/user.yaml correctly.

@@ -1,6 +1,7 @@
-WIP, needs more
+WIP, needs more love
 
  - Welcome :)
+     This documentation describes how to install the Debile Master.
 
 
  - Installation:
@@ -38,9 +39,13 @@ PATH=/usr/local/bin:/usr/bin:/bin
      # (you'll also need to concatenate the certificate and CA-chain into /srv/debile/master.crt)
      openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -keyout /srv/debile/master.key -out /srv/debile/master.csr
 
+     # Edit /etc/debile/user.yaml
+       - keyfile: "path_to_key"
+       - certfile: "path_to_cert"
+     With this file, the user controlling debile with debile-remote can be setup. This allows remote administration.
+
      # Create a /etc/debile/debile.yaml to seed the debile-master database.
-     debile-master-init
-     debile-import /etc/debile/debile.yaml
+     debile-master-init --config /etc/debile/master.yaml /etc/debile/debile.yaml
 
      # For each user/slave added to debile.yaml, add the self-signed ssl certificate and the pgp public key to the approriate keyring:
      cat >>/srv/debile/keyring.pem </path/to/ssl-cert.pem
