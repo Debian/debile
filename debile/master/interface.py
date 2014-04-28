@@ -107,7 +107,7 @@ class DebileMasterInterface(object):
         if self.__class__.shutdown_request:
             return None
 
-        job = NAMESPACE.session.query(Job).join(Job.source).join(Job.check).filter(
+        job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).filter(
             ~Job.depedencies.any(),
             Job.externally_blocked == False,
             Job.assigned_at == None,
