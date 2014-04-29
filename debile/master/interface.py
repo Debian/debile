@@ -119,6 +119,7 @@ class DebileMasterInterface(object):
             Job.affinity.has(Arch.name.in_(arches)),
             Job.check.has(Check.name.in_(checks)),
         ).order_by(
+            Job.assigned_count.asc(),
             Check.build.desc(),
             Source.uploaded_at.asc(),
         ).first()
@@ -126,6 +127,7 @@ class DebileMasterInterface(object):
         if job is None:
             return None
 
+        job.assigned_count += 1
         job.assigned_at = datetime.utcnow()
         job.builder = NAMESPACE.machine
 

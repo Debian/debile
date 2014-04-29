@@ -649,6 +649,7 @@ class Job(Base):
                         nullable=True, default=None)
     builder = relationship("Builder", foreign_keys=[builder_id])
 
+    assigned_count = Column(Integer, default=0)
     assigned_at = Column(DateTime, nullable=True, default=None)
     finished_at = Column(DateTime, nullable=True, default=None)
     failed = Column(Boolean, nullable=True, default=None)
