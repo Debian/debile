@@ -200,6 +200,31 @@ class ArchiveDebileBridge:
                 except Exception as ex:
                     print("Skipping %s (%s) %s due to error: %s" % (job.source.name, job.source.version, job.name, str(ex)))
 
+    def prune_pkgs(self, suite):
+        base_suite = self._conf.get_base_suite(suite)
+        suites = [suite, base_suite] if suite != base_suite else [suite]
+        components = self._conf.get_supported_components(base_suite).split(" ")
+
+        pkg_list = []
+        for s in suites:
+            for c in components:
+                pkg_list += self._pkginfo._get_package_list(s, c)
+
+        pkgs = set()
+        pkgs.update(pkg.pkgname + " " + pkg.version for pkg in pkg_list)
+
+        with session() as s:
+            sources = s.query(Source).join(Source.group_suite).join(GroupSuite.group).join(GroupSuite.suite).filter(
+                Group.name == "default",
+                Suite.name == suite,
+            )
+
+            for source in sources:
+                if not (source.name + " " + source.version) in pkgs and not os.path.exists(source.dsc_path):
+                    print("Removed obsolete source %s %s" % (source.name, source.version))
+                    # Package no longer in the archive (neither in the index nor the pool)
+                    s.delete(source)
+
     def reschedule_jobs(self):
         with session() as s:
 
@@ -247,6 +272,8 @@ def main():
                          help="Import new packages from Dak to Debile")
     actions.add_argument("--unblock", action="store_true", dest="unblock_jobs",
                          help="Run dose and unblock jobs that are now buildable")
+    actions.add_argument("--prune", action="store_true", dest="prune_pkgs",
+                         help="Prune packages no longer in Dak from Debile")
     actions.add_argument("--reschedule", action="store_true", dest="reschedule_jobs",
                          help="Reschedule jobs where debile is still waiting for an upload")
 
@@ -265,6 +292,9 @@ def main():
     if args.unblock_jobs:
         for suite in args.suites:
             bridge.unblock_jobs(suite)
+    if args.prune_pkgs:
+        for suite in args.suites:
+            bridge.prune_pkgs(suite)
     if args.reschedule_jobs:
         bridge.reschedule_jobs()
 
