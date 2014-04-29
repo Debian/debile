@@ -19,6 +19,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import shutil
+import glob
 import apt_pkg
 import yaml
 
@@ -29,7 +31,7 @@ from apt_pkg import version_compare
 from debile.utils.deb822 import Dsc
 from debile.master.utils import init_master, session, emit
 from debile.master.orm import (Person, Suite, Component, Arch, Check, Group,
-                               GroupSuite, Source, Binary, Deb, Job,
+                               GroupSuite, Source, Binary, Deb, Job, Result,
                                create_source, create_jobs)
 
 from rapidumolib.pkginfo import PackageBuildInfoRetriever
@@ -260,6 +262,27 @@ class ArchiveDebileBridge:
                 job.assigned_at = None
                 job.finished_at = None
 
+    def clean_results(self):
+        path = None
+        dirs = set()
+
+        with session() as s:
+            group = s.query(Group).filter_by(name="default").one()
+            path = group.files_path
+
+            dirs.update(x.directory for x in s.query(Result).join(Result.job).join(Job.source).join(Source.group_suite).filter(GroupSuite.group == group))
+
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(path)
+            for dir in glob.iglob("*/*/*/"):
+                if dir not in dirs:
+                    # An orphaned results path, remove it
+                    shutil.rmtree(dir)
+                    print("Removed orphaned result dir %s" % dir)
+        finally:
+            os.chdir(old_cwd)
+
 
 def main():
     # init Apt, we need it later
@@ -276,6 +299,8 @@ def main():
                          help="Prune packages no longer in Dak from Debile")
     actions.add_argument("--reschedule", action="store_true", dest="reschedule_jobs",
                          help="Reschedule jobs where debile is still waiting for an upload")
+    actions.add_argument("--clean", action="store_true", dest="clean_results",
+                         help="Remove unreferenced result directories")
 
     parser.add_argument("--config", action="store", dest="config", default=None,
                         help="Path to the master.yaml config file.")
@@ -297,6 +322,8 @@ def main():
             bridge.prune_pkgs(suite)
     if args.reschedule_jobs:
         bridge.reschedule_jobs()
+    if args.clean_results:
+        bridge.clean_results()
 
 if __name__ == '__main__':
     os.environ['LANG'] = 'C'
