@@ -92,7 +92,7 @@ class ArchiveDebileBridge:
                     deb = Deb(binary=binary, directory=directory, filename=filename)
                     session.add(deb)
 
-        create_jobs(source, self._affinity_preference, valid_affinities, externally_blocked=True)
+        create_jobs(source, self._affinity_preference, valid_affinities, dose_report="No dose-builddebcheck report available yet.")
 
         # Drop any old jobs that are still pending.
         oldsources = session.query(Source).filter(
@@ -158,8 +158,7 @@ class ArchiveDebileBridge:
     def _get_package_depwait_report(self, bcheck_data, job):
         for nbpkg in bcheck_data[job.component.name][job.affinity.name]:
             if (nbpkg['package'] == ("src:" + job.source.name) and (nbpkg['version'] == job.source.version)):
-                if nbpkg['status'] == 'broken':
-                    return yaml.dump(nbpkg['reasons'])
+                return nbpkg
         return None
 
     def import_pkgs(self, suite):
@@ -191,13 +190,25 @@ class ArchiveDebileBridge:
                 Group.name == "default",
                 Suite.name == suite,
                 Check.build == True,
-                Job.externally_blocked == True,
+                Job.dose_report != None,
             )
 
             for job in jobs:
                 try:
-                    if not self._get_package_depwait_report(bcheck_data, job):
-                        job.externally_blocked = False
+                    report = self._get_package_depwait_report(bcheck_data, job)
+                    if report and report['status'] != "ok":
+                        dose_report = "Unknown problem"
+                        for reason in report["reasons"]:
+                            if "missing" in reason:
+                                dose_report = "Unsat dependency %s" % (reason["missing"]["pkg"]["unsat-dependency"])
+                                break
+                            elif "conflict" in reason:
+                                dose_report = "Conflict between %s and %s" % (reason["conflict"]["pkg1"]["package"], reason["conflict"]["pkg2"]["package"])
+                                break
+                        if job.dose_report != dose_report:
+                            job.dose_report = dose_report
+                    else:
+                        job.dose_report = None
                         print("Unblocked job %s (%s) %s" % (job.source.name, job.source.version, job.name))
                 except Exception as ex:
                     print("Skipping %s (%s) %s due to error: %s" % (job.source.name, job.source.version, job.name, str(ex)))

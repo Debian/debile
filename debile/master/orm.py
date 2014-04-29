@@ -610,7 +610,7 @@ class Job(Base):
 
     # This is a hack for Tanglu, so we can use dose for depwait calculations
     # instead using the as-of-now unimplemented debile depwait support.
-    externally_blocked = Column(Boolean, default=False)
+    dose_report = Column(String(255), nullable=True, default=None)
 
     check_id = Column(Integer, ForeignKey('checks.id'))
     check = relationship("Check", foreign_keys=[check_id])
@@ -826,7 +826,7 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, affinity_preference, valid_affinities, externally_blocked=False):
+def create_jobs(source, affinity_preference, valid_affinities, dose_report=None):
     """
     Create jobs for Source `source`, using the an architecture matching
     `valid_affinities` for any arch "all" jobs.
@@ -875,7 +875,7 @@ def create_jobs(source, affinity_preference, valid_affinities, externally_blocke
             if arch not in binaries:
                 j = Job(check=check, arch=arch, affinity=jobaffinity,
                         source=source, binary=None,
-                        externally_blocked=externally_blocked)
+                        dose_report=dose_report)
                 builds[arch] = j
                 source.jobs.append(j)
 

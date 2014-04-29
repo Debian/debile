@@ -109,7 +109,7 @@ class DebileMasterInterface(object):
 
         job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).filter(
             ~Job.depedencies.any(),
-            Job.externally_blocked == False,
+            Job.dose_report == None,
             Job.assigned_at == None,
             Job.finished_at == None,
             Job.failed.is_(None),
