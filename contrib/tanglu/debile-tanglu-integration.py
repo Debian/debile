@@ -137,7 +137,6 @@ class ArchiveDebileBridge:
         base_suite = self._conf.get_base_suite(suite)
         components = self._conf.get_supported_components(base_suite).split(" ")
         supported_archs = self._conf.get_supported_archs(base_suite).split(" ")
-        supported_archs.append("all")
 
         bcheck_data = {}
         for component in components:
@@ -155,7 +154,7 @@ class ArchiveDebileBridge:
         return bcheck_data
 
     def _get_package_depwait_report(self, bcheck_data, job):
-        for nbpkg in bcheck_data[job.component.name][job.arch.name]:
+        for nbpkg in bcheck_data[job.component.name][job.affinity.name]:
             if (nbpkg['package'] == ("src:" + job.source.name) and (nbpkg['version'] == job.source.version)):
                 if nbpkg['status'] == 'broken':
                     return yaml.dump(nbpkg['reasons'])
