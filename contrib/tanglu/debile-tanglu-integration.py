@@ -144,6 +144,7 @@ class ArchiveDebileBridge:
             bcheck_data[component] = {}
             for arch in supported_archs:
                 yaml_data = self._bcheck.get_package_states_yaml(suite, component, arch)
+                yaml_data = yaml_data.replace("%3a", ":")  # Support for wheezy version of dose-builddebcheck
                 report_data = yaml.safe_load(yaml_data)['report']
                 if not report_data:
                     report_data = list()
@@ -155,7 +156,7 @@ class ArchiveDebileBridge:
 
     def _get_package_depwait_report(self, bcheck_data, job):
         for nbpkg in bcheck_data[job.component.name][job.arch.name]:
-            if (nbpkg['package'] == ("src%3a" + job.source.name) and (nbpkg['version'] == job.source.version)):
+            if (nbpkg['package'] == ("src:" + job.source.name) and (nbpkg['version'] == job.source.version)):
                 if nbpkg['status'] == 'broken':
                     return yaml.dump(nbpkg['reasons'])
         return None
