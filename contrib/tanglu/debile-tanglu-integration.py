@@ -27,6 +27,7 @@ import yaml
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 from apt_pkg import version_compare
+from sqlalchemy.sql import exists
 
 from debile.utils.deb822 import Dsc
 from debile.master.utils import init_master, session, emit
@@ -76,7 +77,8 @@ class ArchiveDebileBridge:
         else:
             valid_affinities = "any"
 
-        source = create_source(dsc, group_suite, component, user)
+        source = create_source(dsc, group_suite, component, user,
+                               self._affinity_preference, valid_affinities)
         source.directory = pkg.directory
         source.dsc_filename = pkg.dsc
         session.add(source)
@@ -92,7 +94,7 @@ class ArchiveDebileBridge:
                     deb = Deb(binary=binary, directory=directory, filename=filename)
                     session.add(deb)
 
-        create_jobs(source, self._affinity_preference, valid_affinities, dose_report="No dose-builddebcheck report available yet.")
+        create_jobs(source, dose_report="No dose-builddebcheck report available yet.")
 
         # Drop any old jobs that are still pending.
         oldsources = session.query(Source).filter(
@@ -103,7 +105,7 @@ class ArchiveDebileBridge:
             if version_compare(oldsource.version, source.version) >= 0:
                 continue
             for job in oldsource.jobs:
-                if (not job.results and not job.built_binary):
+                if (not any(job.results) and not any(job.built_binaries)):
                     session.delete(job)
                 elif job.failed is None:
                     job.failed = True
@@ -114,26 +116,57 @@ class ArchiveDebileBridge:
         emit('accept', 'source', source.debilize())
 
     def _create_debile_binaries(self, session, source, pkg):
-        for job in source.jobs:
-            if job.check.build and not job.built_binary and job.arch.name in pkg.installed_archs:
-                binary = job.new_binary()
-                session.add(binary)
+        arch_all = session.query(Arch).filter(Arch.name == "all").one()
+        arches = session.query(Arch).filter(Arch.name.in_(pkg.installed_archs)).all()
 
-                for name, arch, filename in pkg.binaries:
-                    if arch == binary.arch.name:
-                        directory, _, filename = filename.rpartition('/')
-                        deb = Deb(binary=binary, directory=directory, filename=filename)
-                        session.add(deb)
+        if arch_all in source.arches and arch_all not in arches and source.affinity in arches:
+            if not session.query(exists().where((Job.source == source) & (Job.arch == arch_all) & Job.check.has(Check.build == True))).scalar():
+                # We have the arch:affinity binary but is still lacking the arch:all binary
+                # Make sure debile builds the arch:all binary separately
+                check = session.query(Check).filter(Check.build == True).one()
+                job = Job(check=check, arch=arch_all,
+                          source=source, binary=None)
+                session.add(job)
 
-                if not job.assigned_at or job.failed is True:
-                    # Dak accepted a binary that wasn't built by debile, eg a manual binary upload.
-                    # Remove the now useless build job, to be consistent with create_debile_source behaviour
-                    # (does not create a build job if dak accepted the binary before debile knew about the source)
-                    binary.build_job = None
+        for arch in arches:
+            if session.query(exists().where((Binary.source == source) & (Binary.arch == arch))).scalar():
+                continue
+
+            # Find the job for this binary
+            job = session.query(Job).join(Job.check).filter(
+                Job.source == source,
+                Job.arch == arch,
+                Check.build == True,
+            ).first()
+
+            if not job and arch == arch_all and source.affinity in arches:
+                # The arch:all binary might have been created by the arch:affinity build job.
+                job = session.query(Job).join(Job.check).filter(
+                    Job.source == source,
+                    Job.arch == source.affinity,
+                    Check.build == True,
+                ).first()
+
+            if job and (not job.finished_at or job.failed is True):
+                # Dak accepted a binary upload that debile-master didn't ask for
+                if arch != arch_all and not any(job.built_binaries):
                     session.delete(job)
+                job = None
 
-                print("Created binary for %s %s on %s" % (binary.name, binary.version, binary.arch))
-                emit('accept', 'binary', binary.debilize())
+            if job:
+                binary = job.new_binary(arch)
+            else:
+                binary = Binary(source=source, arch=arch, uploaded_at=datetime.utcnow())
+            session.add(binary)
+
+            for name, arch, filename in pkg.binaries:
+                if arch == binary.arch.name:
+                    directory, _, filename = filename.rpartition('/')
+                    deb = Deb(binary=binary, directory=directory, filename=filename)
+                    session.add(deb)
+
+            print("Created binary for %s %s on %s" % (binary.name, binary.version, binary.arch))
+            emit('accept', 'binary', binary.debilize())
 
     def _create_depwait_report(self, suite):
         base_suite = self._conf.get_base_suite(suite)
@@ -156,7 +189,8 @@ class ArchiveDebileBridge:
         return bcheck_data
 
     def _get_package_depwait_report(self, bcheck_data, job):
-        for nbpkg in bcheck_data[job.component.name][job.affinity.name]:
+        arch = job.source.affinity if job.arch.name == "all" else job.arch
+        for nbpkg in bcheck_data[job.component.name][arch.name]:
             if (nbpkg['package'] == ("src:" + job.source.name) and (nbpkg['version'] == job.source.version)):
                 return nbpkg
         return None
@@ -260,7 +294,7 @@ class ArchiveDebileBridge:
             jobs = s.query(Job).join(Job.check).filter(
                 Check.build == True,
                 Job.failed.is_(False),
-                Job.built_binary == None,
+                ~Job.built_binaries.any(),
                 Job.finished_at != None,
                 Job.finished_at < cutoff,
             )

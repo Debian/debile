@@ -27,7 +27,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from debile.master.utils import emit
 from debile.master.changes import Changes, ChangesFileException
 from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
-from debile.master.orm import (Person, Builder, Suite, Component, Group,
+from debile.master.orm import (Person, Builder, Suite, Component, Arch, Group,
                                GroupSuite, Source, Deb, Job,
                                create_source, create_jobs)
 
@@ -72,6 +72,7 @@ def process_changes(default_group, config, session, path):
 
 
 def reject_changes(session, changes, tag):
+    session.rollback()
 
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=changes.get_package_name())
@@ -137,14 +138,15 @@ def accept_source_changes(default_group, config, session, changes, user):
     else:
         valid_affinities = "any"
 
-    source = create_source(dsc, group_suite, component, user)
-    create_jobs(source, config["affinity_preference"], valid_affinities)
+    source = create_source(dsc, group_suite, component, user,
+                           config["affinity_preference"], valid_affinities)
+    create_jobs(source)
     session.add(source)
 
     # Drop any old jobs that are still pending.
     for oldsource in oldsources:
         for job in oldsource.jobs:
-            if (not job.results and not job.built_binary):
+            if (not any(job.results) and not any(job.built_binaries)):
                 session.delete(job)
             elif job.failed is None:
                 job.failed = True
@@ -184,22 +186,34 @@ def accept_binary_changes(default_group, config, session, changes, builder):
     if changes.get('Distribution') != source.suite.name:
         return reject_changes(session, changes, "binary-source-suite-mismatch")
 
-    if changes.get("Architecture") != job.arch.name:
-        return reject_changes(session, changes, "wrong-architecture")
-
     if builder != job.builder:
         return reject_changes(session, changes, "wrong-builder")
 
-    binary = job.new_binary()
-    session.add(binary)
+    anames = changes.get("Architecture").split(None)
+    arches = session.query(Arch).filter(Arch.name.in_(anames)).all()
+
+    binaries = {}
+    for arch in arches:
+        if arch.name not in [job.arch.name, "all"]:
+            return reject_changes(session, changes, "wrong-architecture")
+        binaries[arch.name] = job.new_binary(arch)
+
+    if not binaries:
+        return reject_changes(session, changes, "no-architecture")
+
+    session.add_all(binaries.values())
 
     PATH = re.compile("^/pool/.*/")
+    ARCH = re.compile(".+_(?P<arch>[^_]+)\.u?deb$")
     for entry in changes.get('Files'):
         directory = source.directory
         if '/' in entry['section']:
             component, section = entry['section'].split('/', 1)
             directory = PATH.sub("/pool/%s/" % component, directory)
-        deb = Deb(binary=binary, directory=directory, filename=entry['name'])
+        arch = ARCH.match(entry['name']).get('arch')
+        if arch not in binaries:
+            return reject_changes(session, changes, "bad-architecture-of-file")
+        deb = Deb(binary=binaries[arch], directory=directory, filename=entry['name'])
         session.add(deb)
 
     ## OK. Let's make sure we can add this.
@@ -209,7 +223,8 @@ def accept_binary_changes(default_group, config, session, changes, builder):
     except RepoSourceAlreadyRegistered:
         return reject_changes(session, changes, 'stupid-source-thing')
 
-    emit('accept', 'binary', binary.debilize())
+    for binary in binaries.values():
+        emit('accept', 'binary', binary.debilize())
 
     # OK. It's safely in the database and repo. Let's cleanup.
     for fp in [changes.get_filename()] + changes.get_files():

@@ -64,6 +64,8 @@ def process_dud(config, session, path):
 
 
 def reject_dud(session, dud, tag):
+    session.rollback()
+
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=dud['Source'])
 

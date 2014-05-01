@@ -147,6 +147,7 @@ def run_job(config, job):
         "version": source['version'],
         "type": "source" if binary is None else "binary",
         "arch": job['arch'],
+        "affinity": source['affinity'] if job['arch'] in ["all", "source"] else job['arch'],
         "suite": source['suite'],
         "component": source['component'],
         "group": group,

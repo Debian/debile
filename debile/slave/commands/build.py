@@ -24,8 +24,10 @@ import glob
 
 
 def run(dsc, package, job, firehose):
+    build_arch = job['arch'] != "all"
+    build_indep = job['arch'] == "all" or job['do_indep']
     firehose, out, ftbfs, changes, = \
-        sbuild(dsc, job['suite'], job['arch'], job['affinity'], firehose)
+        sbuild(dsc, package['suite'], package['affinity'], build_arch, build_indep, firehose)
 
     if not changes and not ftbfs:
         print(out)

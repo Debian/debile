@@ -27,7 +27,7 @@ from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
@@ -342,6 +342,7 @@ class Source(Base):
         "group": "group.name",
         "suite": "suite.name",
         "component": "component.name",
+        "affinity": "affinity.name",
         "uploader": "uploader.__debilize__",
         "uploaded_at": "uploaded_at",
         "directory": "directory",
@@ -377,6 +378,9 @@ class Source(Base):
     component = relationship("Component", foreign_keys=[component_id])
 
     arches = relationship("Arch", secondary=source_arch_association)
+
+    affinity_id = Column(Integer, ForeignKey('arches.id'))
+    affinity = relationship("Arch", foreign_keys=[affinity_id])
 
     uploader_id = Column(Integer, ForeignKey('people.id'))
     uploader = relationship("Person", foreign_keys=[uploader_id])
@@ -482,7 +486,7 @@ class Binary(Base):
                                               name='fk_build_job_id',
                                               use_alter=True),
                           nullable=True, default=None)
-    build_job = relationship("Job", backref=backref("built_binary", uselist=False),
+    build_job = relationship("Job", backref="built_binaries",
                              foreign_keys=[build_job_id])
 
     @hybrid_property
@@ -585,7 +589,6 @@ class Job(Base):
         "suite": "suite.name",
         "component": "component.name",
         "arch": "arch.name",
-        "affinity": "affinity.name",
         "builder": "builder.__debilize__",
         "assigned_at": "assigned_at",
         "finished_at": "finished_at",
@@ -593,6 +596,7 @@ class Job(Base):
         "group_id": "group.id",
         "source_id": "source.id",
         "binary_id": "binary.id",
+        "do_indep": "do_indep",
     }
 
     def debilize(self):
@@ -634,9 +638,6 @@ class Job(Base):
     arch_id = Column(Integer, ForeignKey('arches.id'))
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    affinity_id = Column(Integer, ForeignKey('arches.id'))
-    affinity = relationship("Arch", foreign_keys=[affinity_id])
-
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source", backref="jobs",
                           foreign_keys=[source_id])
@@ -661,18 +662,31 @@ class Job(Base):
         secondaryjoin=(id == job_dependencies.c.blocked_job_id),
     )
 
+    @property
+    def do_indep(self):
+        return (self.check.build and
+                self.arch == self.source.affinity and
+                not any(x.arch.name == "all" for x in self.source.binaries))
+
     # Called when the .changes for a build job is processed
-    def new_binary(self):
+    def new_binary(self, arch=None):
         if not self.check.build:
             raise ValueError("add_binary() is for build jobs only!")
-        binary = Binary(build_job=self, source=self.source, arch=self.arch,
+
+        arch = arch or self.arch
+        if not arch.name in [self.arch.name, "all"]:
+            raise ValueError("add_binary() called with invalid arch!")
+
+        binary = Binary(build_job=self, source=self.source, arch=arch,
                         uploaded_at=datetime.utcnow())
-        for job in list(self.blocking):
-            if (job.check.binary and
-                    job.source == self.source and
-                    job.arch == self.arch):
+
+        for job in self.source.jobs:
+            if (job.check.binary and job.source == self.source and job.arch == arch):
                 job.binary = binary
+
+        for job in list(self.blocking):
             job.depedencies.remove(self)
+
         return binary
 
     # Called when a .dud for any job is processed
@@ -787,7 +801,8 @@ class Result(Base):
         )
 
 
-def create_source(dsc, group_suite, component, uploader):
+def create_source(dsc, group_suite, component, uploader,
+                  affinity_preference, valid_affinities):
     source = Source(
         name=dsc['Source'],
         version=dsc['Version'],
@@ -799,6 +814,16 @@ def create_source(dsc, group_suite, component, uploader):
 
     source.arches = get_source_arches(dsc['Architecture'].split(),
                                       group_suite.arches)
+
+    # Sources building arch-dependent packages should build any
+    # arch-independent packages on an architecture it is building
+    # arch-dependent packages on.
+    source.affinity = get_preferred_affinity(
+        affinity_preference,
+        valid_affinities.split(),
+        [x for x in source.arches if x.name not in ["source", "all"]] or
+        [x for x in source.group_suite.arches if x.name not in ["source", "all"]]
+    )
 
     MAINTAINER = re.compile("(?P<name>.*) \<(?P<email>.*)\>")
 
@@ -826,7 +851,7 @@ def create_source(dsc, group_suite, component, uploader):
     return source
 
 
-def create_jobs(source, affinity_preference, valid_affinities, dose_report=None):
+def create_jobs(source, dose_report=None):
     """
     Create jobs for Source `source`, using the an architecture matching
     `valid_affinities` for any arch "all" jobs.
@@ -843,20 +868,6 @@ def create_jobs(source, affinity_preference, valid_affinities, dose_report=None)
     if not arch_source or not arch_all:
         raise ValueError("Missing arch:all or arch:source in the group_suite.")
 
-    # Sources building arch-dependent packages should build any
-    # arch-independent packages on an architecture it is building
-    # arch-dependent packages on.
-    valid_arches = (
-        [x for x in source.arches if x.name not in ["source", "all"]] or
-        [x for x in source.group_suite.arches if x.name not in ["source", "all"]]
-    )
-
-    affinity = get_preferred_affinity(
-        affinity_preference,
-        valid_affinities.split(),
-        valid_arches
-    )
-
     builds = {}
     binaries = {}
 
@@ -864,38 +875,48 @@ def create_jobs(source, affinity_preference, valid_affinities, dose_report=None)
         binaries[binary.arch] = binary
 
     for check in source.group_suite.get_source_checks():
-        j = Job(check=check, arch=arch_source, affinity=affinity,
+        j = Job(check=check, arch=arch_source,
                 source=source, binary=None)
         source.jobs.append(j)
 
+    arch_indep = None
+    if arch_all in source.arches and arch_all not in binaries:
+        # We need to build arch:all packages
+        if source.affinity in source.arches and source.affinity not in binaries:
+            # We can build them together with the arch:affinity packages
+            arch_indep = source.affinity
+        else:
+            # We need to build them separately
+            arch_indep = arch_all
+
     for check in source.group_suite.get_build_checks():
         for arch in source.arches:
-            jobaffinity = affinity if arch == arch_all else arch
+            if arch == arch_all and arch_indep != arch_all:
+                continue
 
             if arch not in binaries:
-                j = Job(check=check, arch=arch, affinity=jobaffinity,
+                j = Job(check=check, arch=arch,
                         source=source, binary=None,
                         dose_report=dose_report)
                 builds[arch] = j
                 source.jobs.append(j)
 
-    for arch, job in builds.iteritems():
-        if arch != arch_all and arch_all in builds:
-            job.depedencies.append(builds[arch_all])
+    if arch_indep and arch_indep in builds:
+        for arch, job in builds.iteritems():
+            if arch != arch_indep:
+                job.depedencies.append(job)
 
     for check in source.group_suite.get_binary_checks():
         for arch in source.arches:
-            jobaffinity = affinity if arch == arch_all else arch
-
             deps = []
             if arch in builds:
                 deps.append(builds[arch])
-            if arch_all in builds and arch_all != arch:
-                deps.append(builds[arch_all])
+            if arch_indep and arch_indep in builds and arch != arch_indep:
+                deps.append(builds[arch_indep])
 
             binary = binaries.get(arch, None)
 
-            j = Job(check=check, arch=arch, affinity=jobaffinity,
+            j = Job(check=check, arch=arch,
                     source=source, binary=binary)
             source.jobs.append(j)
 

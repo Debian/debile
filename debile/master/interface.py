@@ -107,6 +107,7 @@ class DebileMasterInterface(object):
         if self.__class__.shutdown_request:
             return None
 
+        arches = [x for x in arches if x not in ["source", "all"]]
         job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).filter(
             ~Job.depedencies.any(),
             Job.dose_report == None,
@@ -115,8 +116,9 @@ class DebileMasterInterface(object):
             Job.failed.is_(None),
             GroupSuite.suite.has(Suite.name.in_(suites)),
             Source.component.has(Component.name.in_(components)),
-            Job.arch.has(Arch.name.in_(["source", "all"] + arches)),
-            Job.affinity.has(Arch.name.in_(arches)),
+            (Job.arch.has(Arch.name.in_(arches)) |
+             (Job.arch.has(Arch.name.in_(["source", "all"])) &
+              Source.affinity.has(Arch.name.in_(arches)))),
             Job.check.has(Check.name.in_(checks)),
         ).order_by(
             Job.assigned_count.asc(),
@@ -268,7 +270,7 @@ class DebileMasterInterface(object):
         if not job:
             raise ValueError("No job with id %s." % job_id)
 
-        if job.built_binary:
+        if any(job.built_binaries):
             raise ValueError("Can not re-run a successfull build job.")
 
         job.failed = None
@@ -306,7 +308,7 @@ class DebileMasterInterface(object):
     @user_method
     def retry_failed(self):
         jobs = NAMESPACE.session.query(Job).filter(
-            Job.built_binary == None,
+            ~Job.built_binaries.any(),
             Job.check.has(Check.build == True),
         )
 
