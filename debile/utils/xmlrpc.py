@@ -106,7 +106,7 @@ class DebileSafeTransport(xmlrpclib.Transport):
             return self._connection[1]
 
         chost, self._extra_headers, x509 = self.get_host_info(host)
-        self._connection = host, DebileHTTPSConnection(chost, None, **(x509 or {}))
+        self._connection = host, DebileHTTPSConnection(chost, None, timeout=60, **(x509 or {}))
 
         return self._connection[1]
 
