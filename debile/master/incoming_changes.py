@@ -32,14 +32,14 @@ from debile.master.orm import (Person, Builder, Suite, Component, Group,
                                create_source, create_jobs)
 
 
-def process_changes(config, session, path):
+def process_changes(default_group, config, session, path):
     changes = Changes(path)
     try:
         changes.validate()
     except ChangesFileException:
         return reject_changes(session, changes, "invalid-upload")
 
-    group = changes.get('X-Lucy-Group', "default")
+    group = changes.get('X-Debile-Group', default_group)
     try:
         group = session.query(Group).filter_by(name=group).one()
     except MultipleResultsFound:
@@ -58,7 +58,7 @@ def process_changes(config, session, path):
             user = session.query(Person).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-user")
-        return accept_source_changes(config, session, changes, user)
+        return accept_source_changes(default_group, config, session, changes, user)
 
     #### Binary Uploads
     if changes.is_binary_only_upload():
@@ -66,7 +66,7 @@ def process_changes(config, session, path):
             builder = session.query(Builder).filter_by(pgp=fingerprint).one()
         except NoResultFound:
             return reject_changes(session, changes, "invalid-builder")
-        return accept_binary_changes(config, session, changes, builder)
+        return accept_binary_changes(default_group, config, session, changes, builder)
 
     return reject_changes(session, changes, "mixed-upload")
 
@@ -86,8 +86,8 @@ def reject_changes(session, changes, tag):
     # Note this in the log.
 
 
-def accept_source_changes(config, session, changes, user):
-    group = changes.get('X-Lucy-Group', "default")
+def accept_source_changes(default_group, config, session, changes, user):
+    group = changes.get('X-Debile-Group', default_group)
     suite = changes['Distribution']
 
     try:
@@ -163,7 +163,7 @@ def accept_source_changes(config, session, changes, user):
         os.unlink(fp)
 
 
-def accept_binary_changes(config, session, changes, builder):
+def accept_binary_changes(default_group, config, session, changes, builder):
     # OK. We'll relate this back to a build job.
     job = changes.get('X-Debile-Job', None)
     if job is None:
@@ -178,7 +178,7 @@ def accept_binary_changes(config, session, changes, builder):
         return reject_changes(
             session, changes, "binary-source-version-mismatch")
 
-    if changes.get('X-Lucy-Group', "default") != source.group.name:
+    if changes.get('X-Debile-Group', default_group) != source.group.name:
         return reject_changes(session, changes, "binary-source-group-mismatch")
 
     if changes.get('Distribution') != source.suite.name:

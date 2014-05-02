@@ -35,4 +35,4 @@ def main(args, config):
                 process_dud(config, s, path)
         if args.changes and fnmatch.fnmatch(path, "*.changes"):
             with session() as s:
-                process_changes(config, s, path)
+                process_changes(args.group, config, s, path)

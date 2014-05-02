@@ -43,6 +43,8 @@ def process_incoming():
     parser = ArgumentParser(description="Debile master incoming handling")
     parser.add_argument("--config", action="store", dest="config", default=None,
                         help="Path to the master.yaml config file.")
+    parser.add_argument("--group", action="store", dest="group", default="default",
+                        help="Group to use for uploads without a X-Debile-Group field")
     parser.add_argument("--no-dud", action="store_false", dest="dud",
                         help="Do not process *.dud files.")
     parser.add_argument("--no-changes", action="store_false", dest="changes",
