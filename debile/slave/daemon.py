@@ -26,6 +26,7 @@ from debile.utils.log import start_logging
 from debile.utils.deb822 import Changes
 
 from contextlib import contextmanager
+from email.utils import formatdate
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
@@ -160,32 +161,51 @@ def run_job(config, job):
         firehose, log, failed, changes = run(
             target, package, job, firehose)
 
-        _, _, v = source['version'].rpartition(":")
-        prefix = "%s_%s_%s.%d" % (source['name'], v, job['arch'], job['id'])
+        datestr = formatdate()
+        binstr = None
 
-        dudf = "{prefix}.dud".format(prefix=prefix)
+        if changes:
+            f = open(changes, 'r')
+            obj = Changes(f)
+            obj['Distribution'] = source['suite']
+            obj['X-Debile-Group'] = source['group']
+            obj['X-Debile-Job'] = str(job['id'])
+            obj.dump(fd=open(changes, 'wb'))
+
+            datestr = obj['Date']
+            binstr = obj['Binary']
+        elif binary:
+            binstr = " ".join(deb['filename'].partition("_")[0] for deb in binary['debs'])
+
         dud = Changes()
-        dud['Created-By'] = "Dummy Entry <dummy@example.com>"
-        dud['Source'] = package['source']['name']
-        dud['Version'] = package['source']['version']
-        dud['Architecture'] = package['arch']
+        dud['Format'] = "1.8"
+        dud['Date'] = datestr
+        dud['Source'] = source['name']
+        if binstr:
+            dud['Binary'] = binstr
+        dud['Version'] = source['version']
+        dud['Architecture'] = job['arch']
+        dud['Distribution'] = source['suite']
+        dud['X-Debile-Group'] = source['group']
+        dud['X-Debile-Check'] = job['check']
+        dud['X-Debile-Job'] = str(job['id'])
         dud['X-Debile-Failed'] = "Yes" if failed else "No"
-        if package['type'] == 'binary':
-            dud['Binary'] = package['binary']['name']
 
         job['failed'] = failed
+
+        _, _, v = source['version'].rpartition(":")
+        prefix = "%s_%s_%s.%d" % (source['name'], v, job['arch'], job['id'])
 
         with open('{prefix}.firehose.xml'.format(
                 prefix=prefix), 'wb') as fd:
             fd.write(firehose.to_xml_bytes())
-
         dud.add_file('{prefix}.firehose.xml'.format(prefix=prefix))
 
         with open('{prefix}.log'.format(prefix=prefix), 'wb') as fd:
             fd.write(log.encode('utf-8'))
-
         dud.add_file('{prefix}.log'.format(prefix=prefix))
 
+        dudf = "{prefix}.dud".format(prefix=prefix)
         with open(dudf, 'w') as fd:
             dud.dump(fd=fd)
 

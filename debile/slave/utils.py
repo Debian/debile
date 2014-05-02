@@ -24,7 +24,6 @@ import dput
 
 from contextlib import contextmanager
 from schroot import schroot
-from debian import deb822
 import tempfile
 import shutil
 import sys
@@ -71,14 +70,6 @@ def cd(where):
         os.chdir(ncwd)
 
 
-def jobize(path, job):
-    f = open(path, 'r')
-    obj = deb822.Deb822(f)
-    obj['X-Debile-Job'] = str(job['id'])
-    obj.dump(fd=open(path, 'wb'))
-    return obj
-
-
 def sign(changes, gpg):
     if changes.endswith(".dud"):
         out, err, ret = run_command(['gpg', '-u', gpg, '--clearsign', changes])
@@ -99,6 +90,5 @@ def sign(changes, gpg):
 
 
 def upload(changes, job, gpg, host):
-    jobize(changes, job)
     sign(changes, gpg)
     return dput.upload(changes, host)
