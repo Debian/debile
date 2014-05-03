@@ -27,7 +27,7 @@ from firehose.model import Analysis
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
 
@@ -79,8 +79,8 @@ class Person(Base):
     name = Column(String(255))
     email = Column(String(255))
 
-    pgp = Column(String(40), nullable=True)
-    ssl = Column(String(40), nullable=True)
+    pgp = Column(String(40), nullable=True, default=None)
+    ssl = Column(String(40), nullable=True, default=None)
 
     def __str__(self):
         return "%s <%s>" % (self.name, self.email)
@@ -105,13 +105,13 @@ class Builder(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
-    last_ping = Column(DateTime, nullable=False)
+    last_ping = Column(DateTime)
 
-    maintainer_id = Column(Integer, ForeignKey('people.id'))
+    maintainer_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
-    pgp = Column(String(40), nullable=True)
-    ssl = Column(String(40), nullable=True)
+    pgp = Column(String(40), nullable=True, default=None)
+    ssl = Column(String(40), nullable=True, default=None)
 
     def __str__(self):
         return self.name
@@ -221,7 +221,7 @@ class Group(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
 
-    maintainer_id = Column(Integer, ForeignKey('people.id'))
+    maintainer_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"))
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
     def get_repo_info(self):
@@ -269,20 +269,20 @@ class Group(Base):
 # Many-to-Many relationship
 group_suite_component_association = (
     Table('group_suite_component_association', Base.metadata,
-          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-          Column('component_id', Integer, ForeignKey('components.id'))))
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE")),
+          Column('component_id', Integer, ForeignKey('components.id', ondelete="RESTRICT"))))
 
 
 group_suite_arch_association = (
     Table('group_suite_arch_association', Base.metadata,
-          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-          Column('arch_id', Integer, ForeignKey('arches.id'))))
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE")),
+          Column('arch_id', Integer, ForeignKey('arches.id', ondelete="RESTRICT"))))
 
 
 group_suite_check_association = (
     Table('group_suite_check_association', Base.metadata,
-          Column('group_suite_id', Integer, ForeignKey('group_suites.id')),
-          Column('check_id', Integer, ForeignKey('checks.id'))))
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE")),
+          Column('check_id', Integer, ForeignKey('checks.id', ondelete="RESTRICT"))))
 
 
 class GroupSuite(Base):
@@ -296,15 +296,14 @@ class GroupSuite(Base):
 
     id = Column(Integer, primary_key=True)
 
-    group_id = Column(Integer, ForeignKey('groups.id'))
-    group = relationship("Group", backref="group_suites",
-                         foreign_keys=[group_id])
+    group_id = Column(Integer, ForeignKey('groups.id', ondelete="RESTRICT"))
+    group = relationship("Group", foreign_keys=[group_id],
+                         backref=backref("group_suites", passive_deletes=True))
 
-    suite_id = Column(Integer, ForeignKey('suites.id'))
+    suite_id = Column(Integer, ForeignKey('suites.id', ondelete="RESTRICT"))
     suite = relationship("Suite", foreign_keys=[suite_id])
 
-    components = relationship("Component",
-                              secondary=group_suite_component_association)
+    components = relationship("Component", secondary=group_suite_component_association)
     arches = relationship("Arch", secondary=group_suite_arch_association)
     checks = relationship("Check", secondary=group_suite_check_association)
 
@@ -329,8 +328,8 @@ class GroupSuite(Base):
 # Many-to-Many relationship
 source_arch_association = (
     Table('source_arch_association', Base.metadata,
-          Column('source_id', Integer, ForeignKey('sources.id')),
-          Column('arch_id', Integer, ForeignKey('arches.id'))))
+          Column('source_id', Integer, ForeignKey('sources.id', ondelete="CASCADE")),
+          Column('arch_id', Integer, ForeignKey('arches.id', ondelete="RESTRICT"))))
 
 
 class Source(Base):
@@ -363,7 +362,7 @@ class Source(Base):
     name = Column(String(255))
     version = Column(String(255))
 
-    group_suite_id = Column(Integer, ForeignKey('group_suites.id'))
+    group_suite_id = Column(Integer, ForeignKey('group_suites.id', ondelete="RESTRICT"))
     group_suite = relationship("GroupSuite", foreign_keys=[group_suite_id])
 
     @hybrid_property
@@ -374,18 +373,18 @@ class Source(Base):
     def suite(self):
         return self.group_suite.suite
 
-    component_id = Column(Integer, ForeignKey('components.id'))
+    component_id = Column(Integer, ForeignKey('components.id', ondelete="RESTRICT"))
     component = relationship("Component", foreign_keys=[component_id])
 
     arches = relationship("Arch", secondary=source_arch_association)
 
-    affinity_id = Column(Integer, ForeignKey('arches.id'))
+    affinity_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
     affinity = relationship("Arch", foreign_keys=[affinity_id])
 
-    uploader_id = Column(Integer, ForeignKey('people.id'))
+    uploader_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"))
     uploader = relationship("Person", foreign_keys=[uploader_id])
 
-    uploaded_at = Column(DateTime, nullable=False)
+    uploaded_at = Column(DateTime)
 
     directory = Column(String(255))
     dsc_filename = Column(String(255))
@@ -431,9 +430,10 @@ class Maintainer(Base):
     comaintainer = Column(Boolean)
     original_maintainer = Column(Boolean)
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
-    source = relationship("Source", backref='maintainers',
-                          foreign_keys=[source_id])
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
+    source = relationship("Source", foreign_keys=[source_id],
+                          backref=backref('maintainers', passive_deletes=True,
+                                          cascade="save-update, merge, delete"))
 
     def __str__(self):
         return "%s <%s>" % (self.name, self.email)
@@ -475,19 +475,19 @@ class Binary(Base):
     def version(self):
         return self.source.version
 
-    arch_id = Column(Integer, ForeignKey('arches.id'))
+    arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
-    source = relationship("Source", backref="binaries",
-                          foreign_keys=[source_id])
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
+    source = relationship("Source", foreign_keys=[source_id],
+                          backref=backref("binaries", passive_deletes=True,
+                                          cascade="save-update, merge, delete"))
 
-    build_job_id = Column(Integer, ForeignKey('jobs.id',
-                                              name='fk_build_job_id',
-                                              use_alter=True),
+    build_job_id = Column(Integer, ForeignKey('jobs.id', ondelete="SET NULL",
+                                              name='fk_build_job_id', use_alter=True),
                           nullable=True, default=None)
-    build_job = relationship("Job", backref="built_binaries",
-                             foreign_keys=[build_job_id])
+    build_job = relationship("Job", foreign_keys=[build_job_id],
+                             backref=backref("built_binaries", passive_deletes=True))
 
     @hybrid_property
     def group_suite(self):
@@ -505,7 +505,7 @@ class Binary(Base):
     def component(self):
         return self.source.component
 
-    uploaded_at = Column(DateTime, nullable=False)
+    uploaded_at = Column(DateTime)
 
     def __str__(self):
         return "%s (%s)" % (self.name, self.version)
@@ -530,9 +530,10 @@ class Deb(Base):
     directory = Column(String(255))
     filename = Column(String(255))
 
-    binary_id = Column(Integer, ForeignKey('binaries.id'))
-    binary = relationship("Binary", backref="debs",
-                          foreign_keys=[binary_id])
+    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete="CASCADE"))
+    binary = relationship("Binary", foreign_keys=[binary_id],
+                          backref=backref("debs", passive_deletes=True,
+                                          cascade="save-update, merge, delete"))
 
     @hybrid_property
     def group_suite(self):
@@ -574,8 +575,8 @@ class Deb(Base):
 # Many-to-Many relationship
 job_dependencies = (
     Table('job_dependencies', Base.metadata,
-          Column('blocked_job_id', Integer, ForeignKey('jobs.id')),
-          Column('blocking_job_id', Integer, ForeignKey('jobs.id'))))
+          Column('blocked_job_id', Integer, ForeignKey('jobs.id', ondelete="CASCADE")),
+          Column('blocking_job_id', Integer, ForeignKey('jobs.id', ondelete="CASCADE"))))
 
 
 class Job(Base):
@@ -616,7 +617,7 @@ class Job(Base):
     # instead using the as-of-now unimplemented debile depwait support.
     dose_report = Column(String(255), nullable=True, default=None)
 
-    check_id = Column(Integer, ForeignKey('checks.id'))
+    check_id = Column(Integer, ForeignKey('checks.id', ondelete="RESTRICT"))
     check = relationship("Check", foreign_keys=[check_id])
 
     @hybrid_property
@@ -635,18 +636,20 @@ class Job(Base):
     def component(self):
         return self.source.component
 
-    arch_id = Column(Integer, ForeignKey('arches.id'))
+    arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
-    source = relationship("Source", backref="jobs",
-                          foreign_keys=[source_id])
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="RESTRICT"))
+    source = relationship("Source", foreign_keys=[source_id],
+                          backref=backref("jobs", passive_deletes=True))
 
-    binary_id = Column(Integer, ForeignKey('binaries.id'), nullable=True)
-    binary = relationship("Binary", backref="jobs",
-                          foreign_keys=[binary_id])
+    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete="CASCADE"),
+                       nullable=True, default=None)
+    binary = relationship("Binary", foreign_keys=[binary_id],
+                          backref=backref("jobs", passive_deletes=True,
+                                          cascade="save-update, merge, delete"))
 
-    builder_id = Column(Integer, ForeignKey('builders.id'),
+    builder_id = Column(Integer, ForeignKey('builders.id', ondelete="RESTRICT"),
                         nullable=True, default=None)
     builder = relationship("Builder", foreign_keys=[builder_id])
 
@@ -656,8 +659,10 @@ class Job(Base):
     failed = Column(Boolean, nullable=True, default=None)
 
     depedencies = relationship(
-        "Job", backref='blocking',
-        secondary=job_dependencies,
+        "Job", secondary=job_dependencies, passive_deletes=True,
+        cascade="save-update, merge, delete",
+        backref=backref('blocking', passive_deletes=True,
+                        cascade="save-update, merge, delete"),
         primaryjoin=(id == job_dependencies.c.blocking_job_id),
         secondaryjoin=(id == job_dependencies.c.blocked_job_id),
     )
@@ -738,9 +743,10 @@ class Result(Base):
 
     id = Column(Integer, primary_key=True)
 
-    job_id = Column(Integer, ForeignKey('jobs.id'))
-    job = relationship("Job", backref="results",
-                       foreign_keys=[job_id])
+    job_id = Column(Integer, ForeignKey('jobs.id', ondelete="CASCADE"))
+    job = relationship("Job", foreign_keys=[job_id],
+                       backref=backref("results", passive_deletes=True,
+                                       cascade="save-update, merge, delete"))
 
     @hybrid_property
     def source(self):
@@ -770,10 +776,10 @@ class Result(Base):
     def arch(self):
         return self.job.arch
 
-    firehose_id = Column(String, ForeignKey('analysis.id'))
-    firehose = relationship(Analysis)
+    firehose_id = Column(String, ForeignKey('analysis.id', ondelete="RESTRICT"))
+    firehose = relationship(Analysis, single_parent=True, cascade="save-update, merge, delete, delete-orphan")
 
-    uploaded_at = Column(DateTime, nullable=False)
+    uploaded_at = Column(DateTime)
     failed = Column(Boolean)
 
     @property

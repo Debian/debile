@@ -70,6 +70,9 @@ def init_master(confpath=None):
 @contextmanager
 def session():
     session_ = Session()
+    if session_.get_bind().driver == "sqlite":
+        print("Explicitly enabling foreign keys in sqlite")
+        session_.execute("PRAGMA foreign_keys=ON")
 
     try:
         yield session_
