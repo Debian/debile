@@ -19,16 +19,19 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import shutil
+import glob
 import apt_pkg
 import yaml
-from optparse import OptionParser
-from apt_pkg import version_compare
+
+from argparse import ArgumentParser
 from datetime import datetime, timedelta
+from apt_pkg import version_compare
 
 from debile.utils.deb822 import Dsc
 from debile.master.utils import init_master, session, emit
-from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Binary, Job, Deb,
+from debile.master.orm import (Person, Suite, Component, Arch, Check, Group,
+                               GroupSuite, Source, Binary, Deb, Job, Result,
                                create_source, create_jobs)
 
 from rapidumolib.pkginfo import PackageBuildInfoRetriever
@@ -46,7 +49,7 @@ class ArchiveDebileBridge:
         self._pkginfo = PackageBuildInfoRetriever(self._conf)
         self._bcheck = BuildCheck(self._conf)
 
-    def create_debile_source(self, session, pkg):
+    def _create_debile_source(self, session, pkg):
         user = session.query(Person).filter_by(email="dak@ftp-master.tanglu.org").one()
 
         group_suite = session.query(GroupSuite).join(GroupSuite.group).join(GroupSuite.suite).filter(
@@ -110,9 +113,7 @@ class ArchiveDebileBridge:
         print("Created source for %s %s" % (source.name, source.version))
         emit('accept', 'source', source.debilize())
 
-        return source
-
-    def create_debile_binaries(self, session, source, pkg):
+    def _create_debile_binaries(self, session, source, pkg):
         for job in source.jobs:
             if job.check.build and not job.built_binary and job.arch.name in pkg.installed_archs:
                 binary = job.new_binary()
@@ -131,46 +132,20 @@ class ArchiveDebileBridge:
                     binary.build_job = None
                     session.delete(job)
 
+                print("Created binary for %s %s on %s" % (binary.name, binary.version, binary.arch))
                 emit('accept', 'binary', binary.debilize())
 
-    def unblock_debile_jobs(self, session, source, arches):
-        jobs = session.query(Job).filter(
-            Job.source == source,
-            Job.externally_blocked == True,
-            Job.arch.has(Arch.name.in_(arches)),
-        ).all()
-
-        if not jobs:
-            return
-
-        for job in jobs:
-            if job.arch.name in arches:
-                job.externally_blocked = False
-                session.add(job)
-
-        print("Unblocked jobs for %s %s (arches: %s)" %
-              (source.name, source.version, str(arches)))
-
-    def _get_package_depwait_report(self, bcheck_data, pkg, arch):
-        for nbpkg in bcheck_data[pkg.component][arch]:
-            if (nbpkg['package'] == ('src%3a'+pkg.pkgname)) and (nbpkg['version'] == pkg.version):
-                if nbpkg['status'] == 'broken':
-                    return yaml.dump(nbpkg['reasons'])
-        return None
-
-    def sync_packages(self, suite):
-        pkg_dict = self._pkginfo.get_packages_dict(suite)
-
+    def _create_depwait_report(self, suite):
         base_suite = self._conf.get_base_suite(suite)
         components = self._conf.get_supported_components(base_suite).split(" ")
         supported_archs = self._conf.get_supported_archs(base_suite).split(" ")
-        supported_archs.append("all")
 
         bcheck_data = {}
         for component in components:
             bcheck_data[component] = {}
             for arch in supported_archs:
                 yaml_data = self._bcheck.get_package_states_yaml(suite, component, arch)
+                yaml_data = yaml_data.replace("%3a", ":")  # Support for wheezy version of dose-builddebcheck
                 report_data = yaml.safe_load(yaml_data)['report']
                 if not report_data:
                     report_data = list()
@@ -178,6 +153,17 @@ class ArchiveDebileBridge:
                 yaml_file = open("%s/depwait-%s-%s_%s.yml" % (NEEDSBUILD_EXPORT_DIR, suite, component, arch), "w")
                 yaml_file.write(yaml_data)
                 yaml_file.close()
+        return bcheck_data
+
+    def _get_package_depwait_report(self, bcheck_data, job):
+        for nbpkg in bcheck_data[job.component.name][job.affinity.name]:
+            if (nbpkg['package'] == ("src:" + job.source.name) and (nbpkg['version'] == job.source.version)):
+                if nbpkg['status'] == 'broken':
+                    return yaml.dump(nbpkg['reasons'])
+        return None
+
+    def import_pkgs(self, suite):
+        pkg_dict = self._pkginfo.get_packages_dict(suite)
 
         for pkg in pkg_dict.values():
             try:
@@ -190,21 +176,58 @@ class ArchiveDebileBridge:
                     ).first()
 
                     if not source:
-                        source = self.create_debile_source(s, pkg)
+                        self._create_debile_source(s, pkg)
                     elif pkg.installed_archs:
-                        self.create_debile_binaries(s, source, pkg)
-
-                    unblock_arches = [arch for arch in supported_archs
-                                      if not self._get_package_depwait_report(bcheck_data, pkg, arch)]
-
-                    if unblock_arches:
-                        self.unblock_debile_jobs(s, source, unblock_arches)
+                        self._create_debile_binaries(s, source, pkg)
 
             except Exception as ex:
                 print("Skipping %s (%s) in %s due to error: %s" % (pkg.pkgname, pkg.version, pkg.suite, str(ex)))
-                continue
 
-    def reschedule_missing_uploads(self):
+    def unblock_jobs(self, suite):
+        bcheck_data = self._create_depwait_report(suite)
+
+        with session() as s:
+            jobs = s.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).join(GroupSuite.group).join(GroupSuite.suite).filter(
+                Group.name == "default",
+                Suite.name == suite,
+                Check.build == True,
+                Job.externally_blocked == True,
+            )
+
+            for job in jobs:
+                try:
+                    if not self._get_package_depwait_report(bcheck_data, job):
+                        job.externally_blocked = False
+                        print("Unblocked job %s (%s) %s" % (job.source.name, job.source.version, job.name))
+                except Exception as ex:
+                    print("Skipping %s (%s) %s due to error: %s" % (job.source.name, job.source.version, job.name, str(ex)))
+
+    def prune_pkgs(self, suite):
+        base_suite = self._conf.get_base_suite(suite)
+        suites = [suite, base_suite] if suite != base_suite else [suite]
+        components = self._conf.get_supported_components(base_suite).split(" ")
+
+        pkg_list = []
+        for s in suites:
+            for c in components:
+                pkg_list += self._pkginfo._get_package_list(s, c)
+
+        pkgs = set()
+        pkgs.update(pkg.pkgname + " " + pkg.version for pkg in pkg_list)
+
+        with session() as s:
+            sources = s.query(Source).join(Source.group_suite).join(GroupSuite.group).join(GroupSuite.suite).filter(
+                Group.name == "default",
+                Suite.name == suite,
+            )
+
+            for source in sources:
+                if not (source.name + " " + source.version) in pkgs and not os.path.exists(source.dsc_path):
+                    print("Removed obsolete source %s %s" % (source.name, source.version))
+                    # Package no longer in the archive (neither in the index nor the pool)
+                    s.delete(source)
+
+    def reschedule_jobs(self):
         with session() as s:
 
             cutoff = datetime.utcnow() - timedelta(days=1)
@@ -239,26 +262,68 @@ class ArchiveDebileBridge:
                 job.assigned_at = None
                 job.finished_at = None
 
+    def clean_results(self):
+        path = None
+        dirs = set()
+
+        with session() as s:
+            group = s.query(Group).filter_by(name="default").one()
+            path = group.files_path
+
+            dirs.update(x.directory for x in s.query(Result).join(Result.job).join(Job.source).join(Source.group_suite).filter(GroupSuite.group == group))
+
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(path)
+            for dir in glob.iglob("*/*/*/"):
+                if dir not in dirs:
+                    # An orphaned results path, remove it
+                    shutil.rmtree(dir)
+                    print("Removed orphaned result dir %s" % dir)
+        finally:
+            os.chdir(old_cwd)
+
 
 def main():
     # init Apt, we need it later
     apt_pkg.init()
 
-    parser = OptionParser()
-    parser.add_option("-u", "--update-jobs",
-                      action="store_true", dest="update", default=False,
-                      help="syncronize Debile with archive contents")
+    parser = ArgumentParser(description="Debile Tanglu integration script")
 
-    (options, args) = parser.parse_args()
-    config = init_master()
+    actions = parser.add_argument_group("Actions")
+    actions.add_argument("--import", action="store_true", dest="import_pkgs",
+                         help="Import new packages from Dak to Debile")
+    actions.add_argument("--unblock", action="store_true", dest="unblock_jobs",
+                         help="Run dose and unblock jobs that are now buildable")
+    actions.add_argument("--prune", action="store_true", dest="prune_pkgs",
+                         help="Prune packages no longer in Dak from Debile")
+    actions.add_argument("--reschedule", action="store_true", dest="reschedule_jobs",
+                         help="Reschedule jobs where debile is still waiting for an upload")
+    actions.add_argument("--clean", action="store_true", dest="clean_results",
+                         help="Remove unreferenced result directories")
 
-    if options.update:
-        sync = ArchiveDebileBridge(config)
-        sync.sync_packages("staging")
-        sync.sync_packages("aequorea-updates")
-        sync.reschedule_missing_uploads()
-    else:
-        print("Run with -h for a list of available command-line options!")
+    parser.add_argument("--config", action="store", dest="config", default=None,
+                        help="Path to the master.yaml config file.")
+    parser.add_argument("suites", action="store", nargs='*',
+                        help="Suites to process.")
+
+    args = parser.parse_args()
+    config = init_master(args.config)
+    bridge = ArchiveDebileBridge(config)
+
+    if args.import_pkgs:
+        for suite in args.suites:
+            bridge.import_pkgs(suite)
+    if args.unblock_jobs:
+        for suite in args.suites:
+            bridge.unblock_jobs(suite)
+    if args.prune_pkgs:
+        for suite in args.suites:
+            bridge.prune_pkgs(suite)
+    if args.reschedule_jobs:
+        bridge.reschedule_jobs()
+    if args.clean_results:
+        bridge.clean_results()
 
 if __name__ == '__main__':
     os.environ['LANG'] = 'C'
