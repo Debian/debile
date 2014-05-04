@@ -87,7 +87,7 @@ def import_ssl(keyring, certdata, cn=None, email=None):
     # in the keyring, so ensure that it unique to this slave/user.
     if ((cn and not "CN={cn}".format(cn=cn) in subject) or
             (email and not "emailAddress={email}".format(email=email) in subject)):
-        raise ValueError("Incorrect subject of ssl certificate.")
+        raise ValueError("Incorrect subject of ssl certificate (cn = " + str(cn) + " emailAddress = " + str(email) + " with subject = " + str(subject) + ")")
 
     # Add the valid pem-formated certificate to the keyring.
     keyring = open(keyring, 'a')
