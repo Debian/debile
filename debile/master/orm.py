@@ -639,9 +639,10 @@ class Job(Base):
     arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    source_id = Column(Integer, ForeignKey('sources.id', ondelete="RESTRICT"))
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
     source = relationship("Source", foreign_keys=[source_id],
-                          backref=backref("jobs", passive_deletes=True))
+                          backref=backref("jobs", passive_deletes=True,
+                                          cascade="save-update, merge, delete"))
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete="CASCADE"),
                        nullable=True, default=None)
