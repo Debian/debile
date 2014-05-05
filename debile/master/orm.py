@@ -784,7 +784,7 @@ class Result(Base):
 
     @property
     def directory(self):
-        return "/{source}_{version}/{check}_{arch}/{id}".format(
+        return "{source}_{version}/{check}_{arch}/{id}".format(
             source=self.source.name,
             version=self.source.version,
             check=self.job.check.name,

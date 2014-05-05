@@ -320,8 +320,8 @@ class ArchiveDebileBridge:
         old_cwd = os.getcwd()
         try:
             os.chdir(path)
-            for dir in glob.iglob("*/*/*/"):
-                if dir not in dirs:
+            for dir in glob.iglob("*/*/*"):
+                if os.path.isdir(dir) and dir not in dirs:
                     # An orphaned results path, remove it
                     shutil.rmtree(dir)
                     print("Removed orphaned result dir %s" % dir)
