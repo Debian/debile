@@ -273,6 +273,14 @@ class DebileMasterInterface(object):
         if any(job.built_binaries):
             raise ValueError("Can not re-run a successfull build job.")
 
+        versions = NAMESPACE.session.query(Source.version).filter(
+            Source.group_suite == job.source.group_suite,
+            Source.name == job.source.name,
+        )
+        max_version = max([x[0] for x in versions], key=Version)
+        if job.source.version != max_version:
+            raise ValueError("Can not re-run a job for a superseeded source.")
+
         job.failed = None
         job.builder = None
         job.assigned_at = None
