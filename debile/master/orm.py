@@ -76,8 +76,8 @@ class Person(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    email = Column(String(255))
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
 
     pgp = Column(String(40), nullable=True, default=None)
     ssl = Column(String(40), nullable=True, default=None)
@@ -104,10 +104,10 @@ class Builder(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    last_ping = Column(DateTime)
+    name = Column(String(255), nullable=False)
+    last_ping = Column(DateTime, nullable=False)
 
-    maintainer_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"))
+    maintainer_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"), nullable=False)
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
     pgp = Column(String(40), nullable=True, default=None)
@@ -130,7 +130,7 @@ class Suite(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
+    name = Column(String(255), nullable=False)
 
     def __str__(self):
         return self.name
@@ -149,7 +149,7 @@ class Component(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
+    name = Column(String(255), nullable=False)
 
     def __str__(self):
         return self.name
@@ -168,7 +168,7 @@ class Arch(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
+    name = Column(String(255), nullable=False)
 
     def __str__(self):
         return self.name
@@ -190,11 +190,11 @@ class Check(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
+    name = Column(String(255), nullable=False)
 
-    source = Column(Boolean)
-    binary = Column(Boolean)
-    build = Column(Boolean)
+    source = Column(Boolean, nullable=False)
+    binary = Column(Boolean, nullable=False)
+    build = Column(Boolean, nullable=False)
 
     def __str__(self):
         return self.name
@@ -219,9 +219,9 @@ class Group(Base):
     debilize = _debilize
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255))
+    name = Column(String(255), nullable=False)
 
-    maintainer_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"))
+    maintainer_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"), nullable=False)
     maintainer = relationship("Person", foreign_keys=[maintainer_id])
 
     def get_repo_info(self):
@@ -269,20 +269,20 @@ class Group(Base):
 # Many-to-Many relationship
 group_suite_component_association = (
     Table('group_suite_component_association', Base.metadata,
-          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE")),
-          Column('component_id', Integer, ForeignKey('components.id', ondelete="RESTRICT"))))
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE"), nullable=False),
+          Column('component_id', Integer, ForeignKey('components.id', ondelete="RESTRICT"), nullable=False)))
 
 
 group_suite_arch_association = (
     Table('group_suite_arch_association', Base.metadata,
-          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE")),
-          Column('arch_id', Integer, ForeignKey('arches.id', ondelete="RESTRICT"))))
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE"), nullable=False),
+          Column('arch_id', Integer, ForeignKey('arches.id', ondelete="RESTRICT"), nullable=False)))
 
 
 group_suite_check_association = (
     Table('group_suite_check_association', Base.metadata,
-          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE")),
-          Column('check_id', Integer, ForeignKey('checks.id', ondelete="RESTRICT"))))
+          Column('group_suite_id', Integer, ForeignKey('group_suites.id', ondelete="CASCADE"), nullable=False),
+          Column('check_id', Integer, ForeignKey('checks.id', ondelete="RESTRICT"), nullable=False)))
 
 
 class GroupSuite(Base):
@@ -296,11 +296,11 @@ class GroupSuite(Base):
 
     id = Column(Integer, primary_key=True)
 
-    group_id = Column(Integer, ForeignKey('groups.id', ondelete="RESTRICT"))
+    group_id = Column(Integer, ForeignKey('groups.id', ondelete="RESTRICT"), nullable=False)
     group = relationship("Group", foreign_keys=[group_id],
                          backref=backref("group_suites", passive_deletes=True))
 
-    suite_id = Column(Integer, ForeignKey('suites.id', ondelete="RESTRICT"))
+    suite_id = Column(Integer, ForeignKey('suites.id', ondelete="RESTRICT"), nullable=False)
     suite = relationship("Suite", foreign_keys=[suite_id])
 
     components = relationship("Component", secondary=group_suite_component_association)
@@ -328,8 +328,8 @@ class GroupSuite(Base):
 # Many-to-Many relationship
 source_arch_association = (
     Table('source_arch_association', Base.metadata,
-          Column('source_id', Integer, ForeignKey('sources.id', ondelete="CASCADE")),
-          Column('arch_id', Integer, ForeignKey('arches.id', ondelete="RESTRICT"))))
+          Column('source_id', Integer, ForeignKey('sources.id', ondelete="CASCADE"), nullable=False),
+          Column('arch_id', Integer, ForeignKey('arches.id', ondelete="RESTRICT"), nullable=False)))
 
 
 class Source(Base):
@@ -359,10 +359,10 @@ class Source(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String(255))
-    version = Column(String(255))
+    name = Column(String(255), nullable=False)
+    version = Column(String(255), nullable=False)
 
-    group_suite_id = Column(Integer, ForeignKey('group_suites.id', ondelete="RESTRICT"))
+    group_suite_id = Column(Integer, ForeignKey('group_suites.id', ondelete="RESTRICT"), nullable=False)
     group_suite = relationship("GroupSuite", foreign_keys=[group_suite_id])
 
     @hybrid_property
@@ -373,21 +373,21 @@ class Source(Base):
     def suite(self):
         return self.group_suite.suite
 
-    component_id = Column(Integer, ForeignKey('components.id', ondelete="RESTRICT"))
+    component_id = Column(Integer, ForeignKey('components.id', ondelete="RESTRICT"), nullable=False)
     component = relationship("Component", foreign_keys=[component_id])
 
     arches = relationship("Arch", secondary=source_arch_association)
 
-    affinity_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
+    affinity_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"), nullable=False)
     affinity = relationship("Arch", foreign_keys=[affinity_id])
 
-    uploader_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"))
+    uploader_id = Column(Integer, ForeignKey('people.id', ondelete="RESTRICT"), nullable=False)
     uploader = relationship("Person", foreign_keys=[uploader_id])
 
-    uploaded_at = Column(DateTime)
+    uploaded_at = Column(DateTime, nullable=False)
 
-    directory = Column(String(255))
-    dsc_filename = Column(String(255))
+    directory = Column(String(255), nullable=False)
+    dsc_filename = Column(String(255), nullable=False)
 
     @property
     def dsc_path(self):
@@ -425,12 +425,12 @@ class Maintainer(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String(255))
-    email = Column(String(255))
-    comaintainer = Column(Boolean)
-    original_maintainer = Column(Boolean)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    comaintainer = Column(Boolean, nullable=False, default=False)
+    original_maintainer = Column(Boolean, nullable=False, default=False)
 
-    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"), nullable=False)
     source = relationship("Source", foreign_keys=[source_id],
                           backref=backref('maintainers', passive_deletes=True,
                                           cascade="save-update, merge, delete"))
@@ -475,10 +475,10 @@ class Binary(Base):
     def version(self):
         return self.source.version
 
-    arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
+    arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"), nullable=False)
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"), nullable=False)
     source = relationship("Source", foreign_keys=[source_id],
                           backref=backref("binaries", passive_deletes=True,
                                           cascade="save-update, merge, delete"))
@@ -505,7 +505,7 @@ class Binary(Base):
     def component(self):
         return self.source.component
 
-    uploaded_at = Column(DateTime)
+    uploaded_at = Column(DateTime, nullable=False)
 
     def __str__(self):
         return "%s (%s)" % (self.name, self.version)
@@ -527,10 +527,10 @@ class Deb(Base):
 
     id = Column(Integer, primary_key=True)
 
-    directory = Column(String(255))
-    filename = Column(String(255))
+    directory = Column(String(255), nullable=False)
+    filename = Column(String(255), nullable=False)
 
-    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete="CASCADE"))
+    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete="CASCADE"), nullable=False)
     binary = relationship("Binary", foreign_keys=[binary_id],
                           backref=backref("debs", passive_deletes=True,
                                           cascade="save-update, merge, delete"))
@@ -575,8 +575,8 @@ class Deb(Base):
 # Many-to-Many relationship
 job_dependencies = (
     Table('job_dependencies', Base.metadata,
-          Column('blocked_job_id', Integer, ForeignKey('jobs.id', ondelete="CASCADE")),
-          Column('blocking_job_id', Integer, ForeignKey('jobs.id', ondelete="CASCADE"))))
+          Column('blocked_job_id', Integer, ForeignKey('jobs.id', ondelete="CASCADE"), nullable=False),
+          Column('blocking_job_id', Integer, ForeignKey('jobs.id', ondelete="CASCADE"), nullable=False)))
 
 
 class Job(Base):
@@ -617,7 +617,7 @@ class Job(Base):
     # instead using the as-of-now unimplemented debile depwait support.
     dose_report = Column(String(255), nullable=True, default=None)
 
-    check_id = Column(Integer, ForeignKey('checks.id', ondelete="RESTRICT"))
+    check_id = Column(Integer, ForeignKey('checks.id', ondelete="RESTRICT"), nullable=False)
     check = relationship("Check", foreign_keys=[check_id])
 
     @hybrid_property
@@ -636,10 +636,10 @@ class Job(Base):
     def component(self):
         return self.source.component
 
-    arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"))
+    arch_id = Column(Integer, ForeignKey('arches.id', ondelete="RESTRICT"), nullable=False)
     arch = relationship("Arch", foreign_keys=[arch_id])
 
-    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"))
+    source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"), nullable=False)
     source = relationship("Source", foreign_keys=[source_id],
                           backref=backref("jobs", passive_deletes=True,
                                           cascade="save-update, merge, delete"))
@@ -654,7 +654,7 @@ class Job(Base):
                         nullable=True, default=None)
     builder = relationship("Builder", foreign_keys=[builder_id])
 
-    assigned_count = Column(Integer, default=0)
+    assigned_count = Column(Integer, nullable=False, default=0)
     assigned_at = Column(DateTime, nullable=True, default=None)
     finished_at = Column(DateTime, nullable=True, default=None)
     failed = Column(Boolean, nullable=True, default=None)
@@ -744,7 +744,7 @@ class Result(Base):
 
     id = Column(Integer, primary_key=True)
 
-    job_id = Column(Integer, ForeignKey('jobs.id', ondelete="CASCADE"))
+    job_id = Column(Integer, ForeignKey('jobs.id', ondelete="CASCADE"), nullable=False)
     job = relationship("Job", foreign_keys=[job_id],
                        backref=backref("results", passive_deletes=True,
                                        cascade="save-update, merge, delete"))
@@ -777,11 +777,11 @@ class Result(Base):
     def arch(self):
         return self.job.arch
 
-    firehose_id = Column(String, ForeignKey('analysis.id', ondelete="RESTRICT"))
+    firehose_id = Column(String, ForeignKey('analysis.id', ondelete="RESTRICT"), nullable=False)
     firehose = relationship(Analysis, single_parent=True, cascade="save-update, merge, delete, delete-orphan")
 
-    uploaded_at = Column(DateTime)
-    failed = Column(Boolean)
+    uploaded_at = Column(DateTime, nullable=False)
+    failed = Column(Boolean, nullable=False)
 
     @property
     def directory(self):
