@@ -60,10 +60,11 @@ def _init_fedmsg(config):
     )
 
 
-def init_master(confpath=None):
+def init_master(confpath=None, fedmsg=True):
     c = _init_config(confpath)
     _init_sqlalchemy(c)
-    _init_fedmsg(c)
+    if fedmsg:
+        _init_fedmsg(c)
     return c
 
 
