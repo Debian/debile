@@ -31,7 +31,7 @@ from sqlalchemy.sql import exists
 
 from debile.utils.deb822 import Dsc
 from debile.master.utils import init_master, session, emit
-from debile.master.orm import (Person, Suite, Component, Arch, Check, Group,
+from debile.master.orm import (Base, Person, Suite, Component, Arch, Check, Group,
                                GroupSuite, Source, Binary, Deb, Job, Result,
                                create_source, create_jobs)
 
@@ -218,6 +218,11 @@ class ArchiveDebileBridge:
 
     def unblock_jobs(self, suite):
         bcheck_data = self._create_depwait_report(suite)
+
+        # Temporary DB cleanup after old bugs (TODO: Remove once db is recreated)
+        with session() as s:
+            s.execute(Base.metadata.tables['jobs'].delete(whereclause="source_id NOT IN (SELECT id FROM sources)"))
+            s.execute(Base.metadata.tables['job_dependencies'].delete(whereclause="blocked_job_id = blocking_job_id"))
 
         with session() as s:
             jobs = s.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).join(GroupSuite.group).join(GroupSuite.suite).filter(
