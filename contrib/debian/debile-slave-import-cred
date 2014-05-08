@@ -4,12 +4,18 @@
 # terms and conditions of the Debile project, MIT/Expat. You should have
 # recieved a copy of the license with this script.
 
+if [ $# -ne 2 ]; then
+    echo "Error."
+    echo " $0 debile-user /path/to/tarfile"
+    exit 1
+fi
+
 USER=$1
 TARFILE=$2
 
-if [ "x${TARFILE}" = "x" ]; then
+if [ ! -f "${TARFILE}" ]; then
     echo "Error."
-    echo " $0 debile-user /path/to/tarfile"
+    echo "Could not find ${TARFILE}"
     exit 1
 fi
 
@@ -38,4 +44,4 @@ function copy-ssl-cred {
 copy-ssl-cred
 do-import key.pub
 do-import key.priv
-
+exit 0
