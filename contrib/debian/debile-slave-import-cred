@@ -4,16 +4,21 @@
 # terms and conditions of the Debile project, MIT/Expat. You should have
 # recieved a copy of the license with this script.
 
-TARFILE=$1
+USER=$1
+TARFILE=$2
 
 if [ "x${TARFILE}" = "x" ]; then
     echo "Error."
-    echo " $0 /path/to/tarfile"
+    echo " $0 debile-user /path/to/tarfile"
     exit 1
 fi
 
+if ! id $USER > /dev/null; then
+    echo "$USER does not exist"
+fi
+
 function do-import {
-    tar -zxf ${TARFILE} $1 -O | gpg --import --status-fd 1
+    su $USER -c "tar -zxf ${TARFILE} $1 -O | gpg --import --status-fd 1"
 }
 
 function copy-ssl-cred {
@@ -30,6 +35,7 @@ function copy-ssl-cred {
 
 }
 
+copy-ssl-cred
 do-import key.pub
 do-import key.priv
-copy-ssl-cred
+
