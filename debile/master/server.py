@@ -115,6 +115,7 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
 def serve(server, port, keyfile, certfile, ssl_keyring, pgp_keyring):
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
+    logger.info("Using keyfile=`{keyfile}', certfile=`{certfile}', ssl_keyring=`{ssl_keyring}', pgp_keyring=`{pgp_keyring}'".format(**locals()))
     server = SecureXMLRPCServer((server, port), keyfile, certfile,
                                 ca_certs=ssl_keyring,
                                 requestHandler=AsyncXMLRPCServer,
