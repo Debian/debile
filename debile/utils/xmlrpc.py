@@ -85,7 +85,9 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
         )
 
         if not validate(self.sock.getpeercert(), self.host):
-            raise Exception("https endpint presented invalid certificate")
+            raise Exception("https endpoint presented invalid certificate: "
+                            "no 'commonName' or 'DNS' field matching host %s"
+                            % self.host)
 
 
 class DebileSafeTransport(xmlrpclib.Transport):

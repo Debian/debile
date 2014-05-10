@@ -40,6 +40,7 @@ Create /etc/cron.d/debile::
 To create a self-signed certificate::
 
      # (you'll also need to copy master.crt to all slaves/users and set ca_certs: in slave.yaml/user.yaml)
+     # the CN must match the 'host' value in user.yaml
      $ sudo openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=debile.debian.net" -keyout /srv/debile/master.key -out /srv/debile/master.cr
      # Set the correct permissions:
      $ sudo chmod go-rwx /srv/debile/*.key && sudo chown Debian-debile:Debian-debile /srv/debile/master.*
@@ -62,7 +63,7 @@ To create a certificate request for a CA-signed certificate::
 
 Create users::
 
-     sudo openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=Sylvestre Ledru/emailAddress=sylvestre@debian.org" -keyout /srv/debile/sylvestre.key -out
+     sudo openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=Sylvestre Ledru/emailAddress=sylvestre@debian.org" -keyout /srv/debile/sylvestre.key -out /srv/debile/sylvestre.crt
      sudo chmod go-rwx /srv/debile/*.key && sudo chown sylvestre:sylvestre /srv/debile/sylvestre.*
 
 Result ::
@@ -86,6 +87,7 @@ For each user/slave added to debile.yaml, add the self-signed ssl certificate an
 
 Create a /etc/debile/debile.yaml to seed the debile-master database ::
 
+  # the 'maintainer' field in section Builders must match an email in Users section
   $ sudo -u Debian-debile -i /usr/bin/debile-master-init --config  /etc/debile/master.yaml  /etc/debile/debile.yaml
   $ sudo service debile-master start
   $ cd /srv/debile/repo/default
