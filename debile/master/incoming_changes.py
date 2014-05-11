@@ -120,8 +120,8 @@ def accept_source_changes(default_group, config, session, changes, user):
         pass
 
     oldsources = session.query(Source).filter(
-        Source.group_suite == source.group_suite,
-        Source.name == source.name,
+        Source.group_suite == group_suite,
+        Source.name == dsc['Source'],
     )
     for oldsource in oldsources:
         if version_compare(oldsource.version, dsc['Version']) > 0:
