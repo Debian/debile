@@ -49,8 +49,8 @@ def process_changes(default_group, config, session, path):
 
     try:
         fingerprint = changes.validate_signature(config['keyrings']['pgp'])
-    except ChangesFileException:
-        return reject_changes(session, changes, "invalid-signature")
+    except ChangesFileException as e:
+        return reject_changes(session, changes, "invalid-signature: " + e.message)
 
     #### Sourceful Uploads
     if changes.is_source_only_upload():
