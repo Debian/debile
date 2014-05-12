@@ -149,4 +149,7 @@ Anonymous FTP ::
         ls_recurse_enable=NO
         connect_from_port_20=NO
         max_clients=100
+        seccomp_sandbox=NO # if running on amd64 kernel
 
+create log directory for vsftpd::
+       mkdir /var/log/ftp

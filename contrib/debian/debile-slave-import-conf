@@ -58,4 +58,4 @@ with tarfile.open(sys.argv[1], "r:gz") as tf:
         config['gpg'] = key
         r = config['xmlrpc']
         r['keyfile'] = DEFAULT_DEBILE_CONF + name + ".key"
-        r['certfile'] = DEFAULT_DEBILE_CONF + name + ".cert"
+        r['certfile'] = DEFAULT_DEBILE_CONF + name + ".crt"
