@@ -690,6 +690,7 @@ class Job(Base):
             if (job.check.binary and job.source == self.source and job.arch == arch):
                 job.binary = binary
 
+        self.dose_report = None
         for job in list(self.blocking):
             job.depedencies.remove(self)
 

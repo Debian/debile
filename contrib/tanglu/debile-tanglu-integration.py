@@ -219,17 +219,12 @@ class ArchiveDebileBridge:
     def unblock_jobs(self, suite):
         bcheck_data = self._create_depwait_report(suite)
 
-        # Temporary DB cleanup after old bugs (TODO: Remove once db is recreated)
-        with session() as s:
-            s.execute(Base.metadata.tables['jobs'].delete(whereclause="source_id NOT IN (SELECT id FROM sources)"))
-            s.execute(Base.metadata.tables['job_dependencies'].delete(whereclause="blocked_job_id = blocking_job_id"))
-
         with session() as s:
             jobs = s.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).join(GroupSuite.group).join(GroupSuite.suite).filter(
                 Group.name == "default",
                 Suite.name == suite,
                 Check.build == True,
-                Job.dose_report != None,
+                (Job.dose_report != None) | ~Job.built_binaries.any()
             )
 
             for job in jobs:
@@ -246,7 +241,7 @@ class ArchiveDebileBridge:
                                 break
                         if job.dose_report != dose_report:
                             job.dose_report = dose_report
-                    else:
+                    elif job.dose_report != None:
                         job.dose_report = None
                         print("Unblocked job %s (%s) %s" % (job.source.name, job.source.version, job.name))
                 except Exception as ex:
