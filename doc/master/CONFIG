@@ -33,8 +33,7 @@ Create /etc/cron.d/debile::
 
   SHELL=/bin/sh
   PATH=/usr/local/bin:/usr/bin:/bin
-  */5 * * * * Debian-debile debile-incoming-changes /srv/debile/incoming/UploadQueue
-  */5 * * * * Debian-debile debile-incoming-dud /srv/debile/incoming/UploadQueue
+  */5 * * * * Debian-debile debile-incoming /srv/debile/incoming/UploadQueue
 
 
 To create a self-signed certificate::
