@@ -127,6 +127,16 @@ def accept_source_changes(default_group, config, session, changes, user):
         if version_compare(oldsource.version, dsc['Version']) > 0:
             return reject_changes(session, changes, "newer-source-already-in-suite")
 
+    # Drop any old jobs that are still pending.
+    for oldsource in oldsources:
+        for job in oldsource.jobs:
+            if (not any(job.results) and not any(job.built_binaries)):
+                session.delete(job)
+            elif job.failed is None:
+                job.failed = True
+        if not any(oldsource.jobs):
+            session.delete(oldsource)
+
     component = session.query(Component).filter_by(name="main").one()
 
     if 'Build-Architecture-Indep' in dsc:
@@ -138,25 +148,16 @@ def accept_source_changes(default_group, config, session, changes, user):
     else:
         valid_affinities = "any"
 
-    source = create_source(dsc, group_suite, component, user,
-                           config["affinity_preference"], valid_affinities)
-    create_jobs(source)
-    session.add(source)
+    with session.no_autoflush:
+        source = create_source(dsc, group_suite, component, user,
+                               config["affinity_preference"], valid_affinities)
+        create_jobs(source)
+        session.add(source)
 
-    # Drop any old jobs that are still pending.
-    for oldsource in oldsources:
-        for job in oldsource.jobs:
-            if (not any(job.results) and not any(job.built_binaries)):
-                session.delete(job)
-            elif job.failed is None:
-                job.failed = True
-        if not any(oldsource.jobs):
-            session.delete(oldsource)
-
-    # OK. We have a changes in order. Let's roll.
-    repo = Repo(group_suite.group.repo_path)
-    repo.add_changes(changes)
-    (source.directory, source.dsc_filename) = repo.find_dsc(source)
+        # We have a changes in order. Let's roll.
+        repo = Repo(group_suite.group.repo_path)
+        repo.add_changes(changes)
+        (source.directory, source.dsc_filename) = repo.find_dsc(source)
 
     emit('accept', 'source', source.debilize())
 
