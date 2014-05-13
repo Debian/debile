@@ -60,6 +60,20 @@ To create a certificate request for a CA-signed certificate::
      openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -keyout /srv/debile/master.key -out /srv/debile/master.csr
 
 
+Create a PGP key for debile-master::
+        gpg -q --gen-key --batch <<EOF
+            Key-Type: RSA
+            Key-Length: 2048
+            Name-Real: Debile Master
+            Name-Comment: Debile Master Key
+            Name-Email: debile@localhost
+         EOF
+         # if you choose a non-default keyring
+         # (--no-default-keyring --keyring path/keyring.pgp)
+         # you will need to create a symbolic link from .gnupg/pubring.gpg
+         # to it, in your debile user's home, so that reprepo can find it
+         # FIXME: can with pass gpg options to reprepo?
+
 Create users::
 
      sudo openssl req -utf8 -nodes -newkey rsa:3072 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=Sylvestre Ledru/emailAddress=sylvestre@debian.org" -keyout /srv/debile/sylvestre.key -out /srv/debile/sylvestre.crt
@@ -75,6 +89,10 @@ Result ::
 Edit /etc/debile/\*.yaml to match the setup above:
 
    With user.yaml, the user controlling debile with debile-remote can be setup. This allows remote administration.
+
+master.yaml::
+  pgp = /srv/debile/.gnupg/keyring.gpg # if keyring in default location
+                                       # see gpg --gen-key above
 
 For each user/slave added to debile.yaml, add the self-signed ssl certificate and the pgp public key to the approriate keyring::
 
@@ -93,7 +111,7 @@ Create a /etc/debile/debile.yaml to seed the debile-master database ::
   $ mkdir conf logs
   $ cd conf
 
-distributions ::
+distributions (do not forget to set SignWith to the key you generated earlier) ::
 
               Origin: Paul Tagliamonte
               Label: Debile
