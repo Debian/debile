@@ -36,7 +36,7 @@ class FileRepo(object):
             raise FilesAlreadyRegistered()
         os.makedirs(path)
 
-        for fp in [dud.get_filename()] + dud.get_files():
+        for fp in [dud.get_dud_file()] + dud.get_files():
             # copy-then-remove instead of move to get the debile user
             # to own the file.
             shutil.copy2(fp, path)
