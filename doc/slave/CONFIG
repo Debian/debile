@@ -20,4 +20,8 @@ Otherwise:
  - copy the generated .tar.gz to the slave
  - sudo /usr/share/debile-slave/debile-slave-import-{conf,cred} name.tar.gz
 
+
+Install devscripts::
+        apt-get install devscripts
+
 - restart the slave daemon
