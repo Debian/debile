@@ -192,7 +192,7 @@ components:
 ### EOF ###
 
 === 8. Configure dput-ng ===
-Create /etc/dput.d/profiles/tanglu.json with the following data:
+Create /etc/dput.d/metas/tanglu.json with the following data:
 ### BEGIN FILE ###
 {
     "allow_dcut": false,
@@ -205,7 +205,7 @@ Create /etc/dput.d/profiles/tanglu.json with the following data:
 }
 ### EOF ###
 
-Create /etc/dput.d/metas/tanglu.json with the following data:
+Create /etc/dput.d/profiles/tanglu.json with the following data:
 ### BEGIN FILE ###
 {
     "fqdn": "ftp-master.tanglu.org",
