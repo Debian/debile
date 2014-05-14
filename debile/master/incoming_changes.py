@@ -82,7 +82,7 @@ def reject_changes(session, changes, tag):
         "source": changes.get_package_name(),
     })
 
-    for fp in [changes.get_filename()] + changes.get_files():
+    for fp in [changes.get_changes_file()] + changes.get_files():
         os.unlink(fp)
     # Note this in the log.
 
