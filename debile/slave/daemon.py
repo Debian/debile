@@ -130,11 +130,41 @@ def workon(proxy, suites, components, arches, capabilities):
         raise
     except:
         logger.warn("Forfeiting the job because of internal exception", exc_info=True)
-        proxy.forfeit_job(job['id'])
-        raise
+        try:
+            for retry in range(1, 5):
+                try:
+                    proxy.forfeit_job(job['id'])
+                    raise
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except:
+                    if shutdown_request:
+                        raise
+                    logger.error("Error while reporting forfeiture to the master", exc_info=True)
+                    time.sleep(60)
+        except (SystemExit, KeyboardInterrupt):
+            logger.info("Forfeiting the job because of shutdown request")
+            proxy.forfeit_job(job['id'])
+            raise
     else:
-        logger.info("Successfully closing the job")
-        proxy.close_job(job['id'], job['failed'])
+        logger.info("Closing the job after successfull run")
+        try:
+            while True:
+                try:
+                    proxy.close_job(job['id'], job['failed'])
+                    break
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except:
+                    logger.error("Error while reporting success to the master", exc_info=True)
+                    time.sleep(60)
+        except (SystemExit, KeyboardInterrupt):
+            try:
+                # One last ditch attempt before exiting
+                proxy.close_job(job['id'], job['failed'])
+            except:
+                logger.error("Error while reporting success to the master", exc_info=True)
+            raise
 
 
 def run_job(config, job):

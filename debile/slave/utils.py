@@ -28,6 +28,8 @@ import tempfile
 import shutil
 import sys
 import os
+import logging
+import time
 
 
 def upgrade(chroot):
@@ -91,4 +93,11 @@ def sign(changes, gpg):
 
 def upload(changes, job, gpg, host):
     sign(changes, gpg)
-    return dput.upload(changes, host)
+    for retry in range(1, 5):
+        try:
+            return dput.upload(changes, host)
+        except:
+            if retry >= 5:
+                raise
+            logging.getLogger('debile').error("Error while uploading %s" % changes, exc_info=True)
+            time.sleep(60)
