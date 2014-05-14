@@ -24,4 +24,16 @@ Otherwise:
 Install devscripts::
         apt-get install devscripts
 
+Install dput-ng::
+        apt-get install dput-ng
+
+/etc/dput.d/profiles/ursae.json::
+    {
+        "fqdn": "ursae.inria.fr",
+        "incoming": "/UploadQueue",
+        "login": "anonymous",
+        "meta": "boring",
+        "method": "ftp"
+    }
+
 - restart the slave daemon
