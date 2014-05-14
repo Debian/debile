@@ -170,3 +170,35 @@ Anonymous FTP ::
 
 create log directory for vsftpd::
        mkdir /var/log/ftp
+
+
+Setup http server for the repository::
+      apt-get install apache2
+
+/etc/apache2/sites-enabled/000-default.conf::
+      
+    <Directory /srv/debile/repo/ >
+            # We want the user to be able to browse the directory manually
+            Options Indexes FollowSymLinks Multiviews
+            # apache 2.2:
+            Order allow,deny
+            Allow from all
+            # apache 2.4:
+            # Require all granted
+
+    </Directory>
+    
+    <Directory "/srv/debile/repo/*/db/">
+            Order allow,deny
+            Deny from all
+    </Directory>
+    
+    <Directory "/srv/debile/repo/*/conf/">
+            Order allow,deny
+            Deny from all
+    </Directory>
+    
+    <Directory "/srv/debile/repo//*/incoming/">
+            Order allow,deny
+            Deny from all
+    </Directory>
