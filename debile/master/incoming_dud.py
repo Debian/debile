@@ -80,7 +80,7 @@ def reject_dud(session, dud, tag):
         "source": dud['Source'],
     })
 
-    for fp in [dud.get_filename()] + dud.get_files():
+    for fp in [dud.get_dud_file()] + dud.get_files():
         os.unlink(fp)
     # Note this in the log.
 
@@ -106,5 +106,5 @@ def accept_dud(config, session, dud, builder):
     emit('receive', 'result', result.debilize())
 
     # OK. It's safely in the database and repo. Let's cleanup.
-    for fp in [dud.get_filename()] + dud.get_files():
+    for fp in [dud.get_dud_file()] + dud.get_files():
         os.unlink(fp)

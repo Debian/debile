@@ -228,5 +228,5 @@ def accept_binary_changes(default_group, config, session, changes, builder):
         emit('accept', 'binary', binary.debilize())
 
     # OK. It's safely in the database and repo. Let's cleanup.
-    for fp in [changes.get_filename()] + changes.get_files():
+    for fp in [changes.get_changes_file()] + changes.get_files():
         os.unlink(fp)
