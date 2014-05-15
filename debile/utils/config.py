@@ -35,4 +35,5 @@ def _find_config_file(name):
 
 
 def get_config(name, path=None):
-    return yaml.safe_load(open(path or _find_config_file(name), 'r'))
+    with open(path or _find_config_file(name), 'r') as f:
+        return yaml.safe_load(f)

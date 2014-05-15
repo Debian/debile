@@ -196,12 +196,13 @@ def run_job(config, job):
         binstr = None
 
         if changes:
-            f = open(changes, 'r')
-            obj = Changes(f)
+            with open(changes, 'r') as f:
+                obj = Changes(f)
             obj['Distribution'] = source['suite']
             obj['X-Debile-Group'] = source['group']
             obj['X-Debile-Job'] = str(job['id'])
-            obj.dump(fd=open(changes, 'wb'))
+            with open(changes, 'wb') as f:
+                obj.dump(fd=f)
 
             datestr = obj['Date']
             binstr = obj['Binary']
