@@ -19,10 +19,12 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
-                               Group, GroupSuite, Source, Binary, Job)
+                               Group, GroupSuite, Source, Binary, Job,
+                               job_dependencies)
 from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 from debile.master.utils import emit
 
+from sqlalchemy.sql import func, select, asc
 from debian.debian_support import Version
 from datetime import datetime
 
@@ -108,7 +110,7 @@ class DebileMasterInterface(object):
             return None
 
         arches = [x for x in arches if x not in ["source", "all"]]
-        job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).filter(
+        job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).join(GroupSuite.suite).filter(
             ~Job.depedencies.any(),
             Job.dose_report == None,
             Job.assigned_at == None,
@@ -121,8 +123,8 @@ class DebileMasterInterface(object):
               Source.affinity.has(Arch.name.in_(arches)))),
             Job.check.has(Check.name.in_(checks)),
         ).order_by(
-            Job.assigned_count.asc(),
-            Check.build.desc(),
+            asc(Job.assigned_count - select([func.count(1)]).where(job_dependencies.c.blocking_job_id == Job.id) +
+                4 * Suite.name.in_(["staging", "sid", "experimental"]) - 8 * Check.build),
             Source.uploaded_at.asc(),
         ).first()
 
