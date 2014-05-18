@@ -123,8 +123,7 @@ class DebileMasterInterface(object):
               Source.affinity.has(Arch.name.in_(arches)))),
             Job.check.has(Check.name.in_(checks)),
         ).order_by(
-            asc(Job.assigned_count - select([func.count(1)]).where(job_dependencies.c.blocking_job_id == Job.id) +
-                case([(Suite.name.in_(["staging", "sid", "experimental"]), 4)], else_=0) - case([(Check.build, 8)], else_=0)),
+            asc(Job.assigned_count - select([func.count(1)]).where(job_dependencies.c.blocking_job_id == Job.id)),
             Source.uploaded_at.asc(),
         ).first()
 

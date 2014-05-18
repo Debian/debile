@@ -654,7 +654,9 @@ class Job(Base):
                         nullable=True, default=None)
     builder = relationship("Builder", foreign_keys=[builder_id])
 
+    # Todo: Rename to something better.
     assigned_count = Column(Integer, nullable=False, default=0)
+
     assigned_at = Column(DateTime, nullable=True, default=None)
     finished_at = Column(DateTime, nullable=True, default=None)
     failed = Column(Boolean, nullable=True, default=None)
@@ -931,3 +933,7 @@ def create_jobs(source, dose_report=None):
 
             for dep in deps:
                 j.depedencies.append(dep)
+
+    for job in source.jobs:
+        # Fake the assigned_count to prioritize build jobs an production suites slightly.
+        job.assigned_count = (4 if job.source.suite.name in ["staging", "sid", "experimental"] else 0) + (8 if not job.check.build else 0)
