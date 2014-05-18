@@ -24,7 +24,7 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
 from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 from debile.master.utils import emit
 
-from sqlalchemy.sql import func, select, asc
+from sqlalchemy.sql import func, select, asc, case
 from debian.debian_support import Version
 from datetime import datetime
 
@@ -124,7 +124,7 @@ class DebileMasterInterface(object):
             Job.check.has(Check.name.in_(checks)),
         ).order_by(
             asc(Job.assigned_count - select([func.count(1)]).where(job_dependencies.c.blocking_job_id == Job.id) +
-                4 * Suite.name.in_(["staging", "sid", "experimental"]) - 8 * Check.build),
+                case([(Suite.name.in_(["staging", "sid", "experimental"]), 4)], else_=0) - case([(Check.build, 8)], else_=0)),
             Source.uploaded_at.asc(),
         ).first()
 
