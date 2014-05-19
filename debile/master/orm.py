@@ -782,7 +782,7 @@ class Result(Base):
         return self.job.arch
 
     firehose_id = Column(String, ForeignKey('analysis.id', ondelete="RESTRICT"), nullable=False)
-    firehose = relationship(Analysis, single_parent=True, cascade="save-update, merge, delete, delete-orphan")
+    firehose = relationship(Analysis, single_parent=True)
 
     uploaded_at = Column(DateTime, nullable=False)
     failed = Column(Boolean, nullable=False)
