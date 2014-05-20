@@ -26,6 +26,7 @@ import httplib
 import socket
 import ssl
 import os.path
+import os
 
 def get_host_list(cert):
     if 'subjectAltName' in cert:
@@ -49,13 +50,13 @@ class DebileHTTPSConnection(httplib.HTTPSConnection):
         strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
         source_address=None
     ):
-        if not os.path.isfile(cert_file):
+        if not (os.path.isfile(cert_file) and os.access(cert_file, os.R_OK)):
             raise Exception("Could not find/access " + cert_file)
 
-        if not os.path.isfile(key_file):
+        if not (os.path.isfile(key_file) and os.access(key_file, os.R_OK)):
             raise Exception("Could not find/access " + key_file)
 
-        if not os.path.isfile(ca_certs):
+        if not (os.path.isfile(ca_certs) and os.access(ca_certs, os.R_OK)):
             raise Exception("Could not find/access " + ca_certs)
 
         httplib.HTTPSConnection.__init__(
