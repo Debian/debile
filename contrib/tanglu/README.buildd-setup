@@ -1,12 +1,12 @@
 == Setting up a Tanglu buildd ==
 
 === 1. Install dependencies ===
-On your newly installed Debian Wheezy machine, install the buildd dependencies:
+On a newly installed Debian 8 ("jessie") or Tanglu 2 ("bartholomea") machine, install the buildd dependencies:
 
- apt-get install sudo devscripts dpkg-dev eatmydata sbuild/jessie schroot dput-ng \
-    python-dput python-debian python-requests python-yaml python-schroot/jessie python-sqlalchemy/jessie python-virtualenv
+ apt-get install --no-install-recommends sudo devscripts dpkg-dev debootstrap schroot sbuild lintian dput-ng \
+    python-dput python-debian python-requests python-yaml python-schroot python-sqlalchemy python-virtualenv
 
-Then install Tanglu debootstrap, Tanglu lintian and the Tanglu Archive Keyring:
+If you are using Debian, manually install the Tanglu version of debootstrap, lintian and the Tanglu Archive Keyring:
  wget http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.59tanglu1_all.deb \
     http://archive.tanglu.org/tanglu/pool/main/l/lintian/lintian_2.5.22.1tanglu1_all.deb \
     http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
