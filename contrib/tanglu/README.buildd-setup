@@ -3,7 +3,7 @@
 === 1. Install dependencies ===
 On a newly installed Debian 8 ("jessie") or Tanglu 2 ("bartholomea") machine, install the buildd dependencies:
 
- apt-get install --no-install-recommends sudo devscripts dpkg-dev debootstrap schroot sbuild lintian dput-ng \
+ apt-get install --no-install-recommends sudo devscripts dpkg-dev debootstrap schroot sbuild aptitude lintian dput-ng \
     python-dput python-debian python-requests python-yaml python-schroot python-sqlalchemy python-virtualenv
 
 If you are using Debian, manually install the Tanglu version of debootstrap, lintian and the Tanglu Archive Keyring:
@@ -33,14 +33,14 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
    mkdir -p /srv/buildd/chroots /srv/buildd/snapshots
    btrfs subvolume create /srv/buildd/chroots/${STABLE}-${ARCH}
    btrfs subvolume create /srv/buildd/chroots/${DEVEL}-${ARCH}
-   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" ${STABLE} /srv/buildd/chroots/${STABLE}-${ARCH} http://archive.tanglu.org/tanglu
-   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" ${DEVEL} /srv/buildd/chroots/${DEVEL}-${ARCH} http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --include=aptitude ${STABLE} /srv/buildd/chroots/${STABLE}-${ARCH} http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --include=aptitude ${DEVEL} /srv/buildd/chroots/${DEVEL}-${ARCH} http://archive.tanglu.org/tanglu
    btrfs subvolume snapshot /srv/buildd/chroots/${DEVEL}-${ARCH} /srv/buildd/chroots/staging-${ARCH}
 
  :: /srv/buildd is *not* on btrfs:
    mkdir -p /srv/buildd/chroots
-   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --keep-sbuild-chroot-dir --make-sbuild-tarball=/srv/buildd/chroots/${STABLE}-${ARCH}.tar.gz ${STABLE} /srv/buildd/chroots/${STABLE}-${ARCH} http://archive.tanglu.org/tanglu
-   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --keep-sbuild-chroot-dir --make-sbuild-tarball=/srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz ${DEVEL} /srv/buildd/chroots/${DEVEL}-${ARCH} http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --include=aptitude --keep-sbuild-chroot-dir --make-sbuild-tarball=/srv/buildd/chroots/${STABLE}-${ARCH}.tar.gz ${STABLE} /srv/buildd/chroots/${STABLE}-${ARCH} http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --include=aptitude --keep-sbuild-chroot-dir --make-sbuild-tarball=/srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz ${DEVEL} /srv/buildd/chroots/${DEVEL}-${ARCH} http://archive.tanglu.org/tanglu
    cp -a /srv/buildd/chroots/${DEVEL}-${ARCH} /srv/buildd/chroots/staging-${ARCH}
 
  :: all builders:
@@ -123,6 +123,9 @@ Please keep the Git clone up-to-date and install new software versions from time
 === 7. Configure buildd software ===
 Copy the tanglu-buildd certificate to /srv/buildd/tanglu-buildd.crt
 Modify /etc/sbuild/sbuild.conf to contain:
+$apt_distupgrade = 0;
+$apt_upgrade = 1;
+$build_dep_resolver = 'aptitude';
 $resolve_alternatives = 1;
 $build_environment = {
     'DEB_BUILD_OPTIONS' => 'parallel=5'
