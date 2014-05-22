@@ -39,22 +39,12 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
 
  :: /srv/buildd is *not* on btrfs:
    mkdir -p /srv/buildd/chroots
-   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/srv/buildd/chroots/${STABLE}-${ARCH}.tar.gz ${STABLE} `mktemp -d` http://archive.tanglu.org/tanglu
-   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --make-sbuild-tarball=/srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz ${DEVEL} `mktemp -d` http://archive.tanglu.org/tanglu
-   cp /srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz /srv/buildd/chroots/staging-${ARCH}.tar.gz
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --keep-sbuild-chroot-dir --make-sbuild-tarball=/srv/buildd/chroots/${STABLE}-${ARCH}.tar.gz ${STABLE} /srv/buildd/chroots/${STABLE}-${ARCH} http://archive.tanglu.org/tanglu
+   sbuild-createchroot --arch=${ARCH} --components="main,contrib,non-free" --keep-sbuild-chroot-dir --make-sbuild-tarball=/srv/buildd/chroots/${DEVEL}-${ARCH}.tar.gz ${DEVEL} /srv/buildd/chroots/${DEVEL}-${ARCH} http://archive.tanglu.org/tanglu
+   cp -a /srv/buildd/chroots/${DEVEL}-${ARCH} /srv/buildd/chroots/staging-${ARCH}
 
  :: all builders:
-   mv /etc/schroot/chroot.d/${STABLE}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${STABLE}-${ARCH}
-   mv /etc/schroot/chroot.d/${DEVEL}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${DEVEL}-${ARCH}
-   cp /etc/schroot/chroot.d/${DEVEL}-${ARCH} /etc/schroot/chroot.d/staging-${ARCH}
-
-   sed -e "s,${STABLE}-${ARCH}-sbuild,${STABLE}-${ARCH},g" -i /etc/schroot/chroot.d/${STABLE}-${ARCH}
-   sed -e "s,${DEVEL}-${ARCH}-sbuild,${DEVEL}-${ARCH},g" -i /etc/schroot/chroot.d/${DEVEL}-${ARCH}
-   sed -e "s,${DEVEL}-${ARCH}-sbuild,staging-${ARCH},g" -e "s,${DEVEL},staging,g" -i /etc/schroot/chroot.d/staging-${ARCH}
-
- :: /srv/buildd is on btrfs:
    for SUITE in ${STABLE} ${DEVEL} staging; do
-       sed -E -e 's,^type=directory$,type=btrfs-snapshot,' -e 's,^directory=(.+)$,btrfs-source-subvolume=\1\nbtrfs-snapshot-directory=/srv/buildd/snapshots,' -i /etc/schroot/chroot.d/${SUITE}-${ARCH}
        rm /srv/buildd/chroots/${SUITE}-${ARCH}/dev/ptmx
        ln -s pts/ptmx /srv/buildd/chroots/${SUITE}-${ARCH}/dev/ptmx
        echo force-unsafe-io >/srv/buildd/chroots/${SUITE}-${ARCH}/etc/dpkg/dpkg.cfg.d/90sbuild
@@ -65,40 +55,28 @@ These instructions must be followed twice, once for amd64 and once for i386, to 
    echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free"     >>/srv/buildd/chroots/staging-${ARCH}/etc/apt/sources.list
    echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/srv/buildd/chroots/staging-${ARCH}/etc/apt/sources.list
 
+   mv /etc/schroot/chroot.d/${STABLE}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${STABLE}-${ARCH}
+   cp /etc/schroot/chroot.d/${STABLE}-${ARCH} /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
+   mv /etc/schroot/chroot.d/${DEVEL}-${ARCH}-sbuild-* /etc/schroot/chroot.d/${DEVEL}-${ARCH}
+   cp /etc/schroot/chroot.d/${DEVEL}-${ARCH} /etc/schroot/chroot.d/staging-${ARCH}
+
+   sed -e "s,${STABLE}-${ARCH}-sbuild,${STABLE}-${ARCH},g" -i /etc/schroot/chroot.d/${STABLE}-${ARCH}
+   sed -e "s,${STABLE}-${ARCH}-sbuild,${STABLE}-updates-${ARCH},g" -i /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
+   sed -e "s,${DEVEL}-${ARCH}-sbuild,${DEVEL}-${ARCH},g" -i /etc/schroot/chroot.d/${DEVEL}-${ARCH}
+   sed -e "s,${DEVEL}-${ARCH}-sbuild,staging-${ARCH},g" -e "s,${DEVEL},staging,g" -i /etc/schroot/chroot.d/staging-${ARCH}
+
+ :: /srv/buildd is on btrfs:
+   for SUITE in ${STABLE} ${DEVEL} staging; do
+       sed -E -e 's,^type=directory$,type=btrfs-snapshot,' -e 's,^directory=(.+)$,btrfs-source-subvolume=\1\nbtrfs-snapshot-directory=/srv/buildd/snapshots,' -i /etc/schroot/chroot.d/${SUITE}-${ARCH}
+   done
+
  :: /srv/buildd is *not* on btrfs:
-   # Log into the newly created stable environment:
-   sbuild-shell ${STABLE}-${ARCH}
-   # And run these commands:
-   rm /dev/ptmx
-   ln -s pts/ptmx /dev/ptmx
-   echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
-   echo "deb http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
-   echo "deb-src http://archive.tanglu.org/tanglu aequorea-updates main contrib non-free" >>/etc/apt/sources.list
-   exit
-
-   # Log into the newly created devel environment:
-   sbuild-shell ${STABLE}-${ARCH}
-   # And run these commands:
-   rm /dev/ptmx
-   ln -s pts/ptmx /dev/ptmx
-   echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
-   exit
-
-   # Log into the newly created staging environment:
-   sbuild-shell staging-${ARCH}
-   # And run these commands:
-   rm /dev/ptmx
-   ln -s pts/ptmx /dev/ptmx
-   echo force-unsafe-io >/etc/dpkg/dpkg.cfg.d/90sbuild
-   echo "deb http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
-   echo "deb-src http://archive.tanglu.org/tanglu staging main contrib non-free" >>/etc/apt/sources.list
-   exit
+   for SUITE in ${STABLE} ${DEVEL} staging; do
+       tar caf /srv/buildd/chroots/${STABLE}-${ARCH}.tar.gz -C /srv/buildd/chroots/${STABLE}-${ARCH} . && rm -r /srv/buildd/chroots/${STABLE}-${ARCH}
+   done
 
  :: all builders:
    sbuild-update --update --upgrade --clean ${STABLE}-${ARCH} ${DEVEL}-${ARCH} staging-${ARCH}
-
-   cp /etc/schroot/chroot.d/${STABLE}-${ARCH} /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
-   sed -E -e "s/^\[${STABLE}-${ARCH}\]\$/[${STABLE}-updates-${ARCH}]/" -i /etc/schroot/chroot.d/${STABLE}-updates-${ARCH}
 
 === 4. Generate builder keys ===
 Note: The rng-tools and urandom may help if you don't have enough entropy
