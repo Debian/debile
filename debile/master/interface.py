@@ -334,3 +334,33 @@ class DebileMasterInterface(object):
             job.builder = None
             job.assigned_at = None
             job.finished_at = None
+
+
+    @user_method
+    def add_check(self, check, group, *args):
+        is_source = True if 'source' in args else False
+        is_binary = True if 'binary' in args else False
+        is_build = True if 'build' in args else False
+
+        group_query = NAMESPACE.session.query(Group).filter_by(name=group)
+
+        if group_query.count() == 0:
+            raise ValueError('No group named %s' % group)
+
+        group = group_query.one()
+        checks = list()
+
+        if (NAMESPACE.session.query(GroupSuite)
+            .filter_by(group=group)
+            .join(GroupSuite.checks)
+            .filter(Check.name == check)
+            .count() > 0):
+            raise ValueError('Check %s already setup' % check)
+
+        for gs in NAMESPACE.session.query(GroupSuite).filter_by(group=group).all():
+            check = Check(name=check, source=is_source, binary=is_binary, build=is_build)
+            NAMESPACE.session.add(check)
+            gs.checks.append(check)
+            checks.append(check.debilize())
+
+        return checks

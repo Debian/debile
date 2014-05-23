@@ -160,6 +160,13 @@ def _retry_failed(proxy):
 
     print(proxy.retry_failed())
 
+def _add_check(proxy, check, group, *args):
+    """
+    Add a check to the database:
+        debile-remote add-check <check-name> <group> [source] [binary] [build]
+    """
+    print(proxy.add_check(check, group, *args))
+
 
 def _help():
     print("Commands:")
@@ -177,6 +184,7 @@ COMMANDS = {
     "rerun-job": _rerun_job,
     "rerun-check": _rerun_check,
     "retry-failed": _retry_failed,
+    "add-check": _add_check,
 }
 
 
