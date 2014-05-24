@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from debile.utils.commands import run_command
+from debile.utils.commands import safe_run
 import dput
 
 from contextlib import contextmanager
@@ -74,30 +74,12 @@ def cd(where):
 
 def sign(changes, gpg):
     if changes.endswith(".dud"):
-        out, err, ret = run_command(['gpg', '-u', gpg, '--clearsign', changes])
-        if ret != 0:
-            print(out)
-            print(err)
-            raise Exception("bad clearsign")
-        os.unlink(changes)
+        safe_run(['gpg', '-u', gpg, '--clearsign', changes])
         os.rename("%s.asc" % (changes), changes)
-        return
     else:
-        out, err, ret = run_command(['debsign', '-k%s' % (gpg), changes])
-        if ret != 0:
-            print(out)
-            print(err)
-            raise Exception("bad debsign")
-        return
+        safe_run(['debsign', '-k', gpg, changes])
 
 
 def upload(changes, job, gpg, host):
     sign(changes, gpg)
-    for retry in range(1, 5):
-        try:
-            return dput.upload(changes, host)
-        except:
-            if retry >= 5:
-                raise
-            logging.getLogger('debile').error("Error while uploading %s" % changes, exc_info=True)
-            time.sleep(60)
+    dput.upload(changes, host)
