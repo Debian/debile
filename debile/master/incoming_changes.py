@@ -211,7 +211,7 @@ def accept_binary_changes(default_group, config, session, changes, builder):
         if '/' in entry['section']:
             component, section = entry['section'].split('/', 1)
             directory = PATH.sub("/pool/%s/" % component, directory)
-        arch = ARCH.match(entry['name']).get('arch')
+        arch = ARCH.match(entry['name']).groupdict().get('arch')
         if arch not in binaries:
             return reject_changes(session, changes, "bad-architecture-of-file")
         deb = Deb(binary=binaries[arch], directory=directory, filename=entry['name'])
