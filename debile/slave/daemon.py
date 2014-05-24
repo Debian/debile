@@ -140,7 +140,7 @@ def workon(proxy, suites, components, arches, capabilities):
                 except:
                     if shutdown_request:
                         raise
-                    logger.error("Error while reporting forfeiture to the master", exc_info=True)
+                    logger.error("Error while reporting forfeiture to the master", exc_info=sys.exc_info())
                     time.sleep(60)
         except (SystemExit, KeyboardInterrupt):
             logger.info("Forfeiting the job because of shutdown request")
@@ -156,14 +156,14 @@ def workon(proxy, suites, components, arches, capabilities):
                 except (SystemExit, KeyboardInterrupt):
                     raise
                 except:
-                    logger.error("Error while reporting success to the master", exc_info=True)
+                    logger.error("Error while reporting success to the master", exc_info=sys.exc_info())
                     time.sleep(60)
         except (SystemExit, KeyboardInterrupt):
             try:
                 # One last ditch attempt before exiting
                 proxy.close_job(job['id'], job['failed'])
             except:
-                logger.error("Error while reporting success to the master", exc_info=True)
+                logger.error("Error while reporting success to the master", exc_info=sys.exc_info())
             raise
 
 

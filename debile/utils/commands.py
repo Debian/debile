@@ -37,6 +37,9 @@ class SubprocessError(Exception):
         self.ret = ret
         self.cmd = cmd
 
+    def __str__(self):
+        return "%s: %d" % (str(self.cmd), self.ret)
+
 
 # Input may be a byte string, a unicode string, or a file-like object
 def run_command(command, input=None):
