@@ -160,12 +160,20 @@ def _retry_failed(proxy):
 
     print(proxy.retry_failed())
 
-def _add_check(proxy, check, group, *args):
+def _set_check(proxy, check, *args):
     """
-    Add a check to the database:
-        debile-remote add-check <check-name> <group> [source] [binary] [build]
+    Add a check to the database or configure an existing one:
+        debile-remote set-check <check-name> [source] [binary] [build]
     """
-    print(proxy.add_check(check, group, *args))
+    print(proxy.set_check(check, *args))
+
+def _enable_check(proxy, check, group, suite):
+    """
+    Enable a check for a given group/suite
+        debile-remote enable-check <check> <group> <suite>
+    """
+    print(proxy.enable_check(check, group, suite))
+
 
 
 def _help():
@@ -184,7 +192,9 @@ COMMANDS = {
     "rerun-job": _rerun_job,
     "rerun-check": _rerun_check,
     "retry-failed": _retry_failed,
-    "add-check": _add_check,
+    "enable-check": _enable_check,
+    "set-check": _set_check,
+
 }
 
 

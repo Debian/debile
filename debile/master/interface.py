@@ -337,30 +337,51 @@ class DebileMasterInterface(object):
 
 
     @user_method
-    def add_check(self, check, group, *args):
+    def set_check(self, check, *args):
         is_source = True if 'source' in args else False
         is_binary = True if 'binary' in args else False
         is_build = True if 'build' in args else False
 
+        check_query = NAMESPACE.session.query(Check).filter_by(name=check)
+        if check_query.count() > 0:
+            check = check_query.one()
+        else:
+            check = Check(name=check)
+
+        check.source = is_source
+        check.binary = is_binary
+        check.build = is_build
+        NAMESPACE.session.add(check)
+        return check.debilize()
+
+
+    @user_method
+    def enable_check(self, check, group, suite):
+        suite_query = NAMESPACE.session.query(Suite).filter_by(name=suite)
         group_query = NAMESPACE.session.query(Group).filter_by(name=group)
 
         if group_query.count() == 0:
             raise ValueError('No group named %s' % group)
 
-        group = group_query.one()
-        checks = list()
+        if suite_query.count() == 0:
+            raise ValueError('No suite name %s' % suite)
 
-        if (NAMESPACE.session.query(GroupSuite)
-            .filter_by(group=group)
+        gs_query = NAMESPACE.session.query(GroupSuite).\
+                   filter_by(group=group_query.one(), suite=suite_query.one())
+
+        if (gs_query
             .join(GroupSuite.checks)
             .filter(Check.name == check)
             .count() > 0):
-            raise ValueError('Check %s already setup' % check)
+            raise ValueError('Check %s already setup for %s/%s' % (check,
+                                                                   group,
+                                                                   suite))
 
-        for gs in NAMESPACE.session.query(GroupSuite).filter_by(group=group).all():
-            check = Check(name=check, source=is_source, binary=is_binary, build=is_build)
-            NAMESPACE.session.add(check)
-            gs.checks.append(check)
-            checks.append(check.debilize())
+        check_query = NAMESPACE.session.query(Check).filter_by(name=check)
+        if check_query.count() == 0:
+            raise ValueError('Check %s does not exist' % check)
 
-        return checks
+        gs = gs_query.one()
+        gs.checks.append(check_query.one())
+        return 'Check %s added to %s.' % (check, gs)
+
