@@ -385,3 +385,9 @@ class DebileMasterInterface(object):
         gs.checks.append(check_query.one())
         return 'Check %s added to %s.' % (check, gs)
 
+    @user_method
+    def list_checks(self, *args):
+        # FIXME: return an user-friendly table
+        # FIXME: list groups/suites the checks are enabled for
+        checks_query = NAMESPACE.session.query(Check)
+        return [c.debilize() for c in checks_query.all()]
