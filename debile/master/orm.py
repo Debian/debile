@@ -936,4 +936,5 @@ def create_jobs(source, dose_report=None):
 
     for job in source.jobs:
         # Fake the assigned_count to prioritize build jobs an production suites slightly.
-        job.assigned_count = (4 if job.source.suite.name in ["staging", "sid", "experimental"] else 0) + (8 if not job.check.build else 0)
+        job.assigned_count = ((4 if job.source.suite.name in ["staging", "sid", "experimental"] else 0) +
+                              (8 if not job.check.build else 0))

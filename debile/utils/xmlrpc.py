@@ -28,6 +28,7 @@ import ssl
 import os.path
 import os
 
+
 def get_host_list(cert):
     if 'subjectAltName' in cert:
         return [x[1] for x in cert['subjectAltName'] if x[0] == 'DNS']

@@ -28,8 +28,6 @@ import tempfile
 import shutil
 import sys
 import os
-import logging
-import time
 
 
 def upgrade(chroot):

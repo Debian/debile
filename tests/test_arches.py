@@ -1,5 +1,6 @@
 from debile.master.arches import get_preferred_affinity, get_source_arches
 
+
 class FnordArch(object):
     def __init__(self, name):
         self.name = name
@@ -48,6 +49,7 @@ def test_affinity_secondary():
     )
     assert arch.name == 'sparc'
 
+
 def test_affinity_any():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
@@ -55,6 +57,7 @@ def test_affinity_any():
         valid_arches
     )
     assert arch.name == 'amd64'
+
 
 def test_affinity_linux_any():
     arch = get_preferred_affinity(
@@ -64,6 +67,7 @@ def test_affinity_linux_any():
     )
     assert arch.name == 'amd64'
 
+
 def test_affinity_any_arm():
     arch = get_preferred_affinity(
         ['amd64', 'sparc', 'armhf'],
@@ -71,6 +75,7 @@ def test_affinity_any_arm():
         valid_arches
     )
     assert arch.name == 'armhf'
+
 
 def test_affinity_fail():
     try:
@@ -102,6 +107,7 @@ def test_kfreebsd_arches():
             'kfreebsd-i386', 'kfreebsd-amd64', 'armhf'
         ], valid_arches)
     ])
+
 
 def test_hurd_arches():
     assert set([

@@ -160,6 +160,7 @@ def _retry_failed(proxy):
 
     print(proxy.retry_failed())
 
+
 def _set_check(proxy, check, *args):
     """
     Add a check to the database or configure an existing one:
@@ -167,12 +168,14 @@ def _set_check(proxy, check, *args):
     """
     print(proxy.set_check(check, *args))
 
+
 def _enable_check(proxy, check, group, suite):
     """
     Enable a check for a given group/suite
         debile-remote enable-check <check> <group> <suite>
     """
     print(proxy.enable_check(check, group, suite))
+
 
 def _list_checks(proxy, *args):
     """

@@ -24,7 +24,7 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Check,
 from debile.master.keyrings import import_pgp, import_ssl, clean_ssl_keyring
 from debile.master.utils import emit
 
-from sqlalchemy.sql import func, select, asc, case
+from sqlalchemy.sql import func, select, asc
 from debian.debian_support import Version
 from datetime import datetime, timedelta
 
@@ -110,7 +110,7 @@ class DebileMasterInterface(object):
             return None
 
         arches = [x for x in arches if x not in ["source", "all"]]
-        job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).join(GroupSuite.suite).filter(
+        job = NAMESPACE.session.query(Job).join(Job.check).join(Job.source).join(Source.group_suite).filter(
             ~Job.depedencies.any(),
             Job.dose_report == None,
             Job.assigned_at == None,
@@ -338,7 +338,6 @@ class DebileMasterInterface(object):
             job.assigned_at = None
             job.finished_at = None
 
-
     @user_method
     def set_check(self, check, *args):
         is_source = True if 'source' in args else False
@@ -357,7 +356,6 @@ class DebileMasterInterface(object):
         NAMESPACE.session.add(check)
         return check.debilize()
 
-
     @user_method
     def enable_check(self, check, group, suite):
         suite_query = NAMESPACE.session.query(Suite).filter_by(name=suite)
@@ -369,16 +367,17 @@ class DebileMasterInterface(object):
         if suite_query.count() == 0:
             raise ValueError('No suite name %s' % suite)
 
-        gs_query = NAMESPACE.session.query(GroupSuite).\
-                   filter_by(group=group_query.one(), suite=suite_query.one())
+        gs_query = NAMESPACE.session.query(GroupSuite).filter_by(
+            group=group_query.one(),
+            suite=suite_query.one(),
+        )
 
         if (gs_query
-            .join(GroupSuite.checks)
-            .filter(Check.name == check)
-            .count() > 0):
-            raise ValueError('Check %s already setup for %s/%s' % (check,
-                                                                   group,
-                                                                   suite))
+                .join(GroupSuite.checks)
+                .filter(Check.name == check)
+                .count() > 0):
+            raise ValueError('Check %s already setup for %s/%s' %
+                             (check, group, suite))
 
         check_query = NAMESPACE.session.query(Check).filter_by(name=check)
         if check_query.count() == 0:

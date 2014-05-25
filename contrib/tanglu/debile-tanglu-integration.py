@@ -31,7 +31,7 @@ from sqlalchemy.sql import exists
 
 from debile.utils.deb822 import Dsc
 from debile.master.utils import init_master, session, emit
-from debile.master.orm import (Base, Person, Suite, Component, Arch, Check, Group,
+from debile.master.orm import (Person, Suite, Component, Arch, Check, Group,
                                GroupSuite, Source, Binary, Deb, Job, Result,
                                create_source, create_jobs)
 
@@ -120,7 +120,9 @@ class ArchiveDebileBridge:
         arches = session.query(Arch).filter(Arch.name.in_(pkg.installed_archs)).all()
 
         if arch_all in source.arches and arch_all not in arches and source.affinity in arches:
-            if not session.query(exists().where((Job.source == source) & (Job.arch == arch_all) & Job.check.has(Check.build == True))).scalar():
+            if not session.query(exists().where((Job.source == source) &
+                                                (Job.arch == arch_all) &
+                                                Job.check.has(Check.build == True))).scalar():
                 # We have the arch:affinity binary but is still lacking the arch:all binary
                 # Make sure debile builds the arch:all binary separately
                 check = session.query(Check).filter(Check.build == True).one()
@@ -234,18 +236,23 @@ class ArchiveDebileBridge:
                         dose_report = "Unknown problem"
                         for reason in report["reasons"]:
                             if "missing" in reason:
-                                dose_report = "Unsat dependency %s" % (reason["missing"]["pkg"]["unsat-dependency"])
+                                dose_report = ("Unsat dependency %s" %
+                                               (reason["missing"]["pkg"]["unsat-dependency"]))
                                 break
                             elif "conflict" in reason:
-                                dose_report = "Conflict between %s and %s" % (reason["conflict"]["pkg1"]["package"], reason["conflict"]["pkg2"]["package"])
+                                dose_report = ("Conflict between %s and %s" %
+                                               (reason["conflict"]["pkg1"]["package"],
+                                                reason["conflict"]["pkg2"]["package"]))
                                 break
                         if job.dose_report != dose_report:
                             job.dose_report = dose_report
                     elif job.dose_report != None:
                         job.dose_report = None
-                        print("Unblocked job %s (%s) %s" % (job.source.name, job.source.version, job.name))
+                        print("Unblocked job %s (%s) %s" %
+                              (job.source.name, job.source.version, job.name))
                 except Exception as ex:
-                    print("Skipping %s (%s) %s due to error: %s" % (job.source.name, job.source.version, job.name, str(ex)))
+                    print("Skipping %s (%s) %s due to error: %s" %
+                          (job.source.name, job.source.version, job.name, str(ex)))
 
     def prune_pkgs(self, suite):
         base_suite = self._conf.get_base_suite(suite)

@@ -92,7 +92,7 @@ def clanganalyzer(package, suite, arch, analysis):
         # WARN : if the previous run did not delete the folder, this will fail
         # worst, if we run several instances of virtual builders, this will
         # fail because by default /tmp is a bind mount from the physical server
-        reports_dir = glob.glob(internal_report_dir+'*')
+        reports_dir = glob.glob(internal_report_dir + '*')
 
         ### SCANDALOUS HACK !!
         return analysis, out, reports_dir, None
