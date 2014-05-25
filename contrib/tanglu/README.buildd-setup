@@ -153,7 +153,7 @@ xmlrpc:
 gpg: GPGKEY_FINGERPRINT
 
 sbuild:
-    maintainer: tanglu-changes@lists.tanglu.org
+    maintainer: ELEMENT_NAME@buildd.tanglu.org
 
 dput:
     host: tanglu
