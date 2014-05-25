@@ -87,7 +87,7 @@ def ensure_chroot_sanity(chroot_name):
     raise ValueError("No such schroot (%s) found." % (chroot_name))
 
 
-def sbuild(package, suite, affinity, build_arch, build_indep, analysis):
+def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analysis):
     chroot_name = "{suite}-{affinity}".format(suite=suite, affinity=affinity)
 
     ensure_chroot_sanity(chroot_name)
@@ -104,6 +104,8 @@ def sbuild(package, suite, affinity, build_arch, build_indep, analysis):
         sbuild_cmd += ["-A"]
         if not build_arch:
             sbuild_cmd += ["--debbuildopt=-A"]
+    if maintainer:
+        sbuild_cmd += ["--maintainer={maintainer}".format(maintainer=maintainer)]
     sbuild_cmd += [package]
 
     out, err, ret = run_command(sbuild_cmd)

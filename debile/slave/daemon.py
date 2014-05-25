@@ -184,6 +184,7 @@ def run_job(config, job):
         "group": group,
         "source": source,
         "binary": binary,
+        "config": config,
     }
 
     with checkout(package) as target:
