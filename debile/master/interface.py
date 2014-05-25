@@ -26,7 +26,7 @@ from debile.master.utils import emit
 
 from sqlalchemy.sql import func, select, asc, case
 from debian.debian_support import Version
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import threading
 import logging
@@ -316,9 +316,12 @@ class DebileMasterInterface(object):
 
     @user_method
     def retry_failed(self):
+        cutoff = datetime.utcnow() - timedelta(hours=1)
         jobs = NAMESPACE.session.query(Job).filter(
             ~Job.built_binaries.any(),
             Job.check.has(Check.build == True),
+            Job.finished_at != None,
+            Job.finished_at < cutoff,
         )
 
         for job in jobs:
