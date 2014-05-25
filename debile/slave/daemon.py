@@ -30,6 +30,7 @@ from email.utils import formatdate
 from firehose.model import (Analysis, Generator, Metadata,
                             DebianBinary, DebianSource)
 
+import sys
 import signal
 import logging
 import time
