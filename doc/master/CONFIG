@@ -120,6 +120,7 @@ distributions (do not forget to set SignWith to the key you generated earlier) :
               Version: 1.0
               Architectures: i386 amd64 armhf source
               Components: main
+              UDebComponents: main
               Description: Debile
               SignWith: 0x2BF6C8EE
               Contents: . .gz .bz2
