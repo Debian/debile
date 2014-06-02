@@ -109,7 +109,7 @@ def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analys
         sbuild_cmd += ["--maintainer={maintainer}".format(maintainer=maintainer)]
 
     if clang:
-        sbuild_cmd += ["--chroot-setup-commands", "/usr/share/debile-slave/debile-slave-switch-to-clang"]
+        sbuild_cmd += ["--chroot-system-setup-commands", "/usr/share/debile-slave/debile-slave-switch-to-clang"]
 
     sbuild_cmd += [package]
 
