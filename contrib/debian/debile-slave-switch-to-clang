@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# Copyright (c) Sylvestre Ledru <sylvestre@debian.org>, 2013-2014 under the
+# terms and conditions of the Debile project, MIT/Expat. You should have
+# recieved a copy of the license with this script.
+#
+# Hack the system to make sure clang is used by default instead of gcc.
+# Same hack is used for http://clang.debian.net/
+
 set -x
 echo "Entering customization script..."
 
@@ -18,17 +26,6 @@ for VERSION in $VERSIONS; do
     echo "g++-$VERSION hold"|dpkg --set-selections
 done
 cd -
-
-#echo "Block the installation of new gcc version"
-#echo "gcc-4.6 hold"|dpkg --set-selections
-#echo "cpp-4.6 hold"|dpkg --set-selections
-#echo "g++-4.6 hold"|dpkg --set-selections
-#echo "gcc-4.7 hold"|dpkg --set-selections
-#echo "cpp-4.7 hold"|dpkg --set-selections
-#echo "g++-4.7 hold"|dpkg --set-selections
-#echo "gcc-4.8 hold"|dpkg --set-selections
-#echo "cpp-4.8 hold"|dpkg --set-selections
-#echo "g++-4.8 hold"|dpkg --set-selections
 
 echo "Check if gcc, g++ & cpp are actually clang"
 gcc --version|grep clang > /dev/null || exit 1
