@@ -1,0 +1,36 @@
+#!/bin/bash
+set -x
+echo "Entering customization script..."
+
+echo "Install of clang-3.4"
+apt-get update
+apt-get install --yes --no-install-recommends --force-yes clang-3.4
+
+echo "Replace gcc, g++ & cpp by clang"
+VERSIONS="4.6 4.7 4.8 4.9"
+cd /usr/bin
+for VERSION in $VERSIONS; do
+    rm -f g++-$VERSION gcc-$VERSION cpp-$VERSION
+    ln -s clang++ g++-$VERSION
+    ln -s clang gcc-$VERSION
+    ln -s clang cpp-$VERSION
+    echo "gcc-$VERSION hold"|dpkg --set-selections
+    echo "g++-$VERSION hold"|dpkg --set-selections
+done
+cd -
+
+#echo "Block the installation of new gcc version"
+#echo "gcc-4.6 hold"|dpkg --set-selections
+#echo "cpp-4.6 hold"|dpkg --set-selections
+#echo "g++-4.6 hold"|dpkg --set-selections
+#echo "gcc-4.7 hold"|dpkg --set-selections
+#echo "cpp-4.7 hold"|dpkg --set-selections
+#echo "g++-4.7 hold"|dpkg --set-selections
+#echo "gcc-4.8 hold"|dpkg --set-selections
+#echo "cpp-4.8 hold"|dpkg --set-selections
+#echo "g++-4.8 hold"|dpkg --set-selections
+
+echo "Check if gcc, g++ & cpp are actually clang"
+gcc --version|grep clang > /dev/null || exit 1
+cpp --version|grep clang > /dev/null || exit 1
+g++ --version|grep clang > /dev/null || exit 1
