@@ -87,7 +87,7 @@ def ensure_chroot_sanity(chroot_name):
     raise ValueError("No such schroot (%s) found." % (chroot_name))
 
 
-def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analysis):
+def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analysis, clang=False):
     chroot_name = "{suite}-{affinity}".format(suite=suite, affinity=affinity)
 
     ensure_chroot_sanity(chroot_name)
@@ -100,13 +100,19 @@ def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analys
                   "--arch={affinity}".format(affinity=affinity),
                   "--chroot={chroot_name}".format(chroot_name=chroot_name),
                   "--verbose"]
+
     if build_indep:
         sbuild_cmd += ["-A"]
         if not build_arch:
             sbuild_cmd += ["--debbuildopt=-A"]
     if maintainer:
         sbuild_cmd += ["--maintainer={maintainer}".format(maintainer=maintainer)]
+
+    if clang:
+        sbuild_cmd += ["--chroot-setup-commands", "/usr/share/debile-slave/debile-slave-switch-to-clang"]
+
     sbuild_cmd += [package]
+
 
     out, err, ret = run_command(sbuild_cmd)
 

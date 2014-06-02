@@ -24,6 +24,7 @@ import importlib
 
 PLUGINS = {
     "build": "debile.slave.commands.build",
+    "clang": "debile.slave.commands.clang",
     "clanganalyzer": "debile.slave.commands.clanganalyzer",
 
     "pep8": "debile.slave.commands.pep8",

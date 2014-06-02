@@ -1,3 +1,4 @@
 ./eg/etc/debile/slave.yaml             etc/debile
 contrib/debian/debile-slave-import-cred    usr/share/debile-slave/
 contrib/debian/debile-slave-import-conf    usr/share/debile-slave/
+contrib/debian/debile-slave-switch-to-clang usr/share/debile-slave/
