@@ -1,0 +1,228 @@
+Description: Allow sbuild to run a command in the chroot as root.
+Renames 'chroot-setup-commands' to 'chroot-user-setup-commands'
+Adds 'chroot-system-setup-commands' which runs as soon as the chroot
+is set-up, so before the 'update' phase and thus useul for adding
+repos. That command is run as root.
+The cleanup command is now run as root too.
+
+Adds some info to the sbuild man-page about which commands are run
+outside the chroot, which inside, which as root, which as build user.
+
+
+It also includes slightly half-arsed and not tested extra substitution
+tokens for hostarch and chrootpath so that these could be passed to
+commands.
+Forwarded: not-needed
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=608840
+Origin: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=608840#27
+Author: Wookey <wookey@wookware.org>Index: sbuild-0.64.1/lib/Sbuild/Build.pm
+===================================================================
+--- sbuild-0.64.1.orig/lib/Sbuild/Build.pm	2013-10-13 21:18:11.408926779 +0200
++++ sbuild-0.64.1/lib/Sbuild/Build.pm	2014-06-02 18:45:28.007242848 +0200
+@@ -505,6 +505,15 @@
+ 	my $session = $self->get('Session');
+ 	my $resolver = $self->get('Dependency Resolver');
+ 
++	# Run specified chroot setup commands
++	$self->check_abort();
++	$self->run_external_commands("chroot-system-setup-commands",
++				     $self->get_conf('LOG_EXTERNAL_COMMAND_OUTPUT'),
++				     $self->get_conf('LOG_EXTERNAL_COMMAND_ERROR'));
++
++	$self->check_abort();
++
++
+ 	$self->check_abort();
+ 	$resolver->setup();
+ 
+@@ -607,14 +616,14 @@
+ 	# Display message about chroot setup script option use being deprecated
+ 	if ($self->get_conf('CHROOT_SETUP_SCRIPT')) {
+ 	    my $msg = "setup-hook option is deprecated. It has been superceded by ";
+-	    $msg .= "the chroot-setup-commands feature. setup-hook script will be ";
+-	    $msg .= "run via chroot-setup-commands.\n";
++	    $msg .= "the chroot-user-setup-commands feature. setup-hook script will be ";
++	    $msg .= "run via chroot-user-setup-commands.\n";
+ 	    $self->log_warning($msg);
+ 	}
+ 
+ 	# Run specified chroot setup commands
+ 	$self->check_abort();
+-	$self->run_external_commands("chroot-setup-commands",
++	$self->run_external_commands("chroot-user-setup-commands",
+ 				     $self->get_conf('LOG_EXTERNAL_COMMAND_OUTPUT'),
+ 				     $self->get_conf('LOG_EXTERNAL_COMMAND_ERROR'));
+ 
+@@ -1000,6 +1009,7 @@
+     my $log_output = shift;
+     my $log_error = shift;
+     my $chroot = shift;
++    my $rootuser = shift;
+ 
+     # Used to determine if we are to log from commands
+     my ($out, $err, $defaults);
+@@ -1022,7 +1032,7 @@
+ 	    $err = $defaults->{'STREAMERR'} if ($log_error);
+ 	    $self->get('Session')->run_command(
+ 		{ COMMAND => \@{$command},
+-		    USER => $self->get_conf('BUILD_USER'),
++		    USER => ($rootuser ? 'root' : $self->get_conf('BUILD_USER')),
+ 		    PRIORITY => 0,
+ 		    STREAMOUT => $out,
+ 		    STREAMERR => $err,
+@@ -1053,13 +1063,18 @@
+     return 1 if !(@commands);
+ 
+     # Create appropriate log message and determine if the commands are to be
+-    # run inside the chroot or not.
++    # run inside the chroot or not, and as root or not.
+     my $chroot = 0;
++    my $rootuser = 1;  
+     if ($stage eq "pre-build-commands") {
+ 	$self->log_subsection("Pre Build Commands");
+-    } elsif ($stage eq "chroot-setup-commands") {
+-	$self->log_subsection("Chroot Setup Commands");
++    } elsif ($stage eq "chroot-system-setup-commands") {
++	$self->log_subsection("Chroot System Setup Commands");
++	$chroot = 1;
++    } elsif ($stage eq "chroot-user-setup-commands") {
++	$self->log_subsection("Chroot User Setup Commands");
+ 	$chroot = 1;
++        $rootuser = 0;
+     } elsif ($stage eq "chroot-cleanup-commands") {
+ 	$self->log_subsection("Chroot Cleanup Commands");
+ 	$chroot = 1;
+@@ -1070,12 +1085,16 @@
+     # Run each command, substituting the various percent escapes (like
+     # %SBUILD_DSC) from the commands to run with the appropriate subsitutions.
+     my $dsc = $self->get('DSC');
+-    my $changes;
++    my ($changes, $chrootpath, $hostarch);
+     $changes = $self->get('Changes File') if ($self->get('Changes File'));
++    $hostarch = $self->get('Host Arch') if ($self->get('Host Arch'));
++    $chrootpath = ""; # I can't see where to get the chroot path from. Fixme Roger!
+     my %percent = (
+ 	"%" => "%",
+ 	"d" => $dsc, "SBUILD_DSC" => $dsc,
+ 	"c" => $changes, "SBUILD_CHANGES" => $changes,
++	"p" => $chrootpath,
++	"a" => $hostarch,
+     );
+     # Our escapes pattern, with longer escapes first, then sorted lexically.
+     my $keyword_pat = join("|",
+@@ -1093,7 +1112,7 @@
+ 	}
+   my $command_str = join(" ", @{$command});
+ 	$self->log_subsubsection("$command_str");
+-	$returnval = $self->run_command($command, $log_output, $log_error, $chroot);
++	$returnval = $self->run_command($command, $log_output, $log_error, $chroot, $rootuser);
+ 	$self->log("\n");
+ 	if (!$returnval) {
+ 	    $self->log_error("Command '$command_str' failed to run.\n");
+Index: sbuild-0.64.1/lib/Sbuild/Conf.pm
+===================================================================
+--- sbuild-0.64.1.orig/lib/Sbuild/Conf.pm	2013-09-08 01:09:52.518687120 +0200
++++ sbuild-0.64.1/lib/Sbuild/Conf.pm	2014-06-02 18:45:28.007242848 +0200
+@@ -974,7 +974,8 @@
+ 	    GROUP => 'Chroot options',
+ 	    DEFAULT => {
+ 		"pre-build-commands" => [],
+-		"chroot-setup-commands" => [],
++		"chroot-system-setup-commands" => [],
++		"chroot-user-setup-commands" => [],
+ 		"chroot-cleanup-commands" => [],
+ 		"post-build-commands" => [],
+ 	    },
+@@ -985,7 +986,11 @@
+         [\'foo\', \'arg1\', \'arg2\'],
+         [\'bar\', \'arg1\', \'arg2\', \'arg3\'],
+     ],
+-    "chroot-setup-commands" => [
++    "chroot-system-setup-commands" => [
++        [\'foo\', \'arg1\', \'arg2\'],
++        [\'bar\', \'arg1\', \'arg2\', \'arg3\'],
++    ],
++    "chroot-user-setup-commands" => [
+         [\'foo\', \'arg1\', \'arg2\'],
+         [\'bar\', \'arg1\', \'arg2\', \'arg3\'],
+     ],
+@@ -1097,7 +1102,7 @@
+ END
+ 
+     my $custom_setup = <<END;
+-push(\@{\${\$conf->get('EXTERNAL_COMMANDS')}{"chroot-setup-commands"}},
++push(\@{\${\$conf->get('EXTERNAL_COMMANDS')}{"chroot-user-setup-commands"}},
+ \$chroot_setup_script) if (\$chroot_setup_script);
+ 
+     # Trigger log directory creation if needed
+Index: sbuild-0.64.1/lib/Sbuild/Options.pm
+===================================================================
+--- sbuild-0.64.1.orig/lib/Sbuild/Options.pm	2013-09-01 11:13:34.752946274 +0200
++++ sbuild-0.64.1/lib/Sbuild/Options.pm	2014-06-02 18:45:28.011242874 +0200
+@@ -195,7 +195,7 @@
+ 		       },
+ 		       "setup-hook=s" => sub {
+ 			my @command = split(/\s+/, $_[1]);
+-			push(@{${$self->get_conf('EXTERNAL_COMMANDS')}{"chroot-setup-commands"}},
++			push(@{${$self->get_conf('EXTERNAL_COMMANDS')}{"chroot-user-setup-commands"}},
+ 			\@command);
+ 			   $self->set_conf('CHROOT_SETUP_SCRIPT', $_[1]);
+ 		       },
+@@ -262,9 +262,14 @@
+ 			   push(@{${$self->get_conf('EXTERNAL_COMMANDS')}{"pre-build-commands"}},
+ 				\@command);
+ 		       },
+-			"chroot-setup-commands=s" => sub {
++			"chroot-system-setup-commands=s" => sub {
+ 			   my @command = split(/\s+/, $_[1]);
+-			   push(@{${$self->get_conf('EXTERNAL_COMMANDS')}{"chroot-setup-commands"}},
++			   push(@{${$self->get_conf('EXTERNAL_COMMANDS')}{"chroot-system-setup-commands"}},
++				\@command);
++		       },
++			"chroot-user-setup-commands=s" => sub {
++			   my @command = split(/\s+/, $_[1]);
++			   push(@{${$self->get_conf('EXTERNAL_COMMANDS')}{"chroot-user-setup-commands"}},
+ 				\@command);
+ 		       },
+ 			"chroot-cleanup-commands=s" => sub {
+Index: sbuild-0.64.1/man/sbuild.1.in
+===================================================================
+--- sbuild-0.64.1.orig/man/sbuild.1.in	2013-05-19 23:31:41.462003622 +0200
++++ sbuild-0.64.1/man/sbuild.1.in	2014-06-02 18:45:28.011242874 +0200
+@@ -67,7 +67,8 @@
+ .RB [ \-\-piuparts\-root\-arg=\fIoptions\fP ]
+ .RB [ \-\-piuparts\-root\-args=\fIoptions\fP ]
+ .RB [ \-\-pre\-build\-commands=\fIstring\fP ]
+-.RB [ \-\-chroot\-setup\-commands=\fIstring\fP ]
++.RB [ \-\-chroot\-system\-setup\-commands=\fIstring\fP ]
++.RB [ \-\-chroot\-user\-setup\-commands=\fIstring\fP ]
+ .RB [ \-\-chroot\-cleanup\-commands=\fIstring\fP ]
+ .RB [ \-\-post\-build\-commands=\fIstring\fP ]
+ .RB [ \-\-log\-external\-command\-output ]
+@@ -412,6 +413,26 @@
+ of commands to run are placed in a hash of arrays of arrays of strings
+ corresponding to the commands to run.
+ .PP
++The \fIpre/post-build-\fP commands are run external to the chroot. The
++\fIchroot\-setup\-\fP commands are run inside the chroot. They are all
++run as root except \fIchroot-system-setup-\fP commands, which is run as
++the current sbuild user.
++.PP
++Here is a summary of the ordering, user, internal/external, and point
++of running:
++.nf
++.br
++\f[CB]\-\-pre\-build\-commands            root  ext  After chroot session setup\fP
++.br
++\f[CB]\-\-chroot\-system\-setup\-commands  root  int  After chroot initialisation, before 'update'\fP
++.br
++\f[CB]\-\-chroot\-user\-setup\-commands    user  int  After update and dependency-install, before build\fP
++.br
++\f[CB]\-\-chroot\-cleanup\-commands       root  int  After build, before session is closed\fP
++.br
++\f[CB]\-\-post\-build\-commands           root  ext  After session is shut down\fP
++.fi
++.PP
+ Here's an example of how to edit the configuration files to run "foo" and "bar"
+ with arguments before a build starts.
+ .PP
