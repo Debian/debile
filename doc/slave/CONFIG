@@ -36,6 +36,14 @@ Install dput-ng::
         "method": "ftp"
     }
 
+/etc/sbuild/sbuild.conf::
+
+Allow parallel build:
+
+   $build_environment = {
+     'DEB_BUILD_OPTIONS' => 'parallel=8'
+   };
+
 - restart the slave daemon
 
 
