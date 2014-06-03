@@ -37,3 +37,16 @@ Install dput-ng::
     }
 
 - restart the slave daemon
+
+
+Clang command
+=============
+
+The clang check requires
+
+- that the script contrib/debian/debile-switch-to-clang is in
+/usr/share/debile-slave/ in the chroot
+
+- that sbuild has been patched with https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=608840#27
+
+clemux's patched sbuild and libsbuild-perl can be found on http://www.mux.me/debile/
