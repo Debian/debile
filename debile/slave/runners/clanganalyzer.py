@@ -27,8 +27,6 @@ import glob
 
 
 def clanganalyzer(package, suite, arch, analysis):
-    raise NotImplemented("Not ported")
-
     chroot_name = "%s-%s" % (suite, arch)
     with schroot(chroot_name) as chroot:
         # We should have the dsc file to bulid

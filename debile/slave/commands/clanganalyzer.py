@@ -20,17 +20,15 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.runners.clanganalyzer import clanganalyzer, version
-from debile.slave.core import config
-
 
 def run(dsc, package, job, firehose):
-    raise NotImplemented("Not ported yet")
-
     suite = job['suite']
     # clanganalyzer can only run on source packages
-    arch = config['capabilities']['all-arch']
+    arch = package['affinity']
 
-    return clanganalyzer(dsc, suite, arch, firehose)
+    firehose, out, ftbfs, changes = clanganalyzer(dsc, suite, arch, firehose)
+
+    return (firehose, out, ftbfs, changes)
 
 
 def get_version():
