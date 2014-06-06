@@ -58,3 +58,12 @@ The clang check requires
 - that sbuild has been patched with https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=608840#27
 
 clemux's patched sbuild and libsbuild-perl can be found on http://www.mux.me/debile/
+
+
+Clanganalyzer command
+=====================
+
+The clanganalyzer check requires that sbuild is patched with:
+ http://leo.cavaille.net/public/gsoc/sbuild-patches/0001-Added-support-for-schroot-sessions.patch
+
+clemux's patched sbuild and libsuild-perl can be found on http://www.mux.me/debile/
