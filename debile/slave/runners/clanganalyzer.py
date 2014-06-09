@@ -38,7 +38,11 @@ def clanganalyzer(package, suite, arch, analysis):
         # 1/ install clang
         # TODO: check the return codes
         out, err, ret = chroot.run([
-            'apt-get', 'install', '-y', 'clang', 'wget'
+            'apt-get', 'update'
+        ], user='root')
+
+        out, err, ret = chroot.run([
+            'apt-get', 'install', '-y', 'clang', 'wget', 'dpkg-dev',
         ], user='root')
 
         # 2/ fake dpkg-buildpackage in the schroot
