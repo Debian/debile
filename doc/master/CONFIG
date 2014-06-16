@@ -40,7 +40,7 @@ To create a self-signed certificate::
 
      # (you'll also need to copy master.crt to all slaves/users and set ca_certs: in slave.yaml/user.yaml)
      # the CN must match the 'host' value in user.yaml
-     $ sudo openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=debile.debian.net" -keyout /srv/debile/master.key -out /srv/debile/master.cr
+     $ sudo openssl req -utf8 -nodes -newkey rsa:4096 -sha256 -x509 -days 7300 -subj "/C=NT/O=Debian/CN=debile.debian.net" -keyout /srv/debile/master.key -out /srv/debile/master.crt
      # Set the correct permissions:
      $ sudo chmod go-rwx /srv/debile/*.key && sudo chown Debian-debile:Debian-debile /srv/debile/master.*
 
