@@ -32,7 +32,7 @@ function get-fingerprint {
 }
 
 function generate-ssl {
-    openssl req -x509 -nodes -newkey rsa:3072 -sha256 -keyout ${SLAVE_NAME}.key -out ${SLAVE_NAME}.crt -subj "/CN=${SLAVE_NAME}/O=Debian/C=NA"
+    openssl req -x509 -nodes -newkey rsa:3072 -sha256 -days 3000 -keyout ${SLAVE_NAME}.key -out ${SLAVE_NAME}.crt -subj "/CN=${SLAVE_NAME}/O=Debian/C=NA"
 }
 
 
