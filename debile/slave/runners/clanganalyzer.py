@@ -66,7 +66,7 @@ def clanganalyzer(package, suite, arch, analysis):
         out += out_
 
         # Create the script
-        fake_dpkg_url = "http://leo.cavaille.net/public/dpkg-buildpackage-html"
+        fake_dpkg_url = "http://www.mux.me/debile/dpkg-buildpackage-html"
         out_, err, ret = chroot.run([
             'wget', '-O', '/usr/bin/dpkg-buildpackage', fake_dpkg_url
         ], user='root')
