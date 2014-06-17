@@ -20,6 +20,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.utils.commands import run_command
+from debile.slave.wrappers.clanganalyzer import parse_scandir
+
 from schroot import schroot
 
 import os
@@ -94,10 +96,15 @@ def clanganalyzer(package, suite, arch, analysis):
         # WARN : if the previous run did not delete the folder, this will fail
         # worst, if we run several instances of virtual builders, this will
         # fail because by default /tmp is a bind mount from the physical server
-        reports_dir = glob.glob(internal_report_dir + '*')
+        reports_dir = glob.glob(internal_report_dir + '/*')
+
+        for dir in reports_dir:
+            for plist in parse_scandir(dir):
+                for issue in plist:
+                    analysis.results.append(issue)
 
         ### SCANDALOUS HACK !!
-        return analysis, out, reports_dir, None
+        return (analysis, out, reports_dir, None)
 
 
 def version():
