@@ -45,7 +45,7 @@ def findbugs(deb, analysis):
             ]:
                 failed = True
 
-        return (analysis, err, failed, None)
+        return (analysis, err, failed, None, None)
 
 
 def version():

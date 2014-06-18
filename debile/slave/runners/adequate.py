@@ -50,7 +50,7 @@ def adequate(chroot_name, target, package_name, analysis):
             failed = True
             analysis.results.append(issue)
 
-        return analysis, out, failed, None
+        return (analysis, out, failed, None, None)
 
 
 def version():

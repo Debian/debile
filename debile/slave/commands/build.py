@@ -41,7 +41,7 @@ def run(dsc, package, job, firehose):
     else:
         changes = None
 
-    return (firehose, out, ftbfs, changes)
+    return (firehose, out, ftbfs, changes, None)
 
 
 def get_version():

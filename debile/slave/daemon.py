@@ -34,6 +34,8 @@ import sys
 import signal
 import logging
 import time
+import os.path
+import shutil
 
 
 shutdown_request = False
@@ -191,7 +193,7 @@ def run_job(config, job):
         run, version = load_module(job['check'])
         firehose = create_firehose(package, version)
 
-        firehose, log, failed, changes = run(
+        firehose, log, failed, changes, files = run(
             target, package, job, firehose)
 
         datestr = formatdate()
@@ -238,6 +240,11 @@ def run_job(config, job):
         with open('{prefix}.log'.format(prefix=prefix), 'wb') as fd:
             fd.write(log.encode('utf-8'))
         dud.add_file('{prefix}.log'.format(prefix=prefix))
+
+        if files is not None:
+            for f in files:
+                shutil.copyfile(f, os.path.basename(f))
+                dud.add_file(os.path.basename(f))
 
         dudf = "{prefix}.dud".format(prefix=prefix)
         with open(dudf, 'w') as fd:

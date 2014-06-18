@@ -39,7 +39,7 @@ def lintian(targets, analysis, lintian_binary='lintian'):
                 failed = True
         log += out
 
-    return (analysis, log, failed, None)
+    return (analysis, log, failed, None, None)
 
 
 def version(lintian_binary='lintian'):

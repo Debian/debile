@@ -60,7 +60,7 @@ def coccinelle(dsc, analysis):
             log += "DEAL patch %s\n" % semantic_patch
             log += "  %d results\n" % result_count
 
-    return (analysis, log, failed, None)
+    return (analysis, log, failed, None, None)
 
 
 def version():

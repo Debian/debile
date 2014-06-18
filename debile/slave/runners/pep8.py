@@ -33,7 +33,7 @@ def pep8(dsc, analysis):
         for issue in parse_pep8(out.splitlines()):
             analysis.results.append(issue)
 
-        return (analysis, out, failed, None)
+        return (analysis, out, failed, None, None)
 
 
 def version():
