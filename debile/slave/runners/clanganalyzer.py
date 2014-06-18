@@ -56,6 +56,11 @@ def clanganalyzer(package, suite, arch, analysis):
         ], user='root')
         out += out_
 
+        # TODO: use tempfile to create a unique temporary directory
+        # this would allow running several instances of debile-slave
+        # at once
+        # difficulty: the directory must stil exist when debile-slave
+        # uploads the files to the master
         internal_report_dir = "/tmp/scan-build/"
         # clean up internal report dir
         out_, err, ret = chroot.run([
