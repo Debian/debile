@@ -111,7 +111,8 @@ def clanganalyzer(package, suite, arch, analysis):
         ### SCANDALOUS HACK !!
         files = list()
         for dir in reports_dir:
-            for f in glob.glob(dir + '/*.html'):
+            for f in glob.glob(dir + '/*.html') + glob.glob(dir + '/*.js') \
+                                                + glob.glob(dir + '/*.css'):
                 files.append(f)
 
         return (analysis, out, reports_dir, None, files)
