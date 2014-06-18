@@ -26,9 +26,9 @@ def run(dsc, package, job, firehose):
     # clanganalyzer can only run on source packages
     arch = package['affinity']
 
-    firehose, out, ftbfs, changes = clanganalyzer(dsc, suite, arch, firehose)
+    firehose, out, ftbfs, changes, files = clanganalyzer(dsc, suite, arch, firehose)
 
-    return (firehose, out, ftbfs, changes)
+    return (firehose, out, ftbfs, changes, files)
 
 
 def get_version():

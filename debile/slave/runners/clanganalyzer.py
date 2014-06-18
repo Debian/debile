@@ -104,7 +104,12 @@ def clanganalyzer(package, suite, arch, analysis):
                     analysis.results.append(issue)
 
         ### SCANDALOUS HACK !!
-        return (analysis, out, reports_dir, None)
+        files = list()
+        for dir in reports_dir:
+            for f in glob.glob(dir + '/*.html'):
+                files.append(f)
+
+        return (analysis, out, reports_dir, None, files)
 
 
 def version():
