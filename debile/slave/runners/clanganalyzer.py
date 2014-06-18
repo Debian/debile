@@ -57,6 +57,11 @@ def clanganalyzer(package, suite, arch, analysis):
         out += out_
 
         internal_report_dir = "/tmp/scan-build/"
+        # clean up internal report dir
+        out_, err, ret = chroot.run([
+            'rm', '-rf', internal_report_dir
+        ], user='root')
+
         # We will output the scan-build plist reports there
         out_, err, ret = chroot.run([
             'mkdir', '-p', internal_report_dir
