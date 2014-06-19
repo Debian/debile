@@ -150,7 +150,7 @@ def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analys
     base, _ = os.path.basename(package).rsplit(".", 1)
     changes = glob.glob("{base}_*.changes".format(base=base))
 
-    return (analysis, out, ftbfs, changes, None)
+    return (analysis, out, ftbfs, changes)
 
 
 def version():
