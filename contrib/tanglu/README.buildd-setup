@@ -7,8 +7,8 @@ On a newly installed Debian 8 ("jessie") or Tanglu 2 ("bartholomea") machine, in
     python-dput python-debian python-requests python-yaml python-schroot python-sqlalchemy python-virtualenv
 
 If you are using Debian, manually install the Tanglu version of debootstrap, lintian and the Tanglu Archive Keyring:
- wget http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.59tanglu1_all.deb \
-    http://archive.tanglu.org/tanglu/pool/main/l/lintian/lintian_2.5.22.1tanglu1_all.deb \
+ wget http://archive.tanglu.org/tanglu/pool/main/d/debootstrap/debootstrap_1.0.60tanglu1_all.deb \
+    http://archive.tanglu.org/tanglu/pool/main/l/lintian/lintian_2.5.23.1tanglu1_all.deb \
     http://archive.tanglu.org/tanglu/pool/main/t/tanglu-archive-keyring/tanglu-archive-keyring_2013.02_all.deb
  dpkg -i debootstrap_*tanglu*_all.deb lintian_*tanglu*_all.deb tanglu-archive-keyring_*_all.deb
  apt-get install -f
