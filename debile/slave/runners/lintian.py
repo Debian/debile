@@ -35,7 +35,7 @@ def lintian(targets, analysis, lintian_binary='lintian'):
                                      "--show-overrides", target])
         for issue in parse_lintian(out.splitlines(), target):
             analysis.results.append(issue)
-            if issue.severity in ['warning', 'error']:
+            if issue.severity == 'error':
                 failed = True
         log += out
 
