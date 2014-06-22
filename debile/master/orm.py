@@ -480,14 +480,14 @@ class Binary(Base):
 
     source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"), nullable=False)
     source = relationship("Source", foreign_keys=[source_id],
-                          backref=backref("binaries", passive_deletes=True,
+                          backref=backref("binaries", order_by=id, passive_deletes=True,
                                           cascade="save-update, merge, delete"))
 
     build_job_id = Column(Integer, ForeignKey('jobs.id', ondelete="SET NULL",
                                               name='fk_build_job_id', use_alter=True),
                           nullable=True, default=None)
     build_job = relationship("Job", foreign_keys=[build_job_id],
-                             backref=backref("built_binaries", passive_deletes=True))
+                             backref=backref("built_binaries", order_by=id, passive_deletes=True))
 
     @hybrid_property
     def group_suite(self):
@@ -641,13 +641,13 @@ class Job(Base):
 
     source_id = Column(Integer, ForeignKey('sources.id', ondelete="CASCADE"), nullable=False)
     source = relationship("Source", foreign_keys=[source_id],
-                          backref=backref("jobs", passive_deletes=True,
+                          backref=backref("jobs", order_by=id, passive_deletes=True,
                                           cascade="save-update, merge, delete"))
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete="CASCADE"),
                        nullable=True, default=None)
     binary = relationship("Binary", foreign_keys=[binary_id],
-                          backref=backref("jobs", passive_deletes=True,
+                          backref=backref("jobs", order_by=id, passive_deletes=True,
                                           cascade="save-update, merge, delete"))
 
     builder_id = Column(Integer, ForeignKey('builders.id', ondelete="RESTRICT"),
@@ -750,7 +750,7 @@ class Result(Base):
 
     job_id = Column(Integer, ForeignKey('jobs.id', ondelete="CASCADE"), nullable=False)
     job = relationship("Job", foreign_keys=[job_id],
-                       backref=backref("results", passive_deletes=True,
+                       backref=backref("results", order_by=id, passive_deletes=True,
                                        cascade="save-update, merge, delete"))
 
     @hybrid_property
