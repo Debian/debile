@@ -105,10 +105,13 @@ class ArchiveDebileBridge:
             if version_compare(oldsource.version, source.version) >= 0:
                 continue
             for job in oldsource.jobs:
-                if (not any(job.results) and not any(job.built_binaries)):
+                if (job.check.build and not any(job.built_binaries)) or not any(job.results):
                     session.delete(job)
                 elif job.failed is None:
-                    job.failed = True
+                    job.failed = any(result.failed for result in job.results)
+                    job.builder = None
+                    job.assigned_at = None
+                    job.finished_at = None
             if not any(job.check.build for job in oldsource.jobs):
                 session.delete(oldsource)
 
