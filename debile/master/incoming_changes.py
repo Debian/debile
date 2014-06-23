@@ -33,11 +33,17 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Group,
 
 
 def process_changes(default_group, config, session, path):
-    changes = Changes(path)
     try:
+        changes = Changes(path)
         changes.validate()
-    except ChangesFileException:
-        return reject_changes(session, changes, "invalid-upload")
+    except Exception:
+        print "SKIP: Invavalid changes file {path}".format(tag=path)
+        return
+
+    try:
+        fingerprint = changes.validate_signature(config['keyrings']['pgp'])
+    except ChangesFileException as e:
+        return reject_changes(session, changes, "invalid-signature: " + e.message)
 
     group = changes.get('X-Debile-Group', default_group)
     try:
@@ -46,11 +52,6 @@ def process_changes(default_group, config, session, path):
         return reject_changes(session, changes, "internal-error")
     except NoResultFound:
         return reject_changes(session, changes, "invalid-group")
-
-    try:
-        fingerprint = changes.validate_signature(config['keyrings']['pgp'])
-    except ChangesFileException as e:
-        return reject_changes(session, changes, "invalid-signature: " + e.message)
 
     #### Sourceful Uploads
     if changes.is_source_only_upload():

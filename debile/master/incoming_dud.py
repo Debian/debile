@@ -30,15 +30,12 @@ from debile.master.orm import Builder, Job
 
 
 def process_dud(config, session, path):
-    dud = Dud(path)
-    jid = dud.get("X-Debile-Job", None)
-    if jid is None:
-        return reject_dud(session, dud, "missing-dud-job")
-
     try:
+        dud = Dud(path)
         dud.validate()
-    except DudFileException:
-        return reject_dud(session, dud, "invalid-dud-upload")
+    except Exception:
+        print "SKIP: Invavalid dud file {path}".format(tag=path)
+        return
 
     try:
         fingerprint = dud.validate_signature(config['keyrings']['pgp'])
@@ -49,6 +46,10 @@ def process_dud(config, session, path):
         builder = session.query(Builder).filter_by(pgp=fingerprint).one()
     except NoResultFound:
         return reject_dud(session, dud, "invalid-dud-builder")
+
+    jid = dud.get("X-Debile-Job", None)
+    if jid is None:
+        return reject_dud(session, dud, "missing-dud-job")
 
     job = session.query(Job).get(jid)
     if job is None:
@@ -68,12 +69,6 @@ def reject_dud(session, dud, tag):
 
     print "REJECT: {source} because {tag}".format(
         tag=tag, source=dud['Source'])
-
-    e = None
-    try:
-        dud.validate()
-    except DudFileException as e:
-        print e
 
     emit('reject', 'result', {
         "tag": tag,
