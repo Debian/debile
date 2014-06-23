@@ -912,11 +912,6 @@ def create_jobs(source, dose_report=None):
                 builds[arch] = j
                 source.jobs.append(j)
 
-    if arch_indep and arch_indep in builds:
-        for arch, job in builds.iteritems():
-            if arch != arch_indep:
-                job.depedencies.append(builds[arch_indep])
-
     for check in source.group_suite.get_binary_checks():
         for arch in source.arches:
             deps = []
