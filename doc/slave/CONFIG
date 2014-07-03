@@ -47,8 +47,8 @@ Allow parallel build:
 - restart the slave daemon
 
 
-Clang command
-=============
+Clang check
+===========
 
 The clang check requires
 
@@ -60,10 +60,27 @@ The clang check requires
 clemux's patched sbuild and libsbuild-perl can be found on http://www.mux.me/debile/
 
 
-Clanganalyzer command
-=====================
+Clanganalyzer check
+===================
 
 The clanganalyzer check requires that sbuild is patched with:
  http://leo.cavaille.net/public/gsoc/sbuild-patches/0001-Added-support-for-schroot-sessions.patch
 
 clemux's patched sbuild and libsuild-perl can be found on http://www.mux.me/debile/
+
+Honorcxx check
+==============
+
+This check needs a chroot named <dist>-<arc>-honorcxx, configured like this:
+  
+  [unstable-amd64-honorcxx]
+  type=file
+  description=Debian unstable/amd64 autobuilder, for debile's honorcxx check
+  file=/srv/debile/debile/tarballs/unstable-amd64.tar.gz
+  groups=root,sbuild
+  root-groups=root,sbuild
+  command-prefix=/usr/bin/env,CC=fake-compiler,CXX=fake-compiler`
+
+That is, the same configuration than regular debile-slave chroots
+(using the same tarball is fine), but with the command prefix at the
+end.
