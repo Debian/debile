@@ -134,7 +134,7 @@ def honorcxx(package, suite, arch, analysis):
                                 trace=None,
                             ))
 
-        os.remove('/tmp/no-honor-cxx')
+            os.remove('/tmp/no-honor-cxx')
 
         return (analysis, out, failed, None, None)
 
