@@ -35,7 +35,7 @@ def cppcheck(dsc, analysis):
 
         failed = False
         if err.strip() == '':
-            return (analysis, err, failed)
+            return (analysis, err, failed, None, None)
 
         for issue in parse_cppcheck(xmlbytes):
             analysis.results.append(issue)
