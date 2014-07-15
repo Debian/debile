@@ -34,7 +34,8 @@ def process_dud(config, session, path):
         dud = Dud(path)
         dud.validate()
     except Exception:
-        return reject_dud(session, dud, 'invalid-dud')
+        print "SKIP: Invavalid dud file {path}".format(tag=path)
+        return
 
     try:
         fingerprint = dud.validate_signature(config['keyrings']['pgp'])
