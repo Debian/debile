@@ -96,7 +96,6 @@ class ArchiveDebileBridge:
 
         create_jobs(source, dose_report="No dose-builddebcheck report available yet.")
 
-        # Drop any old jobs that are still pending.
         oldsources = session.query(Source).filter(
             Source.group_suite == source.group_suite,
             Source.name == source.name,
@@ -104,6 +103,8 @@ class ArchiveDebileBridge:
         for oldsource in oldsources:
             if version_compare(oldsource.version, source.version) >= 0:
                 continue
+
+            # Drop any old jobs that are still pending.
             for job in oldsource.jobs:
                 if (job.check.build and not any(job.built_binaries)) or not any(job.results):
                     session.delete(job)
@@ -112,6 +113,11 @@ class ArchiveDebileBridge:
                     job.builder = None
                     job.assigned_at = None
                     job.finished_at = None
+
+            # Actually remove jobs marked for deletion above.
+            s.commit()
+
+            # If after cleanup there is no build jobs left, remove the source completely
             if not any(job.check.build for job in oldsource.jobs):
                 session.delete(oldsource)
 
