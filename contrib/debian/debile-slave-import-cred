@@ -24,7 +24,7 @@ if ! id $USER > /dev/null; then
 fi
 
 function do-import {
-    su $USER -c "tar -zxf ${TARFILE} $1 -O | gpg --import --status-fd 1"
+    su $USER -s /bin/bash -c "tar -zxf ${TARFILE} $1 -O | gpg --import --status-fd 1"
 }
 
 function copy-ssl-cred {
