@@ -52,10 +52,10 @@ def honorcxx(package, suite, arch, analysis):
         out += err
 
         # Let's create fake-compiler
-        with chroot.create_file('fake_compiler_path', user='root') as fake_gcc_file:
-            fake_gcc_file.write(fake_gcc)
+        with chroot.create_file(fake_compiler_path, user='root') as fake_compiler_file:
+            fake_compiler_file.write(fake_gcc)
 
-        out_, err, code = chroot.run(['chmod', '755', 'fake_compiler_path'], user='root')
+        out_, err, code = chroot.run(['chmod', '755', fake_compiler_path], user='root')
         out += err
 
 
