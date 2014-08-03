@@ -20,26 +20,30 @@
 # DEALINGS IN THE SOFTWARE.
 
 from debile.slave.wrappers.coccinelle import parse_coccinelle
-from debile.slave.core import config
 from debile.slave.utils import cd
 from debile.utils.commands import run_command
 import os.path
+import os
 import glob
+import logging
 
+logger = logging.getLogger('debile')
 
 def list_semantic_patches():
-    root = config['coccinelle']['coccinelle_patches_folder']
+    root = os.path.join(os.environ['HOME'], 'coccinelle/coccinellery/CONTRIB/firehose')
     return glob.iglob(os.path.join(root, "*/*.cocci"))
 
 
 def coccinelle(dsc, analysis):
-    raise NotImplemented("Not ported")
 
     run_command(["dpkg-source", "-x", dsc, "source"])
+    os.environ['COCCI_SUT_TYPE'] = 'debian-source' # used by coccinelle firehose scripts
+
     with cd('source'):
         log = ""
         failed = False
         for semantic_patch in list_semantic_patches():
+            logger.debug('Running patch: {0}'.format(semantic_patch))
             out, err, ret = run_command([
                 "spatch",
                 "-D", "firehose",
@@ -48,8 +52,11 @@ def coccinelle(dsc, analysis):
                 "--no-show-diff",
                 "--timeout", "120",
             ])
-            failed = (ret != 0) or failed
 
+
+            failed = (ret != 0) or failed
+            logger.debug('Spatch output: {0}'.format(out))
+            logger.debug('Spatch err: {0}'.format(err))
             parsed_results = parse_coccinelle(out)
 
             result_count = 0
@@ -71,4 +78,5 @@ def version():
         out = out.split()[2]  # we only extract the version number
     except:
         out = out.strip()
+
     return ('coccinelle', out)
