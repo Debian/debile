@@ -84,3 +84,11 @@ This check needs a chroot named <dist>-<arc>-honorcxx, configured like this:
 That is, the same configuration than regular debile-slave chroots
 (using the same tarball is fine), but with the command prefix at the
 end.
+
+
+Coccinelle check
+================
+
+This check needs coccinellery in the debile-slave user's home.
+
+Available here: https://github.com/matthieucan/coccinellery
