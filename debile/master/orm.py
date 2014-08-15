@@ -701,7 +701,7 @@ class Job(Base):
     # Called when a .dud for any job is processed
     def new_result(self, fire, failed):
         result = Result(job=self, uploaded_at=datetime.utcnow())
-        result.firehose = fire
+        result.firehose_id = fire.id
         result.failed = failed
         self.failed = failed
         # Only delete the dependency if the job was sucessfull, and

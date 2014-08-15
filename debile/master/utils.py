@@ -37,7 +37,7 @@ def _init_config(path):
 
 
 def _init_sqlalchemy(config):
-    engine = create_engine(config['database'])
+    engine = create_engine(config['database'], implicit_returning=False)
     Session.configure(bind=engine)
 
 

@@ -20,7 +20,8 @@
 
 import os
 
-from firewoes.lib.hash import idify, uniquify
+from firewoes.lib.hash import idify
+from firewoes.lib.uniquify import uniquify
 from sqlalchemy.orm.exc import NoResultFound
 
 from debile.master.utils import emit
@@ -87,7 +88,7 @@ def accept_dud(config, session, dud, builder):
     job = session.query(Job).get(dud['X-Debile-Job'])
 
     fire, _ = idify(fire)
-    fire = uniquify(session, fire)
+    fire = uniquify(session.bind, fire)
 
     result = job.new_result(fire, failed)
     session.add(result)
