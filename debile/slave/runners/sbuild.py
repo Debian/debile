@@ -104,7 +104,7 @@ def sbuild(package, maintainer, suite, affinity, build_arch, build_indep, analys
     if build_indep:
         sbuild_cmd += ["-A"]
         if not build_arch:
-            sbuild_cmd += ["--debbuildopt=-A"]
+            sbuild_cmd += ["--only-arch-all"]
     if maintainer:
         sbuild_cmd += ["--maintainer={maintainer}".format(maintainer=maintainer)]
 
