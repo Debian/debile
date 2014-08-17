@@ -1,5 +1,6 @@
 # Copyright (c) 2012-2013 Paul Tagliamonte <paultag@debian.org>
 # Copyright (c) 2013 Leo Cavaille <leo@cavaille.net>
+# Copyright (c) 2014 Clement Schreiner <clement@mux.me>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,12 +31,11 @@ import logging
 logger = logging.getLogger('debile')
 
 def list_semantic_patches():
-    root = os.path.join(os.environ['HOME'], 'coccinelle/coccinellery/CONTRIB/firehose')
+    root = os.path.join(os.environ['HOME'], 'coccinellery/CONTRIB/firehose')
     return glob.iglob(os.path.join(root, "*/*.cocci"))
 
 
 def coccinelle(dsc, analysis):
-
     run_command(["dpkg-source", "-x", dsc, "source"])
     os.environ['COCCI_SUT_TYPE'] = 'debian-source' # used by coccinelle firehose scripts
 
