@@ -34,7 +34,7 @@ def process_dud(config, session, path):
         dud = Dud(path)
         dud.validate()
     except Exception:
-        print "SKIP: Invavalid dud file {path}".format(tag=path)
+        print("SKIP: Invavalid dud file {path}".format(path=path))
         return
 
     try:
