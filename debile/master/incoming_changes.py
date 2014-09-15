@@ -37,7 +37,7 @@ def process_changes(default_group, config, session, path):
         changes = Changes(path)
         changes.validate()
     except Exception:
-        print "SKIP: Invavalid changes file {path}".format(tag=path)
+        print "SKIP: Invalid changes file {tag}".format(tag=path)
         return
 
     try:
