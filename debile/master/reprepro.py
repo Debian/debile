@@ -30,6 +30,13 @@ class RepoException(Exception):
 class RepoSourceAlreadyRegistered(RepoException):
     pass
 
+class RepoPackageNotFound(RepoException):
+    def __init__(self, package):
+        self.package = package
+
+    def __str__(self):
+        return 'Package {0} not found in Sources.gz'.format(self.package)
+
 
 class Repo(object):
 
