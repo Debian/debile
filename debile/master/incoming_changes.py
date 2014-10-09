@@ -35,9 +35,20 @@ from debile.master.orm import (Person, Builder, Suite, Component, Arch, Group,
 def process_changes(default_group, config, session, path):
     try:
         changes = Changes(path)
+    except Exception as e:
+        print('SKIP: Error loading changes file {tag} - ({exception}: {args})'.format(
+            tag=path,
+            exception=type(e),
+            args=e.args))
+        return
+
+    try:
         changes.validate()
-    except Exception:
-        print "SKIP: Invalid changes file {tag}".format(tag=path)
+    except Exception as e:
+        print('SKIP: Invalid changes file {tag} ({exception}: {args})'.format(
+            tag=path,
+            exception=type(e),
+            args=e.args))
         return
 
     try:
