@@ -115,7 +115,7 @@ class ArchiveDebileBridge:
                     job.finished_at = None
 
             # Actually remove jobs marked for deletion above.
-            s.commit()
+            session.commit()
 
             # If after cleanup there is no build jobs left, remove the source completely
             if not any(job.check.build for job in oldsource.jobs):
