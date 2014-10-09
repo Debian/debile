@@ -26,7 +26,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from debile.master.utils import emit
 from debile.master.changes import Changes, ChangesFileException
-from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered
+from debile.master.reprepro import Repo, RepoSourceAlreadyRegistered, RepoPackageNotFound
 from debile.master.orm import (Person, Builder, Suite, Component, Arch, Group,
                                GroupSuite, Source, Deb, Job,
                                create_source, create_jobs)
@@ -158,7 +158,10 @@ def accept_source_changes(default_group, config, session, changes, user):
         # We have a changes in order. Let's roll.
         repo = Repo(group_suite.group.repo_path)
         repo.add_changes(changes)
-        (source.directory, source.dsc_filename) = repo.find_dsc(source)
+        try:
+            (source.directory, source.dsc_filename) = repo.find_dsc(source)
+        except RepoPackageNotFound:
+            return reject_changes(session, changes, "reprepo-package-not-found")
 
     emit('accept', 'source', source.debilize())
 

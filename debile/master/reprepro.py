@@ -94,4 +94,5 @@ class Repo(object):
                         break
                 return (entry['Directory'], dsc)
 
-        raise Exception("Package not found in Sources.gz")
+        raise RepoPackageNotFound('{0}-{1}'.format(source.name,
+                                             source.version))
