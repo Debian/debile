@@ -33,9 +33,21 @@ from debile.master.orm import Builder, Job
 def process_dud(config, session, path):
     try:
         dud = Dud(path)
+
+    except Exception as e:
+        print('SKIP: Error loading dud file {tag} - ({exception}: {args})'.format(
+            tag=path,
+            exception=type(e),
+            args=e.args))
+        return
+
+    try:
         dud.validate()
-    except Exception:
-        print "SKIP: Invalid dud file {tag}".format(tag=path)
+    except Exception as e:
+        print('SKIP: Invalid dud file {tag} ({exception}: {args})'.format(
+            tag=path,
+            exception=type(e),
+            args=e.args))
         return
 
     try:
