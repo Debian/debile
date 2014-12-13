@@ -82,9 +82,38 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
         if DebileMasterInterface.shutdown_request:
             check_shutdown()
 
+class NoAuthMixIn(SimpleXMLRPCRequestHandler):
+    def authenticate(self):
+        client_address, _ = self.client_address
+        # TODO: check builders/users in DB
+        if client_address in ('127.0.0.1', 'localhost'):
+            return True
+        return False
+
+    def parse_request(self, *args):
+        if SimpleXMLRPCRequestHandler.parse_request(self, *args):
+            if self.authenticate():
+                return True
+            else:
+                self.send_error(401, 'Authentication failed')
+        return False
+
+
+class NoSSLAsyncXMLRPCServer(SocketServer.ThreadingMixIn, NoAuthMixIn):
+    pass
+
 
 class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
     pass
+
+class NoSSLXMLRPCServer(SimpleXMLRPCServer):
+    def __init__(self, addr,
+                 requestHandler=SimpleXMLRPCRequestHandler,
+                 bind_and_activate=True):
+        SimpleXMLRPCServer.__init__(self, addr,
+                                    requestHandler=requestHandler,
+                                    bind_and_activate=bind_and_activate)
+
 
 
 class SecureXMLRPCServer(SimpleXMLRPCServer):
