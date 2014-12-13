@@ -79,7 +79,7 @@ class DebileMasterInterface(object):
 
     shutdown_request = False
 
-    def __init__(self, ssl_keyring, pgp_keyring):
+    def __init__(self, ssl_keyring=None, pgp_keyring=None):
         self.ssl_keyring = ssl_keyring
         self.pgp_keyring = pgp_keyring
 
@@ -178,6 +178,10 @@ class DebileMasterInterface(object):
 
     @user_method
     def create_builder(self, name, pgp, ssl):
+        if self.ssl_keyring is None:
+            # TODO: handle this correctly
+            raise Exception
+
         if NAMESPACE.session.query(Builder).filter_by(name=name).first():
             raise ValueError("Slave already exists.")
 
@@ -193,6 +197,9 @@ class DebileMasterInterface(object):
 
     @user_method
     def update_builder_keys(self, name, pgp, ssl):
+        if self.ssl_keyring is None:
+            # TODO
+            raise Exception
         builder = NAMESPACE.session.query(Builder).filter_by(name=name).first()
 
         if not builder:
@@ -207,6 +214,9 @@ class DebileMasterInterface(object):
 
     @user_method
     def disable_builder(self, name):
+        if self.ssl_keyring is None:
+            # TODO
+            raise Exception
         builder = NAMESPACE.session.query(Builder).filter_by(name=name).first()
 
         if not builder:
@@ -221,6 +231,9 @@ class DebileMasterInterface(object):
 
     @user_method
     def create_user(self, name, email, pgp, ssl):
+        if self.ssl_keyring is None:
+            # TODO
+            raise Exception
         if NAMESPACE.session.query(Person).filter_by(email=email).first():
             raise ValueError("User already exists.")
 
@@ -235,6 +248,9 @@ class DebileMasterInterface(object):
 
     @user_method
     def update_user_keys(self, email, pgp, ssl):
+        if self.ssl_keyring is None:
+            # TODO
+            raise Exception
         user = NAMESPACE.session.query(Person).filter_by(email=email).first()
 
         if not user:
@@ -249,6 +265,9 @@ class DebileMasterInterface(object):
 
     @user_method
     def disable_user(self, email):
+        if self.ssl_keyring is None:
+            # TODO
+            raise Exception
         user = NAMESPACE.session.query(Builder).filter_by(email=email).first()
 
         if not user:
