@@ -109,7 +109,8 @@ class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
 class NoSSLXMLRPCServer(SimpleXMLRPCServer):
     def __init__(self, addr,
                  requestHandler=SimpleXMLRPCRequestHandler,
-                 bind_and_activate=True):
+                 bind_and_activate=True,
+                 allow_none=False):
         SimpleXMLRPCServer.__init__(self, addr,
                                     requestHandler=requestHandler,
                                     bind_and_activate=bind_and_activate)
@@ -141,20 +142,27 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
             self.server_activate()
 
 
-def serve(server, port, keyfile, certfile, ssl_keyring, pgp_keyring):
+def serve(server, port, ssl=True,
+          keyfile=None, certfile=None, ssl_keyring=None, pgp_keyring=None):
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
     logger.info("Using keyfile=`{keyfile}', certfile=`{certfile}', "
                 "ssl_keyring=`{ssl_keyring}', pgp_keyring=`{pgp_keyring}'"
                 .format(**locals()))
-    server = SecureXMLRPCServer((server, port), keyfile, certfile,
+    server = None
+    if ssl is True:
+        server = SecureXMLRPCServer((server, port), keyfile, certfile,
                                 ca_certs=ssl_keyring,
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
+    else:
+        server = NoSSLXMLRPCServer((server, port),
+                                   requestHandler=NoSSLXMLRPCServer,
+                                   allow_none=True)
+
     server.register_introspection_functions()
     server.register_instance(DebileMasterInterface(ssl_keyring, pgp_keyring))
     server.serve_forever()
-
 
 def system_exit_handler(signum, frame):
     raise SystemExit(1)
@@ -176,15 +184,21 @@ def main(args, config):
     signal.signal(signal.SIGUSR1, shutdown_request_handler)
 
     logger = logging.getLogger('debile')
-    if not os.path.isfile(config['xmlrpc']['keyfile']):
-        logger.error("Can not find ssl keyfile `{file}'".format(file=config['xmlrpc']['keyfile']))
-    if not os.path.isfile(config['xmlrpc']['certfile']):
-        logger.error("Can not find ssl certfile `{file}'".format(file=config['xmlrpc']['certfile']))
-    if not os.path.isfile(config['keyrings']['ssl']):
-        logger.error("Can not find ssl keyring `{file}'".format(file=config['keyrings']['ssl']))
+
     if not os.path.isfile(config['keyrings']['pgp']):
         logger.info("Can not find pgp keyring `{file}'".format(file=config['keyrings']['pgp']))
 
+    if not args.simple_auth:
+        if not os.path.isfile(config['xmlrpc']['keyfile']):
+            logger.error("Can not find ssl keyfile `{file}'".format(file=config['xmlrpc']['keyfile']))
+        if not os.path.isfile(config['xmlrpc']['certfile']):
+            logger.error("Can not find ssl certfile `{file}'".format(file=config['xmlrpc']['certfile']))
+        if not os.path.isfile(config['keyrings']['ssl']):
+            logger.error("Can not find ssl keyring `{file}'".format(file=config['keyrings']['ssl']))
+
     serve(config['xmlrpc']['addr'], config['xmlrpc']['port'],
-          config['xmlrpc']['keyfile'], config['xmlrpc']['certfile'],
-          config['keyrings']['ssl'], config["keyrings"]['pgp'])
+          not args.simple_auth, # simple_auth = True -> ssl = False
+          config['xmlrpc'].get('keyfile'),
+          config['xmlrpc'].get('certfile'),
+          config['keyrings'].get('ssl'),
+          config["keyrings"].get('pgp'))
