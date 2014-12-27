@@ -67,6 +67,8 @@ def server():
                         help="Log to syslog instead of stderr.")
     parser.add_argument("-d", "--debug", action="store_true", dest="debug",
                         help="Enable debug messages to stderr.")
+    parser.add_argument("--simple-auth", action="store_true", dest="simple_auth", default=False,
+                        help="Use simple auth")
 
     args = parser.parse_args()
     config = init_master(args.config)
