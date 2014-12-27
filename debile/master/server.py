@@ -146,9 +146,11 @@ def serve(server, port, ssl=True,
           keyfile=None, certfile=None, ssl_keyring=None, pgp_keyring=None):
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
-    logger.info("Using keyfile=`{keyfile}', certfile=`{certfile}', "
-                "ssl_keyring=`{ssl_keyring}', pgp_keyring=`{pgp_keyring}'"
-                .format(**locals()))
+    if ssl:
+        logger.info("Using keyfile=`{keyfile}', certfile=`{certfile}', "
+                    "ssl_keyring=`{ssl_keyring}'".format(**locals()))
+    logger.info("Using pgp_keyring=`{pgp_keyring}'".format(**locals()))
+    logger.info("Using ssl authentication: {0}".format(ssl))
     server = None
     if ssl is True:
         server = SecureXMLRPCServer((server, port), keyfile, certfile,
