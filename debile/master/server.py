@@ -157,7 +157,7 @@ def serve(server, port, ssl=True,
                                 allow_none=True)
     else:
         server = NoSSLXMLRPCServer((server, port),
-                                   requestHandler=NoSSLXMLRPCServer,
+                                   requestHandler=NoSSLAsyncXMLRPCServer,
                                    allow_none=True)
 
     server.register_introspection_functions()
