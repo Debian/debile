@@ -142,10 +142,10 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
             self.server_activate()
 
 
-def serve(server, port, ssl=True,
+def serve(server_addr, port, ssl=True,
           keyfile=None, certfile=None, ssl_keyring=None, pgp_keyring=None):
     logger = logging.getLogger('debile')
-    logger.info("Serving on `{server}' on port `{port}'".format(**locals()))
+    logger.info("Serving on `{server_addr}' on port `{port}'".format(**locals()))
     if ssl:
         logger.info("Using keyfile=`{keyfile}', certfile=`{certfile}', "
                     "ssl_keyring=`{ssl_keyring}'".format(**locals()))
@@ -153,12 +153,12 @@ def serve(server, port, ssl=True,
     logger.info("Using ssl authentication: {0}".format(ssl))
     server = None
     if ssl is True:
-        server = SecureXMLRPCServer((server, port), keyfile, certfile,
+        server = SecureXMLRPCServer((server_addr, port), keyfile, certfile,
                                 ca_certs=ssl_keyring,
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
     else:
-        server = NoSSLXMLRPCServer((server, port),
+        server = NoSSLXMLRPCServer((server_addr, port),
                                    requestHandler=NoSSLAsyncXMLRPCServer,
                                    allow_none=True)
 
