@@ -32,10 +32,13 @@ def daemon():
                         help="Log to syslog instead of stderr.")
     parser.add_argument("-d", "--debug", action="store_true", dest="debug",
                         help="Enable debug messages to stderr.")
+    parser.add_argument("--auth", action="store", dest="auth_method",
+                        default='ssl',
+                        help="Authentication method ('ssl' or 'simple')")
 
     args = parser.parse_args()
     config = get_config("slave.yaml", path=args.config)
-    proxy = get_proxy(config)
+    proxy = get_proxy(config, args.auth_method)
 
     from debile.slave.daemon import main
     main(args, config, proxy)

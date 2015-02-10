@@ -115,12 +115,22 @@ class DebileSafeTransport(xmlrpclib.Transport):
         return self._connection[1]
 
 
-def get_proxy(config):
+def get_proxy(config, auth_method):
     xml = config.get("xmlrpc", None)
     if xml is None:
         raise Exception("No xmlrpc found in slave yaml")
 
-    proxy = xmlrpclib.ServerProxy(
+    proxy = None
+    if auth_method == 'simple':
+        proxy = xmlrpclib.ServerProxy(
+            "http://{host}:{port}/".format(
+            host=xml['host'],
+            port=xml['port'],
+            ),
+            allow_none=True)
+
+    else:
+        proxy = xmlrpclib.ServerProxy(
         "https://{host}:{port}/".format(
             host=xml['host'],
             port=xml['port'],
