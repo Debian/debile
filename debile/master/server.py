@@ -82,7 +82,7 @@ class DebileMasterAuthMixIn(SimpleXMLRPCRequestHandler):
         if DebileMasterInterface.shutdown_request:
             check_shutdown()
 
-class NoAuthMixIn(SimpleXMLRPCRequestHandler):
+class DebileMasterSimpleAuthMixIn(SimpleXMLRPCRequestHandler):
     def authenticate(self):
         client_address, _ = self.client_address
         NAMESPACE.machine = NAMESPACE.session.query(Builder).filter_by(
@@ -117,14 +117,16 @@ class NoAuthMixIn(SimpleXMLRPCRequestHandler):
             check_shutdown()
 
 
-class NoSSLAsyncXMLRPCServer(SocketServer.ThreadingMixIn, NoAuthMixIn):
+class SimpleAsyncXMLRPCServer(SocketServer.ThreadingMixIn,
+                             DebileMasterSimpleAuthMixIn):
     pass
 
 
 class AsyncXMLRPCServer(SocketServer.ThreadingMixIn, DebileMasterAuthMixIn):
     pass
 
-class NoSSLXMLRPCServer(SimpleXMLRPCServer):
+
+class SimpleAuthXMLRPCServer(SimpleXMLRPCServer):
     def __init__(self, addr,
                  requestHandler=SimpleXMLRPCRequestHandler,
                  bind_and_activate=True,
@@ -161,25 +163,27 @@ class SecureXMLRPCServer(SimpleXMLRPCServer):
             self.server_activate()
 
 
-def serve(server_addr, port, ssl=True,
+def serve(server_addr, port, auth_method,
           keyfile=None, certfile=None, ssl_keyring=None, pgp_keyring=None):
     logger = logging.getLogger('debile')
     logger.info("Serving on `{server_addr}' on port `{port}'".format(**locals()))
-    if ssl:
+    logger.info("Authentication method: {0}".format(auth_method))
+    if auth_method == 'ssl':
         logger.info("Using keyfile=`{keyfile}', certfile=`{certfile}', "
                     "ssl_keyring=`{ssl_keyring}'".format(**locals()))
     logger.info("Using pgp_keyring=`{pgp_keyring}'".format(**locals()))
-    logger.info("Using ssl authentication: {0}".format(ssl))
+
     server = None
-    if ssl is True:
+    if auth_method == 'simple':
+        server = SimpleAuthXMLRPCServer((server_addr, port),
+                                   requestHandler=SimpleAsyncXMLRPCServer,
+                                   allow_none=True)
+
+    else:
         server = SecureXMLRPCServer((server_addr, port), keyfile, certfile,
                                 ca_certs=ssl_keyring,
                                 requestHandler=AsyncXMLRPCServer,
                                 allow_none=True)
-    else:
-        server = NoSSLXMLRPCServer((server_addr, port),
-                                   requestHandler=NoSSLAsyncXMLRPCServer,
-                                   allow_none=True)
 
     server.register_introspection_functions()
     server.register_instance(DebileMasterInterface(ssl_keyring, pgp_keyring))
@@ -209,7 +213,7 @@ def main(args, config):
     if not os.path.isfile(config['keyrings']['pgp']):
         logger.info("Can not find pgp keyring `{file}'".format(file=config['keyrings']['pgp']))
 
-    if not args.simple_auth:
+    if args.auth_method == 'ssl':
         if not os.path.isfile(config['xmlrpc']['keyfile']):
             logger.error("Can not find ssl keyfile `{file}'".format(file=config['xmlrpc']['keyfile']))
         if not os.path.isfile(config['xmlrpc']['certfile']):
@@ -218,7 +222,7 @@ def main(args, config):
             logger.error("Can not find ssl keyring `{file}'".format(file=config['keyrings']['ssl']))
 
     serve(config['xmlrpc']['addr'], config['xmlrpc']['port'],
-          not args.simple_auth, # simple_auth = True -> ssl = False
+          args.auth_method,
           config['xmlrpc'].get('keyfile'),
           config['xmlrpc'].get('certfile'),
           config['keyrings'].get('ssl'),
