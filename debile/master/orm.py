@@ -25,11 +25,13 @@ from datetime import datetime
 from firewoes.lib.orm import metadata
 from firehose.model import Analysis
 
+from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (Table, Column, ForeignKey, UniqueConstraint,
                         Integer, String, DateTime, Boolean)
+
 
 from debile.master.utils import config
 from debile.master.arches import (get_preferred_affinity, get_source_arches)
@@ -72,6 +74,7 @@ class Person(Base):
         "email": "email",
         "pgp": "pgp",
         "ssl": "ssl",
+        "ip": "ip",
     }
     debilize = _debilize
 
@@ -81,6 +84,8 @@ class Person(Base):
 
     pgp = Column(String(40), nullable=True, default=None)
     ssl = Column(String(40), nullable=True, default=None)
+
+    ip = Column(INET, nullable=True, default=None)
 
     def __str__(self):
         return "%s <%s>" % (self.name, self.email)
@@ -100,6 +105,7 @@ class Builder(Base):
         "maintainer_email": "maintainer.email",
         "pgp": "pgp",
         "ssl": "ssl",
+        "ip": "ip",
     }
     debilize = _debilize
 
@@ -112,6 +118,8 @@ class Builder(Base):
 
     pgp = Column(String(40), nullable=True, default=None)
     ssl = Column(String(40), nullable=True, default=None)
+
+    ip = Column(INET, nullable=True, default=None)
 
     def __str__(self):
         return self.name
