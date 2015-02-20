@@ -1,0 +1,15 @@
+[Unit]
+Description=Nginx container for Debile
+After=debile-data.service
+
+[Service]
+Restart=always
+# "-" prefix so that ExecStart is always run
+ExecStartPre=/usr/bin/docker create \
+      --name debile-http \
+      --volumes-from debile-data \
+      -v /var/log/nginx/ \
+      -p 80:80 \
+      clemux/debile-http
+ExecStart=/usr/bin/docker start -a debile-http
+ExecStop=/usr/bin/docker stop debile-http

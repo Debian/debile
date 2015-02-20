@@ -1,0 +1,30 @@
+---
+database: postgresql://debile:debile@debile-pg/debile
+filerepo_chmod_mode: 660
+
+affinity_preference: ['amd64']
+
+xmlrpc:
+    addr: 0.0.0.0
+    port: 22017
+
+keyrings:
+    pgp: /srv/debile/keyring.pgp
+
+repo:
+    # custom_resolver: devnull.foo.resolver
+    repo_path: "/srv/debile/repo/{name}"
+    repo_url: "http://localhost/debile/repo/{name}"
+    files_path: "/srv/debile/files/{name}"
+    files_url: "http://localhost/debile/files/{name}"
+
+fedmsg:
+    prefix: "org.anized"
+    sign: false
+    environment: "dev"
+    endpoints:
+        - "debile.leliel":
+            - "tcp://localhost:3000"
+            - "tcp://localhost:3001"
+            - "tcp://localhost:3002"
+            - "tcp://localhost:3003"

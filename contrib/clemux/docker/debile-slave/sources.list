@@ -1,0 +1,4 @@
+deb http://172.17.42.1:3142/debian/ sid main contrib non-free
+
+deb http://172.17.42.1:3142/debian/ experimental main contrib non-free
+

@@ -1,0 +1,16 @@
+[Unit]
+Description=Data-only container for Debile
+After=docker.service
+
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/docker create \
+      --name debile-master \
+      --volumes-from debile-data
+      --links debile-pg:debile-pg
+      clemux/debile-master
+
+ExecStart=/usr/bin/docker start -a debile-master
+
+
+ExecStop=/usr/bin/docker stop debile-master

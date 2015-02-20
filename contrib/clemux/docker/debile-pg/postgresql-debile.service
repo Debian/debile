@@ -1,0 +1,14 @@
+[Unit]
+Description=Postgresql container for Debile
+After=docker.service
+
+[Service]
+Restart=always
+# "-" prefix so that ExecStart is always run
+ExecStartPre=-/usr/bin/docker create \
+              --name debile-pg \
+              -p 5432:5432 \
+              clemux/debile-pg
+ExecStart=/usr/bin/docker start -a debile-pg
+
+ExecStop=/usr/bin/docker stop debile-pg

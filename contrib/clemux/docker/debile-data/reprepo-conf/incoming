@@ -1,0 +1,5 @@
+Name: default
+IncomingDir: incoming
+TempDir: tmp
+Allow: unstable
+Cleanup: on_deny on_error

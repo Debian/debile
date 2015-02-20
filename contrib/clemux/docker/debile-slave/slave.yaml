@@ -1,0 +1,22 @@
+---
+xmlrpc:
+    host: debile-master
+    port: 22017
+    # ca_certs: /etc/ssl/certs/ca-certificates.crt
+
+gpg: 7C367D02AF6D20DCF2BFB686E8D62122F818733D
+
+dput:
+    host: debile-master
+
+suites:
+    - unstable
+
+components:
+    - main
+
+arches:
+    - amd64
+
+checks:
+    - lintian

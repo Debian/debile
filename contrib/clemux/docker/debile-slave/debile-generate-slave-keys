@@ -1,0 +1,65 @@
+#!/bin/bash
+# bashisms and proud of it.
+#
+# Copyright (c) Paul R. Tagliamonte <paultag@debian.org>, 2014
+# Copyright (c) Clement Schreiner <clement@mux.me>, 2014-2015
+# Under the terms and conditions of the Debile project, MIT/Expat. You
+# should have recieved a copy of the license with this script.
+
+GPG_USER="debile@slave"
+GPG_NAME="Debile Slave"
+
+GPG_COMMAND=gpg
+GPG_FLAGS=""
+GPG_FLAGS="${GPG_FLAGS} --no-default-keyring"
+GPG_FLAGS="${GPG_FLAGS} --keyring=$(pwd)/keyring"
+GPG_FLAGS="${GPG_FLAGS} --secret-keyring=$(pwd)/secret-keyring"
+
+
+function get-fingerprint {
+    GPG_FINGERPRINT=$(${GPG_COMMAND} ${GPG_FLAGS} --fingerprint ${GPG_USER} 2>/dev/null \
+        | grep "Key fingerprint = " \
+        | sed 's/Key fingerprint =//g' \
+        | tr -d " " \
+        | head -n 1)
+    echo ${GPG_FINGERPRINT}
+}
+
+if [ "x`get-fingerprint`" = "x" ]; then
+    echo "OK. I'm generating a OpenPGP key for the slave."
+    echo ""
+    echo "  This may take a minute, please let me run."
+    echo ""
+    ${GPG_COMMAND} ${GPG_FLAGS} \
+        -q --gen-key --batch 2>/dev/null <<EOF
+            Key-Type: RSA
+            Key-Length: 2048
+            Name-Real: ${GPG_NAME}
+            Name-Comment: Debile Slave Key
+            Name-Email: ${GPG_USER}
+            %commit
+            %echo Done
+EOF
+fi
+
+
+GPG_FINGERPRINT=`get-fingerprint`
+# Right, OK. We've got a fingerprint.
+
+echo ""
+echo "   The slave has a OpenPGP key ${GPG_FINGERPRINT}"
+echo ""
+
+WORKDIR=$(mktemp -d)
+pushd ${WORKDIR} >/dev/null
+
+
+echo "${GPG_FINGERPRINT}" > fingerprint
+
+${GPG_COMMAND} ${GPG_FLAGS} --armor --export ${GPG_FINGERPRINT} > key.pub
+${GPG_COMMAND} ${GPG_FLAGS} --armor --export-secret-key ${GPG_FINGERPRINT} > key.priv
+
+tar -zcf slave-keys.tar.gz *
+popd >/dev/null
+mv ${WORKDIR}/slave-keys.tar.gz .
+rm -rf ${WORKDIR}

@@ -1,0 +1,16 @@
+[Unit]
+Description=Data-only container for Debile
+After=docker.service
+
+[Service]
+Restart=always
+TimeoutStartSec=10
+ExecStartPre=-/usr/bin/docker create \
+      --name debile-data \
+      -v /srv/debile \
+      clemux/debile-data
+
+ExecStart=/usr/bin/docker start -a debile-data
+
+
+ExecStop=/usr/bin/docker stop debile-data
