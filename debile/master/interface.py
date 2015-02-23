@@ -74,7 +74,7 @@ def user_method(fn):
 
 class DebileMasterInterface(object):
     """
-    This is the exposed interface for the builders. Code enhacing the server
+    This is the exposed interface for the builders. Code enhancing the server
     should likely go here, unless you know what you're doing.
     """
 
